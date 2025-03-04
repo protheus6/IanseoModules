@@ -142,8 +142,7 @@ class iCible
     {
         $structList = array_unique(array_map(fn($m) => $m->structName, $this->participants));
         
-        echo count($structList) ." - ". ($this->ath / 2);
-        if(count($this->participants) == $this->ath)
+         if(count($this->participants) == $this->ath)
         {
             $this->warnLevel = 1;
         }
@@ -155,10 +154,6 @@ class iCible
                 $this->warnLevel = 2;
             }
         }
-        
-        
-        
-        
         
         if(count($structList) == 1 )
         {
