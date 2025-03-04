@@ -1,0 +1,157 @@
+
+
+        .plan d-iv{
+            border: solid;
+            border-color: red;
+            border-width: thin;
+        }
+
+        .archers {
+            font-size: .75rem !important;
+            font-weight: bolder;
+            writing-mode: horizontal-tb;
+        }
+        .Tile
+        {
+            font-weight: bolder;
+        }
+
+        .PickingList .dispsrc
+        {
+            display: block !important;
+        }
+
+
+
+        .PickingList .targettile
+        {
+            display: none !important;
+        }
+        .dispsrc
+        {
+            display: none !important;
+        }
+
+        
+        .plan tr{
+            min-height: 55px;
+            max-he_ight: 110px;
+        }
+        .plan td{
+            width:65px !important;  
+            min-width: 65px !important;
+            max-width: 65px !important;
+
+        }
+
+        .plan .cdDisabled {
+            display:none !important;
+        }
+
+        .plan tr:nth-child(odd) td{
+            background-color: #ffe8c3;
+        }
+        .plan tr:nth-child(even) td{
+            background-color: #fff0de;
+        }
+
+
+        .plan .targettile
+        {
+            display: block !important;
+            max-he_ight: 53px !important;
+            min-height: 53px !important;
+            margin:1px;
+        }
+        .plan .stepelt
+        {
+            padding: 0rem !important;
+        }
+        .planVague{
+            min-height: 55px !important;
+
+        }
+        
+        .vague{
+            width: 59px;
+        }
+        .vagueSep{
+            width:6px;
+        }
+
+        .targettile:hover .btRmTile {
+            display: block;
+          }
+
+
+         .scheader {
+             width:110px;
+             max-width: 165px;
+         }
+        
+        .schTr:hover .btRmTr, .schTr:hover .btAddTr, .schTr:hover .btCancelSc,.schTr:hover .btSaveSc {
+            display: block;
+          }
+          
+        .schHide{
+              display: none !Important ;
+          }
+        .schShow{
+              display: block !Important;
+          }
+          
+        .schEdit {
+             display: none ; 
+          }
+          
+          
+        
+         .btRmTile:hover, .btEditSc:hover, .btSaveSc:hover, .btRmTr:hover, .btAddTr:hover, .btCancelSc:hover {
+            opacity: 1;
+         }
+
+
+        .btRmTr, .btCancelSc, .btRmTile {
+            padding:2px;
+            display: none;
+            color: red;
+            opacity: 50%;
+            cursor: pointer;
+         }  
+         .btAddTr, .btSaveSc {
+            padding:2px;
+            display: none;
+            color: blue;
+            opacity: 50%;
+            cursor: pointer;
+         }
+
+
+
+
+        .halo {
+            border: 2px solid red !important;
+            border-radius: 0.4rem !important;
+            opacity: 1 !important; 
+        } 
+
+        .emptytr{
+            display: none;
+        }
+
+        .cibleHeader:hover .addCible{
+            display: block;
+        }
+
+        .addCible {
+            color: blue;
+            opacity: 50%;
+            cursor: pointer;
+            display: none;
+        }
+
+        .addCible:hover {
+            opacity: 1;
+        }
+
+

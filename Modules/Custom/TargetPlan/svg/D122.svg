@@ -1,0 +1,35 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" height="1250" width="1250">
+<rect width="1248" height="1248" x="1" y="1" stroke="black" fill="white" stroke-width="1" />
+<circle cx="625" cy="625" r="610" fill="white"/>
+<circle cx="625" cy="625" r="549" fill="white"/>
+
+<circle cx="625" cy="625" r="488" fill="black"/>
+<circle cx="625" cy="625" r="427" fill="black"/>
+
+<circle cx="625" cy="625" r="366" fill="blue"/>
+<circle cx="625" cy="625" r="305" fill="blue"/>
+
+<circle cx="625" cy="625" r="244" fill="red"/>
+<circle cx="625" cy="625" r="183" fill="red"/>
+
+<circle cx="625" cy="625" r="122" fill="yellow"/>
+<circle cx="625" cy="625" r="61" fill="yellow"/>
+
+<g stroke-width="2" fill="none">
+  <circle cx="625" cy="625" r="610" stroke="black"/>
+  <circle cx="625" cy="625" r="244" stroke="black"/>
+  <circle cx="625" cy="625" r="122" stroke="black"/>
+</g>
+
+<g stroke-width="1" stroke="#000" fill="none">
+  <circle cx="625" cy="625" r="549" stroke="black"/>
+  <circle cx="625" cy="625" r="427" stroke="white"/>
+  <circle cx="625" cy="625" r="305" stroke="black"/>
+  <circle cx="625" cy="625" r="183" stroke="black"/>
+  <circle cx="625" cy="625" r="61" stroke="black"/>
+  <circle cx="625" cy="625" r="30.5" stroke="black"/>
+</g>
+
+
+</svg>

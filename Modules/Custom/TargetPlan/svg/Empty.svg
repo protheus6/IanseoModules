@@ -1,0 +1,38 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" height="420" width="420">
+<circle cx="210" cy="210" r="200" fill="white" />
+<circle cx="210" cy="210" r="180" fill="white" />
+
+<circle cx="210" cy="210" r="160" fill="black"/>
+<circle cx="210" cy="210" r="140" fill="black" />
+
+<circle cx="210" cy="210" r="120" fill="blue" />
+<circle cx="210" cy="210" r="100" fill="blue" />
+
+<circle cx="210" cy="210" r="80" fill="red"  />
+<circle cx="210" cy="210" r="60" fill="red"  />
+
+<circle cx="210" cy="210" r="40" fill="yellow"  />
+<circle cx="210" cy="210" r="20" fill="yellow"  />
+
+<g stroke-width="2" fill="none">
+  <circle cx="210" cy="210" r="200" stroke="black"/>
+  <circle cx="210" cy="210" r="80" stroke="black" />
+  <circle cx="210" cy="210" r="40" stroke="black" />
+</g>
+
+<g stroke-width="1" stroke="#000" fill="none">
+  <circle cx="210" cy="210" r="180" stroke="black"/>
+  <circle cx="210" cy="210" r="140" stroke="white"/>
+  <circle cx="210" cy="210" r="100" stroke="black"/>
+  <circle cx="210" cy="210" r="60" stroke="black"/>
+  <circle cx="210" cy="210" r="20" stroke="black"/>
+  <circle cx="210" cy="210" r="10" stroke="black"/>
+</g>
+<rect width="418" height="418" x="1" y="1" stroke="black" fill="white" stroke-width="1" opacity="0.6"/>
+<g stroke-width="30" stroke="#000" fill="none" >
+  <circle cx="210" cy="210" r="120" stroke="red"/>
+</g>
+<rect  transform='rotate(-45)' width="30" height="250" x="-15" y="180" fill="red" />
+<rect width="418" height="418" x="1" y="1" stroke="black" fill="white" stroke-width="1" opacity="0.5"/>
+</svg>
