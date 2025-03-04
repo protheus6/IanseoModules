@@ -1,0 +1,53 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" height="640" width="220">
+<rect width="218" height="638" x="1" y="1" stroke="black" fill="white" stroke-width="1" />
+<circle cx="110" cy="110" r="100" fill="blue"/>
+<circle cx="110" cy="110" r="80" fill="red"/>
+<circle cx="110" cy="110" r="60" fill="red"/>
+<circle cx="110" cy="110" r="40" fill="yellow"/>
+<circle cx="110" cy="110" r="20" fill="yellow"/>
+
+
+<circle cx="110" cy="320" r="100" fill="blue"/>
+<circle cx="110" cy="320" r="80" fill="red"/>
+<circle cx="110" cy="320" r="60" fill="red"/>
+<circle cx="110" cy="320" r="40" fill="yellow"/>
+<circle cx="110" cy="320" r="20" fill="yellow"/>
+
+
+<circle cx="110" cy="530" r="100" fill="blue"/>
+<circle cx="110" cy="530" r="80" fill="red"/>
+<circle cx="110" cy="530" r="60" fill="red"/>
+<circle cx="110" cy="530" r="40" fill="yellow"/>
+<circle cx="110" cy="530" r="20" fill="yellow"/>
+
+<g stroke-width="2" fill="none">
+  <circle cx="110" cy="110" r="100" stroke="black"/>
+  <circle cx="110" cy="110" r="80" stroke="black"/>
+  <circle cx="110" cy="110" r="40" stroke="black"/>
+  
+  
+  <circle cx="110" cy="320" r="100" stroke="black"/>
+  <circle cx="110" cy="320" r="80" stroke="black"/>
+  <circle cx="110" cy="320" r="40" stroke="black"/>
+  
+  
+  <circle cx="110" cy="530" r="100" stroke="black"/>
+  <circle cx="110" cy="530" r="80" stroke="black"/>
+  <circle cx="110" cy="530" r="40" stroke="black"/>
+  
+  
+</g>
+
+<g stroke-width="1" stroke="#000" fill="none">
+  <circle cx="110" cy="110" r="60" stroke="black"/>
+  <circle cx="110" cy="110" r="10" stroke="black"/>
+  
+  <circle cx="110" cy="320" r="60" stroke="black"/>
+  <circle cx="110" cy="320" r="10" stroke="black"/>
+  
+  <circle cx="110" cy="530" r="60" stroke="black"/>
+  <circle cx="110" cy="530" r="10" stroke="black"/>
+</g>
+
+</svg>

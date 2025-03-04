@@ -1,0 +1,118 @@
+.sample {
+    background-color: rgba(86,61,124,.15);
+    border: 1px solid rgba(86,61,124,.2);
+    padding-bottom: .75rem;
+    padding-top: .75rem;
+}
+
+.contain {
+    min-width: 150px;
+    max-width: 150px;
+    min-height: 200px;
+    margin: 2px;
+}
+
+.diam {
+    font-size: .75rem !important;
+}
+
+.cibleAC {
+    width: 50%;
+}
+
+.cibleA {
+    width: 25%;
+}
+
+.cibleACBD {
+    width: 100%;
+}
+
+.ddtrg .archers {
+    font-size: .75rem !important;
+    writing-mode: vertical-lr;
+}
+
+.ddsrc .archers {
+    font-size: .75rem !important;
+    font-weight: bold;
+    writing-mode: horizontal-tb;
+}
+
+.ddsrc .affegcted {
+    color: forestgreen !important;
+    font-weight: normal !important;
+}
+
+.disptrg {
+    display: none !important;
+    border: 2px solid grey !important;
+    border-radius: 0.4rem !important;
+}
+
+.dispsrc {
+    display: block;
+    border: 2px solid grey ;
+    border-radius: 0.4rem ;
+}
+
+.ddtrg .disptrg {
+    display: block !important;
+}
+
+.ddtrg .dispsrc {
+    display: none !important;
+}
+
+.ddsrc .disptrg {
+    display: none !important;
+}
+
+.ddsrc .dispsrc {
+    display: block !important;
+}
+
+.halo {
+    border: 2px solid green !important;
+    border-radius: 0.4rem !important;
+}
+
+.nameArcher {
+
+}
+
+.halobgstru {
+    border: 2px solid red !important;
+    border-radius: 0.4rem !important;
+    opacity: 1 !important;
+}
+
+.dragula-container > div {
+  /* cursor: move; */
+  cursor: grab;
+  cursor: -moz-grab;
+  /* cursor: -webkit-grab; */
+}
+
+.gu-mirror {
+  cursor: grabbing;
+  cursor: -moz-grabbing;
+  cursor: -webkit-grabbing;
+}
+
+
+.cibleNum:hover .btRm {
+    display: block;
+} 
+
+.btRm{
+    display: none;
+}
+.btRm i{
+    color: red;
+    font-size: medium;
+}
+
+.btRm:hover i{
+    font-size: large;
+}
