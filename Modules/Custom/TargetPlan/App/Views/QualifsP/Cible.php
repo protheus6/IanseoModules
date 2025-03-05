@@ -3,16 +3,16 @@
     $warnClass = "border-primary";
     switch ($cible->warnLevel) {
     case 0:
-        $warnClass = "border-primary";
+        $warnClass = "primary";
         break;
     case 1:
-        $warnClass = "border-success";
+        $warnClass = "success";
         break;
     case 2:
-        $warnClass = "border-warning";
+        $warnClass = "warning";
         break;
     case 3:
-        $warnClass = "border-danger";
+        $warnClass = "danger";
         break;
 }
 
@@ -23,10 +23,13 @@
 ?>
 
 <input type="hidden" id="cibleNum" value="<?php echo $cible->num; ?>" />
-<div class="d-flex flex-column contain border border-3 p-1 <?php echo $warnClass; ?> rounded-3">
+<div class="d-flex flex-column contain border border-3 p-1 <?php echo "border-".$warnClass; ?> rounded-3 position-relative">
+    <span class="btRm position-absolute bottom-0 start-50 translate-middle-x badge rounded-3 rounded-bottom-0 <?php echo "bg-".$warnClass; ?>">
+    <?php echo LANG['WARN_'.$cible->warnLevel]; ?>
+  </span>
     <div class=" text-center position-relative">
         <span>Cible <?php echo $cible->num; ?></span> 
-        <span class="btRm position-absolute top-0 end-0 badge border border-light rounded-circle bg-light p-0" 
+        <span class="btRm position-absolute top-0 end-0  badge border border-light rounded-circle bg-light p-0" 
               onclick="removeCible(this)">
             <i class="bi bi-x-circle" ></i>
         </span>
@@ -137,7 +140,7 @@
     </div>
 </div>
 
-<div id="cb<?php echo $cible->num; ?>" class=" d-flex nameArcher flex-row contain border border-2 p-1 <?php echo $warnClass; ?> rounded-3 justify-content-center">
+<div id="cb<?php echo $cible->num; ?>" class=" d-flex nameArcher flex-row contain border border-2 p-1 <?php echo "border-".$warnClass; ?> rounded-3 justify-content-center">
 <?php 
     
         foreach($cible->GetVaguesOrdered() as $vaguesOrder)
@@ -166,21 +169,6 @@
                                 <div class="<?php echo $bgcol;?> disptrg " id="<?php echo $idcol; ?>" onmouseover="haloStruct(this);" onmouseout="haloStructOut(this);">
                                     <span class="archers"><?php echo $vague->participant->getCategory()." - ".$vague->participant->getNomCourt(); ?></span>
                                 </div>
-                                <!--
-                                <div class="dispsrc rounded-2 shadow  text-center ">
-                                    <div class="row p-0">
-                                        <span class="archers affected">
-                                            <?php// echo $vague->participant->getCategory()." - ".$vague->participant->getNomCourt(); ?>
-                                        </span>
-                                    </div>
-                                    <div class="row p-0">
-                                        <span class="archers affected">
-                                            <?php// echo $vague->participant->structName; ?>
-                                        </span>
-                                    </div>
-                                </div>
-                                -->
-
                             </div>
                         <?php } ?>
                      </div>
