@@ -16,7 +16,7 @@ class iCible
     public int $warnLevel=0;
             
     
-    public array $distances = [];
+    public \App\Models\iDistance $distance;
     public array $participants = [];
     public array $blasons = [];
     public array $vagues = [];
@@ -28,14 +28,17 @@ class iCible
         $this->tour = new iTourInfo($tId);
         $this->order = $sessOrder;
         $this->num = $CibleNum;
+        $this->distance = new iDistance();
         $this->GetSession();
         $this->GetBlasons();
         $this->GetParticipants($this->num);
         $this->MakeVagues();
+        $this->SetDistance();
         $this->SetWarnLevel();
+        
     }
     
-      private function GetSession()
+    private function GetSession()
     {
          $sqlSessDi = "SELECT D.DiSession, D.DiDistance, D.DiDay, D.DiWarmStart, D.DiStart,
                                     S.SesOrder, S.SesName, S.SesTar4Session, S.SesAth4Target	
@@ -49,10 +52,38 @@ class iCible
             
             if($isFirst){
                 $this->ath =intval($row->SesAth4Target);
-               $isFirst = false;
+                
+                $this->distance->id =$row->DiDistance;
+                $this->distance->day =$row->DiDay;
+                $this->distance->warmStart =$row->DiWarmStart;
+                $this->distance->start =$row->DiStart;
+                $this->distance->targets =intval($row->SesTar4Session);
+                $this->distance->ath =intval($row->SesAth4Target);
+            
+                $this->distance->distance = 0;
+                $this->distance->sameDistance = true;
+        
+                $isFirst = false;
             }
         }
           
+    }
+     private function SetDistance()
+    {
+         
+        $distList  = array_unique(array_map(fn($m) => $m->distance, $this->participants));
+        
+        
+        if(count($distList) == 1)
+        {
+            $this->distance->distance = reset($distList);
+            $this->distance->sameDistance = true;
+        }
+        else if(count($distList) >1)
+        {
+            $this->distance->distance = reset($distList);
+            $this->distance->sameDistance = false;
+        }
     }
     
    
@@ -70,12 +101,21 @@ class iCible
                             TF.TfT5,TF.TfW5,
                             TF.TfT6,TF.TfW6,
                             TF.TfT7,TF.TfW7,
-                            TF.TfT8,TF.TfW8
-       
+                            TF.TfT8,TF.TfW8,
+                            TD.Td1,TD.Td2,TD.Td3,TD.Td4,
+                            TD.Td5,TD.Td6,TD.Td7,TD.Td8,
+                            TD.TdDist1,TD.TdDist2,
+                            TD.TdDist3,TD.TdDist4,
+                            TD.TdDist5,TD.TdDist6,
+                            TD.TdDist7,TD.TdDist8
+                            
                         FROM Entries E
                         INNER JOIN Countries C on E.EnCountry = C.CoId AND E.EnTournament = C.CoTournament
                         INNER JOIN TargetFaces TF on E.EnTargetFace = TF.TfId AND E.EnTournament = TF.TfTournament
                         INNER JOIN Qualifications Q ON E.EnId=Q.QuId
+                        INNER JOIN TournamentDistances TD on EnTournament=TdTournament 
+                                    AND concat(trim(E.EnDivision),trim(E.EnClass)) LIKE TdClasses
+                                    
                         WHERE EnTournament =  {$this->tour->id} AND Q.QuSession = {$this->order} ";
          
          
@@ -99,6 +139,7 @@ class iCible
             $participant->arme = $row->EnDivision;
             $participant->classe = $row->EnClass;
             $participant->target = intval($row->QuTarget);
+            $participant->distance = intval($row->TdDist1);
             $participant->letter = $row->QuLetter;
             $this->participants[$participant->id] = $participant;
             $this->blasons[$row->EnTargetFace]->count++;
@@ -158,6 +199,10 @@ class iCible
         if(count($structList) == 1 )
         {
             $this->warnLevel = 3;
+        }
+        if(!$this->distance->sameDistance)
+        {
+            $this->warnLevel = 4;
         }
         
     }

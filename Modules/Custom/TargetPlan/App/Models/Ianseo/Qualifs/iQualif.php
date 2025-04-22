@@ -98,12 +98,21 @@ class iQualif
                             TF.TfT5,TF.TfW5,
                             TF.TfT6,TF.TfW6,
                             TF.TfT7,TF.TfW7,
-                            TF.TfT8,TF.TfW8
+                            TF.TfT8,TF.TfW8,
+                            TD.Td1,TD.Td2,TD.Td3,TD.Td4,
+                            TD.Td5,TD.Td6,TD.Td7,TD.Td8,
+                            TD.TdDist1,TD.TdDist2,
+                            TD.TdDist3,TD.TdDist4,
+                            TD.TdDist5,TD.TdDist6,
+                            TD.TdDist7,TD.TdDist8
        
                         FROM Entries E
                         INNER JOIN Countries C on E.EnCountry = C.CoId AND E.EnTournament = C.CoTournament
                         INNER JOIN TargetFaces TF on E.EnTargetFace = TF.TfId AND E.EnTournament = TF.TfTournament
                         INNER JOIN Qualifications Q ON E.EnId=Q.QuId
+                        INNER JOIN TournamentDistances TD on EnTournament=TdTournament 
+                                    AND concat(trim(E.EnDivision),trim(E.EnClass)) LIKE TdClasses
+
                         WHERE EnTournament =  {$this->id} AND Q.QuSession = {$sessOrder}
                         ORDER BY QuTarget And  QuLetter";
         $stmtPart = safe_r_sql($sqlPart);
@@ -118,6 +127,7 @@ class iQualif
             $participant->arme = $row->EnDivision;
             $participant->classe = $row->EnClass;
             $participant->target = intval($row->QuTarget);
+            $participant->distance = intval($row->TdDist1);
             $participant->letter = $row->QuLetter;
             $this->sessions[$sessOrder]->participants[$participant->id] = $participant;
         }

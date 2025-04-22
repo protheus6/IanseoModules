@@ -16,6 +16,7 @@ class iParticipant
     public string $prenom = "";
     
     public int $target = 0;
+    public int $distance = 0;
     public string $letter = "";
     public \App\Models\iBlason $blason;
     
