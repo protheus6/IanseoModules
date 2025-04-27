@@ -14,6 +14,9 @@
     case 3:
         $warnClass = "danger";
         break;
+    case 4:
+        $warnClass = "danger";
+        break;
 }
 
     
@@ -28,7 +31,8 @@
     <?php echo LANG['WARN_'.$cible->warnLevel]; ?>
   </span>
     <div class=" text-center position-relative">
-        <span>Cible <?php echo $cible->num; ?></span> 
+        <span>Cible <?php echo $cible->num; ?></span>
+        <span>(<?php echo $cible->distance->distance; ?>m)</span>
         <span class="btRm position-absolute top-0 end-0  badge border border-light rounded-circle bg-light p-0" 
               onclick="removeCible(this)">
             <i class="bi bi-x-circle" ></i>
