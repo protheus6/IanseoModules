@@ -43,7 +43,7 @@ En survolant la sommes des blasons necessaire vous pouvez voir l'ensemble des ar
 
 ### Desaffectation en masse
 Il est également possible de supprimer l'affectation d'une cible entière. Pour cela, il vous suffit de cliquer en haut à droite de la cible avec de supprimer ces archers affectés.\
-![Suppression Affectation](Docs\image-7.png)
+![Suppression Affectation](Docs/image-7.png)
 
 
 
@@ -57,21 +57,21 @@ Lors de l'affectation des archers aux cible plusieurs controles sont effectué r
 
 #### Nombre de archers par cible
 un seul archer par cible\
-![Un seul archer par cible](Docs\image-1.png)
+![Un seul archer par cible](Docs/image-1.png)
 
 #### Nombre de particpants d'une meme structure par cible
 Une seule structure est présente sur la cible\
-![Plusieurs archer de la même structure sur la cible](Docs\image-5.png)\
+![Plusieurs archer de la même structure sur la cible](Docs/image-5.png)\
 Une majorité de archers sur une meme cible d'une meme structure\
-![Une structure est majoritaire sur la cible](Docs\image-3.png)\
+![Une structure est majoritaire sur la cible](Docs/image-3.png)\
 
 #### Distances incohérantes sur la même cible
 Plusieurs archers avec des distances de tir differents.\
-![Melanges de distances sur une cible](Docs\image-4.png)
+![Melanges de distances sur une cible](Docs/image-4.png)
 
 ### Nombre de blasons necessaires
 En fonction de l'affectation TargetPlan vous informes du nombre minimal de blason necessaire pour couvrir votre mur de tir.
-![Recap Blasons](Docs\image-6.png)
+![Recap Blasons](Docs/image-6.png)
 
 
 ## Finales
