@@ -77,8 +77,6 @@ En fonction de l'affectation TargetPlan vous informes du nombre minimal de blaso
 ## Finales
 En cours de rédaction.
 
-## Implentation de parcours
-En cours de developpement :p
 
 # English version
 ## IanseoModules
