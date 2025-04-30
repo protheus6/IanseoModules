@@ -14,7 +14,27 @@ Il intègre egalement des controles lors de l'affecation.
 - Nombre de archers d'une même structure
 
 ## Installation
-Il convient de télécharger la version Stable depuis ce dépot et d'extraire le dossier TargetPlan et menu.php dans le répertoire Modules/Custom de I@anseo.
+1. Étape 1:
+Télécharger depuis ce dépot le fichier Zip 
+
+2. Étape 2:
+Extraire les fichiers sur votre orfinateur
+
+3. Etape 3
+Déplacer par copier/coller le dossier TargetPlan et le fichier menu.php dans le répertoire d'installation de I@nseo. 
+Par défaut, le répertoire est le suivant:
+Xxxxxxxwxxxxxxxxxxxxxxxxx
+
+4. Etape 4
+Redémarrer le serveur Apache de votre ordinateur
+
+5. Étape 5
+Profiter pleinement de ce module TargetPlan ! 
+
+# Retour à I@nseo
+Une fois votre mur de plan de cible réalisés, vous disposez de la flèche en haut à gauche pour retourner sur votre compétition I@nseo.
+
+
 
 ## Accès au module
 Dans I@nseo, vous retrouverez TargetPlan depuis le menu Module > TargetPlan > Qualifications / Finales
@@ -69,8 +89,8 @@ Une majorité de archers sur une meme cible d'une meme structure\
 Plusieurs archers avec des distances de tir differents.\
 ![Melanges de distances sur une cible](Docs/image-4.png)
 
-### Nombre de blasons necessaires
-En fonction de l'affectation TargetPlan vous informes du nombre minimal de blason necessaire pour couvrir votre mur de tir.
+### répartition des archers par blasons
+En fonction de l'affectation TargetPlan vous informes de la répartition des archers par type de blasons. 
 ![Recap Blasons](Docs/image-6.png)
 
 
