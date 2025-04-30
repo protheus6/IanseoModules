@@ -13,17 +13,33 @@ Il intègre egalement des controles lors de l'affecation.
 - Controles de distances (TAE / Beursault)
 - Nombre de archers d'une même structure
 
+
 ## Installation
-Après avoir télécharger le fichier ZIP contenant le module.\
-[Retrouvez le lien ici](https://github.com/protheus6/IanseoModules/archive/refs/heads/main.zip). \
-\
- Il convient d'extraire le dossier TargetPlan et menu.php dans le répertoire Modules/Custom de I@anseo.
+
+1. Télécharger depuis ce dépot le fichier Zip  
+[Retrouvez le lien ici](https://github.com/protheus6/IanseoModules/archive/refs/heads/main.zip).  
+
+2. Extraire les fichiers sur votre orfinateur.  
+Il convient d'extraire le dossier TargetPlan et menu.php dans le répertoire Modules/Custom de I@anseo.  
+
  Pour ce faire, il vous faut copier ces deux élements dans le menu Custom des modules de I@nseo.
  > *Chemin généralement utilisé par defaut:*\
  > C:\ianseo\htdocs\Modules\Custom
 
-**Attention cette action necessite de redémarrer le serveur Apache dans Xammp.**
- (*cf documentation fédérale*)
+3. Déplacer par copier/coller le dossier TargetPlan et le fichier menu.php dans le répertoire d'installation de I@nseo. 
+Par défaut, le répertoire est le suivant:
+Xxxxxxxwxxxxxxxxxxxxxxxxx
+
+4. Etape 4
+Redémarrer le serveur Apache de votre ordinateur
+
+5. Étape 5
+Profiter pleinement de ce module TargetPlan ! 
+
+# Retour à I@nseo
+Une fois votre mur de plan de cible réalisés, vous disposez de la flèche en haut à gauche pour retourner sur votre compétition I@nseo.
+
+
 
 ## Accès au module
 Dans I@nseo, vous retrouverez TargetPlan depuis le menu Module > TargetPlan > Qualifications / Finales\
@@ -90,8 +106,8 @@ Lors de l'affectation des archers aux cible plusieurs controles sont effectué r
 | Plusieurs archers avec des distances de tir differents. | 
 | ![Melanges de distances sur une cible](Docs/image-4.png) |
 
-### Nombre de blasons necessaires
-En fonction de l'affectation TargetPlan vous informes du nombre d'archers positionné sur chaque type de blason.
+### répartition des archers par blasons
+En fonction de l'affectation TargetPlan vous informes de la répartition des archers par type de blasons. 
 ![Recap Blasons](Docs/image-6.png)
 
 ## Finales
