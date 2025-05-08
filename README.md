@@ -1,16 +1,16 @@
 
 # TargetPlan
-TargetPlan est un plugin pour I@nseo.
+TargetPlan est un plugin pour I@nseo, le système de gestion des compétitions de Tir à l'Arc. Retrouver ce projet ici.  
 - https://www.ianseo.net/
 - https://www.facebook.com/ianseoarchery 
 
-Ce plugin permet l'affectation des archers aux cibles de façon graphique. 
+Ce plugin permet l'affectation des archers aux cibles de façon simplifié et graphique. 
 
 ## Principes généraux
 Il est possible de faire l'affectation des cibles depuis les qualifications jusqu'aux phases finales.
-Il intègre egalement des controles lors de l'affecation.
+Il intègre également des contrôles lors de l'affecation.
 - Nombre d'archers par cible
-- Contrôles de distances (TAE / Beursault)
+- Contrôles de distances
 - Nombre d'archers d'une même structure
 
 
@@ -43,7 +43,7 @@ Télécharger le fichier Zip depuis ce site (dépôt Git)
 ![Étape 2: Extraire le fichier](/Docs/Install/etape2.7.png)  
 
 ### Coller ces fichiers dans le répertoire de I@nseo  
- Pour ce faire, il vous faut copier ces deux éléments dans le menu Custom des modules de I@nseo.
+ Pour ce faire, il vous faut copier ces deux éléments dans le menu "Custom" des modules de I@nseo.
  > *Chemin généralement utilisé par defaut:*\
  > C:\ianseo\htdocs\Modules\Custom  
 
@@ -65,47 +65,51 @@ Ce message d'erreur est du à la redirection qui n'est pas nativement pris en ch
 Il faudra donc suivre les éléments suivants afin d'autoriser la redirection relative.
 ### WIP
 
-
 </details>  
 
 
 # Accès au module
-Dans I@nseo, vous retrouverez TargetPlan depuis le menu Module > TargetPlan > Qualifications  
+Dans I@nseo, vous retrouverez TargetPlan depuis le menu **Module > TargetPlan > Qualifications**  
 ![Accès à TargetPlan](Docs/image-0.png)  
 
 
 
 # Qualifications
-![Suppression Affectation](Docs/TargetPlan_home.png)
+![Accueil TargetPlan](Docs/TargetPlan_home.png)
 ### Informations sur le départ
 Dans la partie haute, on retrouve la compétition sélectionnée ainsi que le choix des départs issus de la compétition
 
-### Type d'affichage du mur de tir
+### Type d'affichage du plan de cible
 Le plan de cible peut être regroupé de la façon suivante:
 - par blasons
 - par catégories
 ### Archers à affecter
-Dans la barre latérale gauche, vous pouvez retrouver les archers de votre départ classés comme indiqués précédemment.
-### Zone d'affectation (cibles)
-Il est également possible de personnaliser cet affichage. On peut afficher/masquer le detail des cibles (ne pas voir l'affectation). 
-Enfin, il est possible de faire un filtre sur les archers restant à affecter.
+Dans la barre latérale gauche, vous pouvez retrouver les archers de votre départ classés comme indiqués précédemment.  
 
-### Visualisation des structures
-Lors de chaque ouverture de TargetPlan, le module affectera une couleur differentes à chaque structure. Cette couleur est générée aléatoirement. C'est à dire qu'elle varie à chaque ouverture de TargetPlan.
+### Zone d'affectation (cibles)
+Il est également possible de personnaliser cet affichage.On peut afficher/masquer le detail des cibles.  
+![Afficher le détail](Docs/qualifs/image-10.png)
+
+Enfin, il est possible de faire un filtre sur les archers restant à affecter, en décochant la case "Afficher les archers affectés".  
+![Archers déjà affectés](Docs/qualifs/image-9.png)  
+Par defaut ce bouton est activé.
 
 ### Affectation des archers aux cibles
 Pour affecter un particpant à une cible, il convient de faire glisser le nom de l'archer sur la lettre de la cible souhaitée.
 Le blason s'affichera alors sur la cible, indiquant que la modification est bien prise en compte. 
 
-Si vous affectez un archer sur une place déjà occupée par un autre acher, TargetPlan désaffectera le premier archer déjà affecté pour le remplacer par l'archer en cours d'affectation.
-![Suppression Affectation](Docs/qualifs/image-8.png)
+Si vous affectez un archer sur une place déjà occupée par un autre acher, TargetPlan désaffectera le premier archer déjà affecté pour le remplacer par l'archer en cours d'affectation.  
+![Remplacement d'archer](Docs/qualifs/image-8.png)
 
 ### Désaffectation d'un archer
 Pour supprimer l'affectation d'un archer, il suffit simplement de faire un glisser déposer de l'archer en dehors du cadre de la cible pour désaffecter l'archer.
 
 ### Désaffectation en masse
-Il est également possible de supprimer l'affectation d'une cible entière. Pour cela, il vous suffit de cliquer en haut à droite de la cible pour supprimer ces archers affectés.\
+Il est également possible de supprimer l'affectation d'une cible entière. Pour cela, il vous suffit de cliquer en haut à droite de la cible pour supprimer ces archers affectés.  
 ![Suppression Affectation](Docs/qualifs/image-7.png)
+
+### Visualisation des structures
+Lors de chaque ouverture de TargetPlan, le module affectera une couleur differentes à chaque structure. Cette couleur est générée aléatoirement. C'est à dire qu'elle varie à chaque ouverture de TargetPlan.
 
 ### Survol au-dessus des archers
 En survolant la somme des blasons nécessaires, vous pouvez voir l'ensemble des archers nécessitant ce type de blasons.
