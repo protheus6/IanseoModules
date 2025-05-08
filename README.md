@@ -166,6 +166,11 @@ Il est possible depuis l'interface de TargetPlan de définir la durée d'un duel
 Il est possible depuis l'interface de TargetPlan de définir la durée d'un match et le temps d'échauffement necessaire avant ce dernier.  
 ![Finales equipe 1](Docs/Finales/finale-e1.png)
 
+# Contributeurs
+Ce projet existe grâçe à:  
+<a href="https://github.com/protheus6/IanseoModules"><img src="https://avatars.githubusercontent.com/u/23360881" width="20" /></a> - **Protheus6**
+
+
 # English version
 ## IanseoModules
 Modules for Ianseo Project :
@@ -174,8 +179,3 @@ https://www.facebook.com/ianseoarchery
 
 	-> Target Plan (menu: Modules->Target Plan)
 		Manage competitor placement with a drag and drop graphical interface.
-
-
-# Contributeurs
-Ce projet existe grâçe à:  
-<a href="https://github.com/protheus6/IanseoModules"><img src="https://avatars.githubusercontent.com/u/23360881" width="20" /></a> - **Protheus6**
