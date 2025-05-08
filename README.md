@@ -88,10 +88,10 @@ Dans la barre latérale gauche, vous pouvez retrouver les archers de votre dépa
 
 ### Zone d'affectation (cibles)
 Il est également possible de personnaliser cet affichage.On peut afficher/masquer le detail des cibles.  
-![Afficher le détail](Docs/qualifs/image-10.png)
+![Afficher le détail](Docs/Qualifs/image-10.png)
 
 Enfin, il est possible de faire un filtre sur les archers restant à affecter, en décochant la case "Afficher les archers affectés".  
-![Archers déjà affectés](Docs/qualifs/image-9.png)  
+![Archers déjà affectés](Docs/Qualifs/image-9.png)  
 Par defaut ce bouton est activé.
 
 ### Affectation des archers aux cibles
@@ -99,14 +99,14 @@ Pour affecter un particpant à une cible, il convient de faire glisser le nom de
 Le blason s'affichera alors sur la cible, indiquant que la modification est bien prise en compte. 
 
 Si vous affectez un archer sur une place déjà occupée par un autre acher, TargetPlan désaffectera le premier archer déjà affecté pour le remplacer par l'archer en cours d'affectation.  
-![Remplacement d'archer](Docs/qualifs/image-8.png)
+![Remplacement d'archer](Docs/Qualifs/image-8.png)
 
 ### Désaffectation d'un archer
 Pour supprimer l'affectation d'un archer, il suffit simplement de faire un glisser déposer de l'archer en dehors du cadre de la cible pour désaffecter l'archer.
 
 ### Désaffectation en masse
 Il est également possible de supprimer l'affectation d'une cible entière. Pour cela, il vous suffit de cliquer en haut à droite de la cible pour supprimer ces archers affectés.  
-![Suppression Affectation](Docs/qualifs/image-7.png)
+![Suppression Affectation](Docs/Qualifs/image-7.png)
 
 ### Visualisation des structures
 Lors de chaque ouverture de TargetPlan, le module affectera une couleur differentes à chaque structure. Cette couleur est générée aléatoirement. C'est à dire qu'elle varie à chaque ouverture de TargetPlan.
@@ -128,21 +128,21 @@ Lors de l'affectation des archers aux cibles plusieurs contrôles sont effectué
 |Nombre d'archers par cible | Nombre d'archers par cible |
 | :----: | :----: |
 | Un seul archer par cible |Une seule structure est présente sur la cible
-| ![Un seul archer par cible](Docs/qualifs/image-1.png) |![Plusieurs archer de la même structure sur la cible](Docs/qualifs/image-5.png) |
+| ![Un seul archer par cible](Docs/Qualifs/image-1.png) |![Plusieurs archer de la même structure sur la cible](Docs/Qualifs/image-5.png) |
 
 |Nombre d'archers par cible |
 | :----: |
 | Une majorité d'archers sur une même cible d'une même structure |
-| ![Une structure est majoritaire sur la cible](Docs/qualifs/image-3.png) |
+| ![Une structure est majoritaire sur la cible](Docs/Qualifs/image-3.png) |
 
 | Distances incohérentes sur la même cible | 
 | :----: |
 | Plusieurs archers avec des distances de tir différentes. | 
-| ![Melanges de distances sur une cible](Docs/qualifs/image-4.png) |
+| ![Melanges de distances sur une cible](Docs/Qualifs/image-4.png) |
 
 ### Répartition des archers par blasons
 En fonction de l'affectation, TargetPlan vous informe de la répartition des archers par type de blasons. 
-![Recap Blasons](Docs/qualifs/image-6.png)
+![Recap Blasons](Docs/Qualifs/image-6.png)
 
 # Retour à I@nseo
 Une fois votre mur de plan de cible réalisé, vous disposez de la flèche en haut à gauche pour retourner sur votre compétition I@nseo.
