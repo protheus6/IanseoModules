@@ -175,6 +175,24 @@ Ce projet existe grâçe à:
 <a href="https://github.com/protheus6/IanseoModules"><img src="https://avatars.githubusercontent.com/u/23360881" width="20" /></a> - **Protheus6**
 
 
+# FAQ 
+## Message d'erreur lors de l'accès au module
+### Redirection d'URL
+
+Lorsque vous cliquez sur Modules > TargetPlan > Qualifications, vous arrivez sur une page avec ce message d'erreur:
+![rewrite](/Docs/FAQ/rewrite.png)  
+
+Une source probable du probleme est la réécriture d'URL
+Pour ce faire, il convient de configurer votre APACHE avec cet option. 
+Windows:
+> En cours de documentation
+MAC
+> En cours de documentation
+Linux: 
+> sudo a2enmod rewrite
+> sudo systemctl reload apache2
+
+
 # English version
 ## IanseoModules
 Modules for Ianseo Project :
