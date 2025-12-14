@@ -185,12 +185,14 @@ Lorsque vous cliquez sur Modules > TargetPlan > Qualifications, vous arrivez sur
 Une source probable du probleme est la réécriture d'URL
 Pour ce faire, il convient de configurer votre APACHE avec cet option. 
 Windows:
-> En cours de documentation
-MAC
-> En cours de documentation
+- En cours de documentation
+
+MAC:
+- En cours de documentation
+
 Linux: 
-> sudo a2enmod rewrite
-> sudo systemctl reload apache2
+- sudo a2enmod rewrite
+- sudo systemctl reload apache2
 
 
 # English version
