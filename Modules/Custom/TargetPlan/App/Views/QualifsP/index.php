@@ -650,7 +650,6 @@ function printOrder() {
   w.print();
   w.close();
 }
-
 /* Fermer la modale par clic sur fond */
 document.getElementById('orderModal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeOrder();
