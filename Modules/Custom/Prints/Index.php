@@ -77,8 +77,13 @@ echo '  };';
 echo '  xhr.send();';
 echo '}';
 echo '</script>';
-
-echo '<form method="post" action="../../../Qualification/PDFScore.php" target="PrintOut" id="frmScoreCards">';
+if(isset($_SESSION['TourLocSubRule']) AND $_SESSION['TourLocSubRule']=='SetFrBeursault') {
+	echo '<form method="post" action="../../../Modules/Sets/FR/pdf/PDFScore.php" target="PrintOut" id="frmScoreCards">';
+	echo '<input type="hidden" name="ScoreHeader" value="1">';
+	echo '<input type="hidden" name="ScoreLogos" value="1">';
+} else {
+	echo '<form method="post" action="../../../Qualification/PDFScore.php" target="PrintOut" id="frmScoreCards">';
+}
 echo '<input type="hidden" name="chk_BlockAutoSave" value="1">';
 echo '<input type="hidden" name="ScorePageHeaderFooter" value="1">';
 echo '<input type="hidden" name="ScoreFlags" value="1">';
