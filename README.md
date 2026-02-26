@@ -9,3 +9,4 @@ Modules pour le projet I@nseo :
 
 - [Target Plan](README_TP.md) — Affectation graphique des archers aux cibles par glisser-déposer.
 - [Beursault](README_BSLT.md) — Saisie des scores pour le Beursault avec contrôle de cohérence.
+- [Impression](README_PRINT.md) — Rassemblement des impression utiles sur une seul page simplifié.
