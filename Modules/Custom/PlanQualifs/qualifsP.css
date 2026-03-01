@@ -1,0 +1,412 @@
+/* ============================================================
+   QualifsP — Plan de cible
+   CSS autonome, aucune dépendance Bootstrap.
+   S'appuie sur les variables CSS d'ianseo (colors.css).
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   Mise en page générale
+---------------------------------------------------------- */
+.qp-bandeau {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 6px;
+    margin: 4px 0;
+    border: 1px solid var(--input-border);
+    background: var(--row-background);
+}
+.qp-label {
+    font-weight: bold;
+    font-size: .85em;
+    white-space: nowrap;
+}
+.qp-recap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex: 1;
+}
+.qp-recap-item {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--input-border);
+    border-radius: 3px;
+    background: var(--row-background);
+    font-size: .82em;
+    white-space: nowrap;
+}
+
+/* Layout principal (picking | cibles) */
+.qp-layout {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+    height: calc(100vh - 180px); /* hauteur dispo sous l'entête */
+}
+
+/* Colonne picking (gauche) */
+.qp-picking-col {
+    width: 210px;
+    min-width: 180px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+.qp-picking-list {
+    overflow-y: auto;
+    flex: 1;
+    border: 1px solid var(--input-border);
+    background: var(--row-background);
+}
+
+/* Colonne cibles (droite) */
+.qp-targets-col {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.qp-targets-area {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 4px;
+    overflow-y: auto;
+    flex: 1;
+    padding: 4px;
+}
+
+/* ----------------------------------------------------------
+   Accordion (picking list) — CSS pur, JS minimal
+---------------------------------------------------------- */
+.qp-accordion-item {
+    border-bottom: 1px solid var(--input-border);
+}
+.qp-accordion-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    cursor: pointer;
+    background: var(--bg-cell-header);
+    font-size: .82em;
+    font-weight: bold;
+    user-select: none;
+}
+.qp-accordion-header:hover {
+    background: var(--header-light);
+}
+.qp-counts {
+    font-weight: normal;
+    color: var(--text-muted);
+    font-size: .9em;
+}
+.qp-chevron {
+    margin-left: auto;
+    transition: transform .2s;
+    font-size: .75em;
+}
+.qp-accordion-item.qp-open .qp-chevron {
+    transform: rotate(180deg);
+}
+.qp-accordion-body {
+    padding: 4px;
+}
+.qp-hidden {
+    display: none;
+}
+
+/* ----------------------------------------------------------
+   Carte cible
+---------------------------------------------------------- */
+.qp-cible-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Tailles fixes des cartes */
+.qp-cible-card,
+.qp-cible-names {
+    min-width: 148px;
+    max-width: 148px;
+    box-sizing: border-box;
+    padding: 3px;
+    border-radius: 3px;
+    position: relative;
+}
+.qp-cible-card {
+    min-height: 130px;
+    border: 2px solid;
+}
+.qp-cible-names {
+    border: 1px solid;
+    display: flex;
+    flex-direction: row;
+}
+
+/* Couleurs de bordure selon warnLevel */
+.qp-border-primary { border-color: var(--header-dark); }
+.qp-border-success { border-color: var(--text-success); }
+.qp-border-warning { border-color: var(--bg-orange); }
+.qp-border-danger  { border-color: var(--dark-red); }
+
+/* Badge warn */
+.qp-warn-badge {
+    display: block;
+    text-align: center;
+    font-size: .7em;
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 2px;
+    color: #fff;
+    margin-bottom: 2px;
+}
+.qp-bg-primary { background: var(--header-dark); }
+.qp-bg-success { background: var(--text-success); }
+.qp-bg-warning { background: var(--bg-orange); color: #333; }
+.qp-bg-danger  { background: var(--dark-red); }
+
+/* Entête de la carte */
+.qp-cible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: .82em;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+/* Bouton effacement — masqué par défaut */
+.btRm {
+    display: none;
+    cursor: pointer;
+    color: var(--dark-red);
+    font-weight: bold;
+    font-size: .9em;
+    padding: 0 2px;
+}
+.cibleNum:hover .btRm { display: inline; }
+.btRm:hover { font-size: 1em; }
+
+/* Étiquettes A/B C/D */
+.qp-vagues-labels {
+    display: flex;
+    border: 1px solid #000;
+    border-radius: 2px;
+    margin-bottom: 2px;
+    font-size: .78em;
+    text-align: center;
+}
+.qp-vague-label {
+    flex: 1;
+    padding: 1px 2px;
+    border-right: 1px solid #ccc;
+}
+.qp-vague-label:last-child { border-right: none; }
+
+/* Zone blasons : hauteur fixe pour accueillir le plus grand blason (⌀122 = 122px) */
+.qp-blasons-row {
+    background: cornsilk;
+    height: 130px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Slot vague (drag & drop) */
+.qp-vague-slot {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    flex: 1;
+}
+.qp-vague-slot-label {
+    border: 1px solid #ccc;
+    padding: 1px 3px;
+    font-size: .78em;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* ----------------------------------------------------------
+   Picking item (archer dans la liste)
+---------------------------------------------------------- */
+.qp-picker-item {
+    padding: 2px;
+}
+.qp-src-card {
+    border: 1px solid var(--input-border);
+    border-radius: 2px;
+    padding: 2px 4px;
+    position: relative;
+    cursor: grab;
+}
+/* Archer non placé : mise en valeur avec bordure colorée et fond légèrement teinté */
+.qp-picker-item:not(.affected) .qp-src-card {
+    border: 2px solid var(--color-warning, #e6a817);
+    background-color: #fffbe6;
+    font-weight: bold;
+}
+/* Archer déjà placé : discret */
+.qp-picker-item.affected .qp-src-card {
+    opacity: 0.55;
+}
+.qp-check {
+    position: absolute;
+    top: 0;
+    left: 2px;
+    color: var(--text-success);
+    font-size: .85em;
+}
+
+/* ----------------------------------------------------------
+   Affichage drag source / cible
+---------------------------------------------------------- */
+.disptrg {
+    display: none !important;
+    border: 2px solid grey !important;
+    border-radius: 3px !important;
+}
+.dispsrc {
+    display: block;
+    border: 1px solid var(--input-border);
+    border-radius: 3px;
+}
+.ddtrg .disptrg { display: block !important; }
+.ddtrg .dispsrc { display: none  !important; }
+.ddsrc .disptrg { display: none  !important; }
+.ddsrc .dispsrc { display: block !important; }
+
+/* ----------------------------------------------------------
+   Texte archers
+---------------------------------------------------------- */
+.ddtrg .archers {
+    font-size: .7em;
+    writing-mode: vertical-lr;
+}
+.ddsrc .archers {
+    font-size: .78em;
+    font-weight: bold;
+}
+
+/* ----------------------------------------------------------
+   Halo survol
+---------------------------------------------------------- */
+.halo {
+    outline: 2px solid var(--text-success) !important;
+    border-radius: 3px;
+}
+.halobgstru {
+    outline: 2px solid var(--dark-red) !important;
+    border-radius: 3px;
+}
+
+/* ----------------------------------------------------------
+   Dragula
+---------------------------------------------------------- */
+.dragula-container > div {
+    cursor: grab;
+}
+.gu-mirror {
+    cursor: grabbing;
+    opacity: .8;
+}
+.gu-hide    { display: none; }
+.gu-unselectable { user-select: none; }
+
+/* ----------------------------------------------------------
+   Visibilité archers (toggles)
+---------------------------------------------------------- */
+.qp-hidden-archers .nameArcher { display: none !important; }
+
+/* ============================================================
+   IMPRESSION
+   ============================================================ */
+#printHeader      { display: none; }
+#printBlasonRecap { display: none; }
+
+@media print {
+    :root { --print-header-h: 1.5cm; --print-recap-h: auto; }
+    @page { margin: 0; }
+
+    body * { visibility: hidden; }
+    #printHeader,       #printHeader       * { visibility: visible; }
+    #printBlasonRecap,  #printBlasonRecap  * { visibility: visible; }
+    #targetsArea,       #targetsArea       * { visibility: visible; }
+
+    #printHeader {
+        display: block;
+        position: fixed;
+        top: 0; left: 0; width: 100%;
+        height: var(--print-header-h);
+        padding: .4cm .8cm;
+        box-sizing: border-box;
+        background: #fff;
+        border-bottom: 1px solid #000;
+        font-size: 1.1em;
+        font-weight: bold;
+    }
+
+    /* Bilan blasons — affiché après l'en-tête, avant les cibles */
+    #printBlasonRecap {
+        display: block;
+        position: fixed;
+        top: var(--print-header-h);
+        left: 0;
+        width: 100%;
+        padding: .3cm .8cm;
+        box-sizing: border-box;
+        background: #fff;
+        border-bottom: 1px solid #ccc;
+        font-size: .85em;
+    }
+    #printBlasonRecap .pbr-title {
+        font-weight: bold;
+        font-size: 1em;
+        margin-bottom: .2cm;
+    }
+    #printBlasonTable {
+        border-collapse: collapse;
+        font-size: .85em;
+    }
+    #printBlasonTable th,
+    #printBlasonTable td {
+        border: 1px solid #999;
+        padding: 2px 8px;
+        text-align: left;
+    }
+    #printBlasonTable th {
+        background: #eee;
+        font-weight: bold;
+    }
+    #printBlasonTable tfoot td {
+        font-weight: bold;
+        background: #f5f5f5;
+    }
+    .pbr-total-label {
+        text-align: right;
+    }
+
+    #targetsArea {
+        position: absolute;
+        left: 0;
+        /* on pousse sous l'en-tête + bilan : approximation conservative */
+        top: calc(var(--print-header-h) + 4cm);
+        width: 100%;
+        overflow: visible !important;
+        padding: 0 .8cm .8cm .8cm !important;
+        box-sizing: border-box;
+    }
+    #targetsArea .btRm,
+    #targetsArea [id^="cb"] { display: none !important; }
+
+    .qp-cible-card { page-break-inside: avoid; break-inside: avoid; }
+    #orderModal    { display: none !important; }
+    .qp-picking-col { display: none !important; }
+    .qp-bandeau     { display: none !important; }
+}

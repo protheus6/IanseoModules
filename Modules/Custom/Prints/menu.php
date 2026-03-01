@@ -40,7 +40,9 @@ Each menu item is a string, that joins the text description of the item and the 
 
 
 if(!empty($on) AND isset($ret['MODS'])) {
-	$ret['MODS']['Tools'][] = 'Outils';
+	if (!isset($ret['MODS']['Tools'])) {
+        $ret['MODS']['Tools'][] = 'Outils';
+    }
 	$ret['MODS']['Tools'][] = 'Impression' .'|'.$CFG->ROOT_DIR.'Modules/Custom/Prints/';
 }
 
