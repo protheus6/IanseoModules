@@ -1,0 +1,61 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" height="720" width="510">
+<rect width="506" height="716" x="1" y="1" stroke="black" fill="white" stroke-width="1" />
+<rect width="1" height="580" x="255" y="70" stroke="black" fill="white" stroke-width="1" />
+<rect width="485" height="1" x="12" y="360" stroke="black" fill="white" stroke-width="1" />
+
+
+<g stroke-width="15" stroke="#000" fill="none">
+  <circle cx="255" cy="360" r="230" stroke="black"/>
+  <circle cx="255" cy="360" r="65" stroke="black"/>
+</g>
+
+<g stroke-width="2" stroke="#000" fill="none">
+  <circle cx="255" cy="360" r="185" stroke="black"/>
+  <circle cx="255" cy="360" r="145" stroke="black"/>
+  <circle cx="255" cy="360" r="105" stroke="black"/>
+
+  <circle cx="255" cy="360" r="25" stroke="black"/>
+  <circle cx="255" cy="360" r="40" stroke="black"/>
+ 
+</g>
+
+<g stroke-width="15" stroke="#000" fill="none">
+  <circle cx="255" cy="360" r="12" stroke="black"/>
+ 
+</g>
+
+<style>
+    .bold { font: bold 25px sans-serif; }
+    .boldsm { font: bold 17px sans-serif; }
+</style>
+<rect width="20" height="25" x="245" y="162" fill="white"/>
+<rect width="20" height="25" x="60" y="348" fill="white"/>
+<rect width="20" height="25" x="245" y="532" fill="white"/>
+<rect width="20" height="25" x="430" y="348" fill="white"/>
+<text x="248" y="183" class="bold" >1</text> 
+<text x="62" y="370" class="bold" >1</text> 
+<text x="248" y="555" class="bold" >1</text> 
+<text x="431" y="370" class="bold" >1</text>
+
+
+<rect width="20" height="25" x="245" y="242" fill="white"/>
+<rect width="20" height="25" x="140" y="348" fill="white"/>
+<rect width="20" height="25" x="245" y="452" fill="white"/>
+<rect width="20" height="25" x="350" y="348" fill="white"/>
+<text x="248" y="263" class="bold" >2</text> 
+<text x="144" y="370" class="bold" >2</text> 
+<text x="248" y="473" class="bold" >2</text> 
+<text x="352" y="370" class="bold" >2</text> 
+
+
+<rect width="10" height="25" x="200" y="348" fill="white"/>
+<rect width="10" height="25" x="300" y="348" fill="white"/>
+<rect width="10" height="15" x="250" y="303" fill="white"/>
+<rect width="10" height="15" x="250" y="402" fill="white"/>
+<text x="251" y="316" class="boldsm" >3</text> 
+<text x="198" y="370" class="bold" >3</text> 
+<text x="251" y="416" class="boldsm" >3</text> 
+<text x="297" y="370" class="bold" >3</text> 
+
+</svg>

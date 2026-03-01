@@ -1,0 +1,34 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" height="840" width="840">
+<rect width="838" height="838" x="1" y="1" stroke="black" fill="white" stroke-width="1" />
+<circle cx="420" cy="420" r="400" fill="white"/>
+<circle cx="420" cy="420" r="360" fill="white"/>
+
+<circle cx="420" cy="420" r="320" fill="black"/>
+<circle cx="420" cy="420" r="280" fill="black"/>
+
+<circle cx="420" cy="420" r="240" fill="blue"/>
+<circle cx="420" cy="420" r="200" fill="blue"/>
+
+<circle cx="420" cy="420" r="160" fill="red"/>
+<circle cx="420" cy="420" r="120" fill="red"/>
+
+<circle cx="420" cy="420" r="80" fill="yellow"/>
+<circle cx="420" cy="420" r="40" fill="yellow"/>
+
+<g stroke-width="2" fill="none">
+  <circle cx="420" cy="420" r="400" stroke="black"/>
+  <circle cx="420" cy="420" r="160" stroke="black"/>
+  <circle cx="420" cy="420" r="80" stroke="black"/>
+</g>
+
+<g stroke-width="1" stroke="#000" fill="none">
+  <circle cx="420" cy="420" r="360" stroke="black"/>
+  <circle cx="420" cy="420" r="200" stroke="white"/>
+  <circle cx="420" cy="420" r="120" stroke="black"/>
+  <circle cx="420" cy="420" r="40" stroke="black"/>
+  <circle cx="420" cy="420" r="20" stroke="black"/>
+</g>
+
+
+</svg>
