@@ -1,6 +1,6 @@
 <?php
 
-if (!empty($on) && subFeatureAcl($acl, AclQualification, '') >= AclReadOnly) {
+if (!empty($on) && (subFeatureAcl($acl, AclQualification, '') > AclReadOnly )) {
 	if (!isset($ret['MODS']['Tools'])) {
         $ret['MODS']['Tools'][] = 'Outils';
     }
