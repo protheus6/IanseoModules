@@ -124,6 +124,7 @@ include('Common/Templates/head.php');
   <span class="qp-label">Blasons&nbsp;:</span>
   <span id="recapBlason" class="qp-recap">Chargement...</span>
   <input type="button" class="Button" value="Imprimer les cibles" onclick="printTargets()">
+  <input type="button" class="Button" value="Récap global"        onclick="openGlobalRecap()">
   <input type="button" class="Button" value="Commande blasons"    onclick="openOrder()">
 </div>
 
@@ -131,25 +132,13 @@ include('Common/Templates/head.php');
 <div id="printHeader">
   <strong><?= htmlspecialchars($session->tour->name) ?> — <?= htmlspecialchars($headerName) ?><?= $startTime ? ' — ' . $startTime : '' ?></strong>
 </div>
+<!-- Nom du tournoi seul (utilisé par le récap global) -->
+<span id="tourNameOnly" style="display:none"><?= htmlspecialchars($session->tour->name) ?></span>
 
-<!-- Bilan blasons (visible uniquement à l'impression) -->
+<!-- Page de garde impression : bilan blasons avec images SVG -->
 <div id="printBlasonRecap">
   <div class="pbr-title">Bilan des blasons</div>
-  <table id="printBlasonTable">
-    <thead>
-      <tr>
-        <th>Type de blason</th>
-        <th>Quantité</th>
-      </tr>
-    </thead>
-    <tbody id="printBlasonBody"></tbody>
-    <tfoot>
-      <tr>
-        <td class="pbr-total-label">Total</td>
-        <td id="printBlasonTotal">0</td>
-      </tr>
-    </tfoot>
-  </table>
+  <div id="printBlasonBody"><!-- rempli par AJAX blasonRecapPrint --></div>
 </div>
 
 <!-- ============================================================
@@ -290,5 +279,6 @@ include('Common/Templates/head.php');
     </div>
   </div>
 </div>
+
 
 <?php include('Common/Templates/tail.php'); ?>

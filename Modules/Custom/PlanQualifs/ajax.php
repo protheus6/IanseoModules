@@ -18,20 +18,143 @@ $svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/svg/';
 switch ($action) {
 
     // ---------------------------------------------------------------
+    // Récap global : tableau tous départs × tous types de blasons
+    // ---------------------------------------------------------------
+    case 'blasonRecapGlobal':
+        $tour     = new QP_TourInfo($tourId);
+        $sessions = $tour->sessions; // [ sessOrder => stdClass(id, name) ]
+
+        // Charger chaque session et agréger par alias
+        // Structure : $matrix[alias] = ['blason'=>QP_Blason, 'sessions'=>[sessOrder=>physicalCount]]
+        $matrix   = [];
+        $sessLabels = [];
+        foreach ($sessions as $sOrder => $sInfo) {
+            $sess  = new QP_Session($tourId, $sOrder);
+            $label = !empty($sInfo->name) ? $sInfo->name : 'Départ ' . $sOrder;
+            $sessLabels[$sOrder] = $label;
+            foreach ($sess->blasonCountGrouped() as $alias => $blason) {
+                if (!isset($matrix[$alias])) {
+                    $matrix[$alias] = ['blason' => $blason, 'sessions' => []];
+                }
+                $matrix[$alias]['sessions'][$sOrder] = $blason->physicalCount;
+                // Garder le blason avec le plus grand imgTaille pour l'image
+                if ($blason->imgTaille > $matrix[$alias]['blason']->imgTaille) {
+                    $matrix[$alias]['blason'] = $blason;
+                }
+            }
+        }
+
+        if (empty($matrix)) {
+            echo '<em style="color:#999;">Aucun blason affecté.</em>';
+            break;
+        }
+
+        $maxTaille = 1;
+        foreach ($matrix as $row) {
+            if ($row['blason']->imgTaille > $maxTaille) $maxTaille = $row['blason']->imgTaille;
+        }
+        $cellSize = $maxTaille;
+
+        $html  = '<table class="Tabella" style="border-collapse:collapse;font-size:.88em;">';
+        $html .= '<thead><tr class="Main">';
+        $html .= '<th>Blason</th><th>Type</th>';
+        foreach ($sessLabels as $sOrder => $label) {
+            $html .= '<th style="text-align:center;">' . htmlspecialchars($label) . '</th>';
+        }
+        $html .= '<th style="text-align:center;">Total</th>';
+        $html .= '</tr></thead><tbody>';
+
+        foreach ($matrix as $alias => $row) {
+            $blason   = $row['blason'];
+            $svgUrl   = $svgBase . $blason->svgFile;
+            $imgSize  = $blason->imgTaille;
+            $imgStyle = 'width:' . $imgSize . 'px; height:auto; display:block; margin:auto;';
+            $total    = 0;
+
+            $html .= '<tr>';
+            $html .= '<td style="text-align:center;vertical-align:middle;width:' . $cellSize . 'px;">'
+                   . '<img src="' . htmlspecialchars($svgUrl) . '" style="' . $imgStyle . '" alt="' . htmlspecialchars($alias) . '">'
+                   . '</td>';
+            $html .= '<td style="vertical-align:middle;">' . htmlspecialchars($alias) . '</td>';
+            foreach ($sessLabels as $sOrder => $label) {
+                $qty   = $row['sessions'][$sOrder] ?? 0;
+                $total += $qty;
+                $html .= '<td style="text-align:center;vertical-align:middle;font-weight:' . ($qty > 0 ? 'bold' : 'normal') . ';color:' . ($qty > 0 ? '#000' : '#bbb') . ';">' . ($qty > 0 ? $qty : '—') . '</td>';
+            }
+            $html .= '<td style="text-align:center;vertical-align:middle;font-weight:bold;background:#f5f5f5;">' . $total . '</td>';
+            $html .= '</tr>';
+        }
+
+        // Ligne totaux par session
+        $html .= '<tr style="background:#eee;">';
+        $html .= '<td colspan="2" style="text-align:right;font-weight:bold;">Total</td>';
+        $grandTotal = 0;
+        foreach ($sessLabels as $sOrder => $label) {
+            $colTotal = 0;
+            foreach ($matrix as $row) { $colTotal += $row['sessions'][$sOrder] ?? 0; }
+            $grandTotal += $colTotal;
+            $html .= '<td style="text-align:center;font-weight:bold;">' . $colTotal . '</td>';
+        }
+        $html .= '<td style="text-align:center;font-weight:bold;background:#ddd;">' . $grandTotal . '</td>';
+        $html .= '</tr>';
+
+        $html .= '</tbody></table>';
+        echo $html;
+        break;
+
+    // ---------------------------------------------------------------
     // Récap blasons : badges texte dans le bandeau
     // ---------------------------------------------------------------
     case 'blasonRecap':
         $session = new QP_Session($tourId, $sessId);
-        $items   = $session->blasonCount();
+        $items   = $session->blasonCountGrouped();
         $html    = '';
         foreach ($items as $blId => $blason) {
             $html .= '<span class="qp-recap-item"'
                    . ' data-blason-id="' . $blId . '"'
-                   . ' data-face="'     . htmlspecialchars($blason->name) . '"'
+                   . ' data-face="'     . htmlspecialchars($blason->displayName()) . '"'
                    . ' data-count="'   . $blason->physicalCount . '">'
-                   . htmlspecialchars($blason->name) . '&nbsp;: <strong>' . $blason->physicalCount . '</strong>'
+                   . htmlspecialchars($blason->displayName()) . '&nbsp;: <strong>' . $blason->physicalCount . '</strong>'
                    . '</span> ';
         }
+        echo $html ?: '<em style="color:#999;">Aucun blason</em>';
+        break;
+
+    // ---------------------------------------------------------------
+    // Page de garde impression : récap blasons avec images SVG
+    // ---------------------------------------------------------------
+    case 'blasonRecapPrint':
+        $session   = new QP_Session($tourId, $sessId);
+        $items     = $session->blasonCountGrouped();
+        // Même logique que les cibles : imgTaille comme référence
+        $maxTaille = 1;
+        foreach ($items as $blason) {
+            if ($blason->imgTaille > $maxTaille) $maxTaille = $blason->imgTaille;
+        }
+        $cellSize = $maxTaille; // la cellule fait la taille du plus grand imgTaille
+        $html    = '<table class="pbr-print-table">';
+        $html   .= '<thead><tr>'
+                 . '<th>Blason</th>'
+                 . '<th>Type</th>'
+                 . '<th>Archers/blason</th>'
+                 . '<th>Quantité</th>'
+                 . '</tr></thead><tbody>';
+        foreach ($items as $blId => $blason) {
+            $svgUrl   = $svgBase . $blason->svgFile;
+            $imgSize  = $blason->imgTaille; // même valeur que dans les cibles
+            $imgStyle = 'width:' . $imgSize . 'px; height:auto; display:block; margin:auto;';
+            $html   .= '<tr>'
+                     . '<td class="pbr-svg-cell" style="width:' . $cellSize . 'px;height:' . $cellSize . 'px;text-align:center;vertical-align:middle;">'
+                     . '<img src="' . htmlspecialchars($svgUrl) . '"'
+                     . ' style="' . $imgStyle . '"'
+                     . ' alt="'   . htmlspecialchars($blason->displayName()) . '">'
+                     . '</td>'
+                     . '<td>' . htmlspecialchars($blason->displayName()) . '</td>'
+                     . '<td style="text-align:center;">' . $blason->imgNbArcher . '</td>'
+                     . '<td style="text-align:center;font-weight:bold;">' . $blason->physicalCount . '</td>'
+                     . '</tr>';
+        }
+        $html .= '</tbody></table>';
         echo $html ?: '<em style="color:#999;">Aucun blason</em>';
         break;
 
