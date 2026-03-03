@@ -35,37 +35,22 @@ function qpToggle(header) {
 }
 
 /* ----------------------------------------------------------
-   Récap blasons (bandeau + bilan impression)
+   Récap blasons (bandeau + page de garde impression)
 ---------------------------------------------------------- */
 function blasonRecap() {
+    var sessId = $('#departId').val();
     $.get(QP_ROOT + 'ajax.php', {
         action: 'blasonRecap',
-        sessId: $('#departId').val()
+        sessId: sessId
     }, function (data) {
         $('#recapBlason').html(data);
-        updatePrintBlasonRecap();
     });
-}
-
-function updatePrintBlasonRecap() {
-    var items = parseRecapBlasons();
-    var tbody = document.getElementById('printBlasonBody');
-    var totalEl = document.getElementById('printBlasonTotal');
-    if (!tbody || !totalEl) return;
-    tbody.innerHTML = '';
-    var grand = 0;
-    items.forEach(function (it) {
-        var tr = document.createElement('tr');
-        var tdFace = document.createElement('td');
-        var tdQty  = document.createElement('td');
-        tdFace.textContent = it.face;
-        tdQty.textContent  = it.count;
-        tr.appendChild(tdFace);
-        tr.appendChild(tdQty);
-        tbody.appendChild(tr);
-        grand += it.count;
+    $.get(QP_ROOT + 'ajax.php', {
+        action: 'blasonRecapPrint',
+        sessId: sessId
+    }, function (data) {
+        $('#printBlasonBody').html(data);
     });
-    totalEl.textContent = grand;
 }
 
 /* ----------------------------------------------------------
@@ -201,11 +186,82 @@ function haloStructOut(elt) {
 }
 
 /* ----------------------------------------------------------
+   Récap global (impression dans nouvelle fenêtre)
+---------------------------------------------------------- */
+function openGlobalRecap() {
+    $.get(QP_ROOT + 'ajax.php', {
+        action: 'blasonRecapGlobal',
+        sessId: $('#departId').val()
+    }, function (data) {
+        var tourName = document.getElementById('tourNameOnly')
+                     ? document.getElementById('tourNameOnly').textContent.trim()
+                     : (document.getElementById('printHeader')
+                        ? document.getElementById('printHeader').innerText.trim() : '');
+        var win = window.open('', '_blank', 'width=900,height=700');
+        win.document.write(
+            '<!DOCTYPE html><html><head><meta charset="utf-8">'
+          + '<title>Récap global blasons</title>'
+          + '<style>'
+          + 'body { font-family: Arial, sans-serif; font-size: 11pt; margin: 1cm; }'
+          + 'h2 { font-size: 1.1em; margin-bottom: .4cm; border-bottom: 2px solid #000; padding-bottom: .2cm; text-align: left; }'
+          + 'h2 .subtitle { display: block; text-align: center; font-size: .95em; font-weight: normal; margin-top: .1cm; }'
+          + 'table { border-collapse: collapse; width: 100%; font-size: .95em; }'
+          + 'th, td { border: 1px solid #999; padding: 4px 10px; text-align: left; vertical-align: middle; }'
+          + 'th { background: #eee; font-weight: bold; text-align: center; }'
+          + 'td.num { text-align: center; }'
+          + 'tr:last-child td { font-weight: bold; background: #f0f0f0; }'
+          + 'img { display: block; margin: auto; }'
+          + '@media print { @page { margin: 1cm; } }'
+          + '</style>'
+          + '</head><body>'
+          + '<h2>' + tourName + '<span class="subtitle">Récap global des blasons</span></h2>'
+          + data
+          + '</body></html>'
+        );
+        win.document.close();
+        win.focus();
+        win.onload = function () { win.print(); };
+    });
+}
+
+/* ----------------------------------------------------------
    Impression
 ---------------------------------------------------------- */
+var PRINT_PER_PAGE = 16; // cibles par page
+
 function printTargets() {
     window.print();
 }
+
+(function () {
+    function injectPrintHeaders() {
+        $('.qp-print-page-header').remove();
+        var headerHtml = document.getElementById('printHeader')
+                       ? document.getElementById('printHeader').innerHTML : '';
+        if (!headerHtml) return;
+
+        // En-tête page de garde : injecté au début de #printBlasonRecap, sans saut avant
+        var recap = document.getElementById('printBlasonRecap');
+        if (recap) {
+            $(recap).prepend(
+                $('<div class="qp-print-page-header qp-print-page-header--first"></div>').html(headerHtml)
+            );
+        }
+
+        // En-têtes pages cibles : une par groupe de PRINT_PER_PAGE cibles, avec saut de page
+        var wraps = $('#targetsArea .qp-cible-wrap');
+        for (var i = 0; i < wraps.length; i += PRINT_PER_PAGE) {
+            $(wraps[i]).before(
+                $('<div class="qp-print-page-header"></div>').html(headerHtml)
+            );
+        }
+    }
+
+    window.addEventListener('beforeprint', injectPrintHeaders);
+    window.addEventListener('afterprint',  function () {
+        $('.qp-print-page-header').remove();
+    });
+})();
 
 /* ----------------------------------------------------------
    Dragula (drag & drop)

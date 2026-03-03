@@ -67,6 +67,35 @@ class QP_Blason
     public $svgFile      = 'Empty.svg';
     public $count        = 0; // nb archers
     public $physicalCount = 0; // nb blasons physiques nécessaires
+    public $alias        = ''; // nom d'affichage personnalisé (vide = utilise $name)
+
+    // ---------------------------------------------------------------
+    // Alias personnalisés par clé targetName-diameter
+    // Modifier ici pour renommer un type de blason dans le récap
+    // ---------------------------------------------------------------
+    public static function aliasForKey(string $key): string
+    {
+        static $aliasMap = [
+            'TrgIndComplete-40'  => 'Blason 40cm',
+            'TrgIndSmall-40'     => 'Trispot 40cm',
+            'TrgCOIndSmall-40'   => 'Trispot CO 40cm',
+            'vegas-40'           => 'Vegas 40cm',
+            'TrgIndComplete-60'  => 'Blason 60cm',
+            'TrgIndSmall-60'     => 'Trispot 60cm',
+            'TrgIndComplete-80'  => 'Blason 80cm',
+            'TrgCOOutdoor-80'    => 'Blason CO 80cm',
+            'TrgOutdoor-80'      => 'Blason 80cm',
+            'TrgOutdoor-122'     => 'Blason 122cm',
+            'TrgFrBeursault-45'  => 'Beursault 45cm',
+        ];
+        return $aliasMap[$key] ?? '';
+    }
+
+    // Retourne le nom à afficher : alias si défini, sinon $name
+    public function displayName(): string
+    {
+        return ($this->alias !== '') ? $this->alias : $this->name;
+    }
 
     // Retourne fichier SVG + taille px pour une clé targetName-diameter
     public static function svgForKey(string $key): string
@@ -307,6 +336,7 @@ class QP_Session
             }
             $b->svgFile   = QP_Blason::svgForKey($key);
             $b->imgTaille = QP_Blason::tailleForKey($key);
+            $b->alias     = QP_Blason::aliasForKey($key);
             $b->calcNbArcher();
             $this->blasons[$b->id] = $b;
         }
@@ -404,6 +434,31 @@ class QP_Session
     public function blasonCount(): array
     {
         return array_filter($this->blasons, fn($b) => $b->count > 0);
+    }
+
+    /**
+     * Liste des blasons regroupés par alias (displayName).
+     * Les blasons ayant le même alias sont fusionnés : physicalCount sommé,
+     * imgTaille/svgFile/imgNbArcher pris du premier trouvé.
+     * Retourne un tableau indexé par alias.
+     */
+    public function blasonCountGrouped(): array
+    {
+        $grouped = [];
+        foreach ($this->blasons as $b) {
+            if ($b->count <= 0) continue;
+            $key = $b->displayName();
+            if (!isset($grouped[$key])) {
+                // Clone léger : copie des propriétés utiles
+                $g               = clone $b;
+                $g->physicalCount = $b->physicalCount;
+                $grouped[$key]   = $g;
+            } else {
+                $grouped[$key]->physicalCount += $b->physicalCount;
+                $grouped[$key]->count         += $b->count;
+            }
+        }
+        return $grouped;
     }
 
     public function listByCategory(): array
@@ -509,6 +564,7 @@ class QP_Cible
             }
             $b->svgFile   = QP_Blason::svgForKey($key);
             $b->imgTaille = QP_Blason::tailleForKey($key);
+            $b->alias     = QP_Blason::aliasForKey($key);
             $b->calcNbArcher();
             $this->blasons[$b->id] = $b;
         }
