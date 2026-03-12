@@ -47,10 +47,14 @@ $_fscQuery = 'SELECT'
 	. ' CONCAT(FSScheduledDate, \' \', FSScheduledTime) AS dtOrder,'
 	. ' FSEvent AS Event,'
 	. ' GrPhase AS Phase,'
-	. ' MAX(IF(FinAthlete=0,0,1)) AS Printable'
+	. ' MAX(IF(f1.FinAthlete=0,0,1)) AS Printable,'
+	. ' CASE WHEN MAX(IF(f1.FinAthlete=0,0,1))=0 THEN \'waiting\''
+	. '      WHEN MAX(IF(GREATEST(f1.FinWinLose,COALESCE(f2.FinWinLose,0),f1.FinTie,COALESCE(f2.FinTie,0))=0,1,0))=0 THEN \'done\''
+	. '      ELSE \'ongoing\' END AS Status'
 	. ' FROM FinSchedule'
-	. ' INNER JOIN Finals ON FinEvent=FSEvent AND FinMatchNo=FSMatchNo AND FinTournament=FSTournament AND FSTeamEvent=0'
-	. ' INNER JOIN Grids ON GrMatchNo=FinMatchNo'
+	. ' INNER JOIN Finals AS f1 ON f1.FinEvent=FSEvent AND f1.FinMatchNo=FSMatchNo AND f1.FinTournament=FSTournament AND (FSTeamEvent=0 OR FSTeamEvent IS NULL)'
+	. ' LEFT JOIN Finals AS f2 ON f2.FinEvent=FSEvent AND f2.FinMatchNo=FSMatchNo^1 AND f2.FinTournament=FSTournament'
+	. ' INNER JOIN Grids ON GrMatchNo=f1.FinMatchNo'
 	. ' INNER JOIN Events ON EvCode=FSEvent AND EvTournament=FSTournament AND EvTeamEvent=0'
 	. ' WHERE ' . $_fscWhere
 	. ' GROUP BY SessionKey, FSEvent, GrPhase'
@@ -73,9 +77,11 @@ while ($_fscRow = safe_fetch($_fscRs)) {
 		$_fscSessions[$_sk]['cells'][$_ev] = array(
 			'phases'    => array(),
 			'printable' => false,
+			'statuses'  => array(),
 		);
 	}
-	$_fscSessions[$_sk]['cells'][$_ev]['phases'][]  = intval($_fscRow->Phase);
+	$_fscSessions[$_sk]['cells'][$_ev]['phases'][]    = intval($_fscRow->Phase);
+	$_fscSessions[$_sk]['cells'][$_ev]['statuses'][]  = $_fscRow->Status;
 	// Printable = true dès qu'au moins un match de cette cellule a un athlète
 	if ($_fscRow->Printable) $_fscSessions[$_sk]['cells'][$_ev]['printable'] = true;
 }
@@ -89,12 +95,24 @@ foreach ($_fscSessions as $_s) {
 }
 sort($_fscAllEvents);
 
-// Printable global par session : true si au moins une cellule est printable
-// (utilisé pour l'icône de la ligne "Toutes catégories")
+// Printable global par session + statut visuel de chaque cellule et de la session
 foreach ($_fscSessions as $_sk => $_s) {
 	$_fscSessions[$_sk]['printable'] = false;
-	foreach ($_s['cells'] as $_cell) {
-		if ($_cell['printable']) { $_fscSessions[$_sk]['printable'] = true; break; }
+	$_fscSessions[$_sk]['status']    = 'done';
+	foreach ($_s['cells'] as $_cev => $_cell) {
+		if ($_cell['printable']) $_fscSessions[$_sk]['printable'] = true;
+		// Statut de la cellule = le pire statut parmi ses phases
+		$_cst = 'done';
+		foreach ($_cell['statuses'] as $_st) {
+			if ($_st === 'waiting') { $_cst = 'waiting'; break; }
+			if ($_st === 'ongoing') $_cst = 'ongoing';
+		}
+		$_fscSessions[$_sk]['cells'][$_cev]['status'] = $_cst;
+		// Statut session = le pire parmi les cellules
+		if ($_fscSessions[$_sk]['status'] !== 'waiting') {
+			if ($_cst === 'waiting') $_fscSessions[$_sk]['status'] = 'waiting';
+			elseif ($_cst === 'ongoing') $_fscSessions[$_sk]['status'] = 'ongoing';
+		}
 	}
 }
 
@@ -128,10 +146,14 @@ $_fstQuery = 'SELECT'
 	. ' CONCAT(FSScheduledDate, \' \', FSScheduledTime) AS dtOrder,'
 	. ' FSEvent AS Event,'
 	. ' GrPhase AS Phase,'
-	. ' MAX(IF(TfTeam=0,0,1)) AS Printable'
+	. ' MAX(IF(tf1.TfTeam=0,0,1)) AS Printable,'
+	. ' CASE WHEN MAX(IF(tf1.TfTeam=0,0,1))=0 THEN \'waiting\''
+	. '      WHEN MAX(IF(GREATEST(tf1.TfWinLose,COALESCE(tf2.TfWinLose,0),tf1.TfTie,COALESCE(tf2.TfTie,0))=0,1,0))=0 THEN \'done\''
+	. '      ELSE \'ongoing\' END AS Status'
 	. ' FROM FinSchedule'
-	. ' INNER JOIN TeamFinals ON TfEvent=FSEvent AND TfMatchNo=FSMatchNo AND TfTournament=FSTournament AND FSTeamEvent!=0'
-	. ' INNER JOIN Grids ON GrMatchNo=TfMatchNo'
+	. ' INNER JOIN TeamFinals AS tf1 ON tf1.TfEvent=FSEvent AND tf1.TfMatchNo=FSMatchNo AND tf1.TfTournament=FSTournament AND FSTeamEvent!=0'
+	. ' LEFT JOIN TeamFinals AS tf2 ON tf2.TfEvent=FSEvent AND tf2.TfMatchNo=FSMatchNo^1 AND tf2.TfTournament=FSTournament'
+	. ' INNER JOIN Grids ON GrMatchNo=tf1.TfMatchNo'
 	. ' INNER JOIN Events ON EvCode=FSEvent AND EvTournament=FSTournament AND EvTeamEvent!=0'
 	. ' WHERE ' . $_fstWhere
 	. ' GROUP BY SessionKey, FSEvent, GrPhase'
@@ -153,9 +175,11 @@ while ($_fstRow = safe_fetch($_fstRs)) {
 		$_fstSessions[$_sk]['cells'][$_ev] = array(
 			'phases'    => array(),
 			'printable' => false,
+			'statuses'  => array(),
 		);
 	}
-	$_fstSessions[$_sk]['cells'][$_ev]['phases'][] = intval($_fstRow->Phase);
+	$_fstSessions[$_sk]['cells'][$_ev]['phases'][]   = intval($_fstRow->Phase);
+	$_fstSessions[$_sk]['cells'][$_ev]['statuses'][] = $_fstRow->Status;
 	if ($_fstRow->Printable) $_fstSessions[$_sk]['cells'][$_ev]['printable'] = true;
 }
 
@@ -169,8 +193,19 @@ sort($_fstAllEvents);
 
 foreach ($_fstSessions as $_sk => $_s) {
 	$_fstSessions[$_sk]['printable'] = false;
-	foreach ($_s['cells'] as $_cell) {
-		if ($_cell['printable']) { $_fstSessions[$_sk]['printable'] = true; break; }
+	$_fstSessions[$_sk]['status']    = 'done';
+	foreach ($_s['cells'] as $_cev => $_cell) {
+		if ($_cell['printable']) $_fstSessions[$_sk]['printable'] = true;
+		$_cst = 'done';
+		foreach ($_cell['statuses'] as $_st) {
+			if ($_st === 'waiting') { $_cst = 'waiting'; break; }
+			if ($_st === 'ongoing') $_cst = 'ongoing';
+		}
+		$_fstSessions[$_sk]['cells'][$_cev]['status'] = $_cst;
+		if ($_fstSessions[$_sk]['status'] !== 'waiting') {
+			if ($_cst === 'waiting') $_fstSessions[$_sk]['status'] = 'waiting';
+			elseif ($_cst === 'ongoing') $_fstSessions[$_sk]['status'] = 'ongoing';
+		}
 	}
 }
 
@@ -222,6 +257,11 @@ echo '<style>
 .acc-header.collapsed th::after { transform: translateY(-50%) rotate(180deg); }
 
 .acc-body.collapsed { display: none; }
+
+/* ── Statut des cellules feuilles de marque ── */
+.cell-done    { background:#d4edda !important; outline:2px solid #28a745; border-radius:4px; }
+.cell-ongoing { background:#cce5ff !important; outline:2px solid #0066cc; border-radius:4px; }
+.cell-waiting { background:#fff3cd !important; outline:2px solid #d4a017; border-radius:4px; }
 </style>';
 echo '<script>
 $(function(){
@@ -454,6 +494,8 @@ echo '</td></tr>';
 // ── Qualifications ────────────────────────────────────────────────────────────
 echo '<tr class="acc-header"><th class="SubTitle">Résultats Qualification</th></tr>';
 echo '<tr class="acc-body"><td class="Center" style="padding:8px">';
+echo '	<a href="../../../Qualification/PrnShootoff.php" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Shoot-Off/PF</a>';
+echo '	&nbsp;&nbsp;';
 echo '	<a href="../../../Qualification/PrnIndividualAbs.php" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Individuel</a>';
 echo '	&nbsp;&nbsp;';
 echo '	<a href="../../../Qualification/PrnTeamAbs.php" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Équipe</a>';
@@ -499,6 +541,13 @@ if ($_SESSION['MenuFinIDo'] ) {
 			echo '<p style="color:#888;font-style:italic">Aucune session à afficher.</p>';
 		} else {
 
+		// Légende statuts
+		echo '<div style="margin-left:10px;display:inline-flex;gap:10px;align-items:center;font-size:0.82em">';
+		echo '<span style="background:#d4edda;outline:2px solid #28a745;border-radius:3px;padding:2px 8px">&#10003;&nbsp;Terminé</span>';
+		echo '<span style="background:#cce5ff;outline:2px solid #0066cc;border-radius:3px;padding:2px 8px">&#9654;&nbsp;En cours</span>';
+		echo '<span style="background:#fff3cd;outline:2px solid #d4a017;border-radius:3px;padding:2px 8px">&#9679;&nbsp;En attente</span>';
+		echo '</div>';
+
 		echo '<table class="Tabella" style="width:100%;border-collapse:collapse">';
 
 		// ── En-tête : une colonne par session du programme ───────────────────────
@@ -521,12 +570,18 @@ if ($_SESSION['MenuFinIDo'] ) {
 
 		// ── Une ligne par catégorie ───────────────────────────────────────────────
 		foreach ($_fscAllEvents as $_fscEvCode) {
+			$_fscCatUrl = $_fscBaseUrl. '?Event=' . urlencode($_fscEvCode).'&amp;ScoreFilled=1';
 			echo '<tr>';
-			echo '<td class="Center" style="padding:4px 8px;font-weight:bold">' . htmlspecialchars($_fscEvCode) . '</td>';
+			echo '<td class="Center" style="padding:4px 8px;font-weight:bold">';
+			echo '<a href="' . $_fscCatUrl . '" class="Link" target="PrintOut" title="' . htmlspecialchars($_fscEvCode) .'">'
+						. htmlspecialchars($_fscEvCode) . ' '. $_fscPdfImgSmall
+						. '</a>';
+			echo ' </td>';
 			foreach ($_fscSessions as $_fscSesKey => $_fscSes) {
-				echo '<td class="Center" style="padding:4px 4px">';
 				if (isset($_fscSes['cells'][$_fscEvCode])) {
-					$_fscCell     = $_fscSes['cells'][$_fscEvCode];
+					$_fscCell      = $_fscSes['cells'][$_fscEvCode];
+					$_fscCellClass = 'cell-' . ($_fscCell['status'] ?? 'waiting');
+					echo '<td class="Center ' . $_fscCellClass . '" style="padding:4px 4px">';
 					$_fscEvPhases = $_fscCell['phases'];
 					$_fscCellIcon = $_fscCell['printable'] ? $_fscPdfImgLarge : $_fscPdfImgSmall;
 					if (count($_fscEvPhases) === 1) {
@@ -542,28 +597,53 @@ if ($_SESSION['MenuFinIDo'] ) {
 						. '?Event=' . urlencode($_fscEvCode)
 						. $_fscPhPart
 						. '&amp;Barcode=1' . $_fscQRParam . $_fscFilledParam;
-					echo '<a href="' . $_fscUrl . '" class="Link" target="PrintOut" title="' . htmlspecialchars($_fscPhTip) . '">'
+					echo '<a href="' . $_fscUrl . '" class="Link" target="PrintOut" title="' . htmlspecialchars($_fscPhTip) .'">'
 						. $_fscCellIcon
 						. '<br><small>' . htmlspecialchars($_fscPhTip) . '</small>'
 						. '</a>';
+					echo '</td>';
 				} else {
-					echo '&mdash;';
+					echo '<td class="Center" style="padding:4px 4px">&mdash;</td>';
 				}
-				echo '</td>';
 			}
 			echo '</tr>';
 		}
+		
+				echo '<tr>';
+		echo '<th class="SubTitle"></th>';
+		foreach ($_fscSessions as $_fscSesKey => $_fscSes) {
+			// Séparer date et heure : "26 Feb" et "10:00"
+			$_fscLabelParts = explode(' ', trim($_fscSes['label']), 3);
+			// _fscLabelParts = ['26', 'Feb', '10:00'] ou ['26', 'Feb']
+			$_fscTime = array_pop($_fscLabelParts); // dernière partie = heure
+			$_fscDate = implode(' ', $_fscLabelParts); // reste = date
+			echo '<th class="SubTitle" style="white-space:nowrap">'
+				. htmlspecialchars($_fscDate)
+				. '<br>'
+				. htmlspecialchars($_fscTime)
+				. '</th>';
+		}
+		echo '</tr>';
+
 
 		// ── Ligne du bas : toutes catégories par session (via x_Session) ──────────
+		$_fscAllCatUrl = $_fscBaseUrl. '?ScoreFilled=1';
 		echo '<tr>';
-		echo '<td class="Center" style="padding:4px 8px;font-style:italic">Toutes catégories</td>';
+		echo '<td class="Center" style="padding:4px 8px;font-weight:bold;font-style:italic">';
+		echo '<a href="' . $_fscAllCatUrl . '" class="Link" target="PrintOut" title="Toutes catégories">'
+					.'Toutes catégories '. $_fscPdfImgSmall
+					. '</a>';
+		echo ' </td>';
+		
+		
 		foreach ($_fscSessions as $_fscSesKey => $_fscSes) {
 			// x_Session seul suffit : PDFScoreMatch filtre tous les matchs de la session
 			$_fscUrl = $_fscBaseUrl
 				. '?x_Session=' . urlencode($_fscSesKey)
 				. '&amp;Barcode=1' . $_fscQRParam . $_fscFilledParam;
-			$_fscSesIcon = $_fscSes['printable'] ? $_fscPdfImgLarge : $_fscPdfImgSmall;
-			echo '<td class="Center" style="padding:4px 4px">';
+			$_fscSesIcon  = $_fscSes['printable'] ? $_fscPdfImgLarge : $_fscPdfImgSmall;
+			$_fscSesClass = 'cell-' . ($_fscSes['status'] ?? 'waiting');
+			echo '<td class="Center ' . $_fscSesClass . '" style="padding:4px 4px">';
 			echo '<a href="' . $_fscUrl . '" class="Link" target="PrintOut">'
 				. $_fscSesIcon
 				. '</a>';
@@ -623,6 +703,13 @@ if ($_SESSION['MenuFinTDo'] ) {
 			echo '<p style="color:#888;font-style:italic">Aucune session à afficher.</p>';
 		} else {
 
+		// Légende statuts
+		echo '<div style="margin-left:8px;display:inline-flex;gap:10px;align-items:center;font-size:0.82em">';
+		echo '<span style="background:#d4edda;outline:2px solid #28a745;border-radius:3px;padding:2px 8px">&#10003;&nbsp;Terminé</span>';
+		echo '<span style="background:#cce5ff;outline:2px solid #0066cc;border-radius:3px;padding:2px 8px">&#9654;&nbsp;En cours</span>';
+		echo '<span style="background:#fff3cd;outline:2px solid #d4a017;border-radius:3px;padding:2px 8px">&#9679;&nbsp;En attente</span>';
+		echo '</div>';
+
 		echo '<table class="Tabella" style="width:100%;border-collapse:collapse">';
 
 		// En-tête
@@ -642,12 +729,22 @@ if ($_SESSION['MenuFinTDo'] ) {
 
 		// Lignes par catégorie
 		foreach ($_fstAllEvents as $_fstEvCode) {
+			$_fstCatUrl = $_fstBaseUrl. '?Event=' . urlencode($_fstEvCode).'&amp;ScoreFilled=1';
 			echo '<tr>';
-			echo '<td class="Center" style="padding:4px 8px;font-weight:bold">' . htmlspecialchars($_fstEvCode) . '</td>';
+			echo '<td class="Center" style="padding:4px 8px;font-weight:bold">';
+			echo '<a href="' . $_fstCatUrl . '" class="Link" target="PrintOut" title="' . htmlspecialchars($_fstEvCode) .'">'
+						. htmlspecialchars($_fstEvCode) . ' '. $_fstPdfImgSmall
+						. '</a>';
+			echo ' </td>';
+			
+			
+			
+			
 			foreach ($_fstSessions as $_fstSesKey => $_fstSes) {
-				echo '<td class="Center" style="padding:4px 4px">';
 				if (isset($_fstSes['cells'][$_fstEvCode])) {
-					$_fstCell     = $_fstSes['cells'][$_fstEvCode];
+					$_fstCell      = $_fstSes['cells'][$_fstEvCode];
+					$_fstCellClass = 'cell-' . ($_fstCell['status'] ?? 'waiting');
+					echo '<td class="Center ' . $_fstCellClass . '" style="padding:4px 4px">';
 					$_fstEvPhases = $_fstCell['phases'];
 					$_fstCellIcon = $_fstCell['printable'] ? $_fstPdfImgLarge : $_fstPdfImgSmall;
 					if (count($_fstEvPhases) === 1) {
@@ -666,23 +763,45 @@ if ($_SESSION['MenuFinTDo'] ) {
 						. $_fstCellIcon
 						. '<br><small>' . htmlspecialchars($_fstPhTip) . '</small>'
 						. '</a>';
+					echo '</td>';
 				} else {
-					echo '&mdash;';
+					echo '<td class="Center" style="padding:4px 4px">&mdash;</td>';
 				}
-				echo '</td>';
 			}
 			echo '</tr>';
 		}
+		echo '<tr>';
+		echo '<th class="SubTitle">Catégorie</th>';
+		foreach ($_fstSessions as $_fstSesKey => $_fstSes) {
+			$_fstLabelParts = explode(' ', trim($_fstSes['label']), 3);
+			$_fstTime = array_pop($_fstLabelParts);
+			$_fstDate = implode(' ', $_fstLabelParts);
+			echo '<th class="SubTitle" style="white-space:nowrap">'
+				. htmlspecialchars($_fstDate)
+				. '<br>'
+				. htmlspecialchars($_fstTime)
+				. '</th>';
+		}
+		echo '</tr>';
 
 		// Ligne toutes catégories
+		$_fstAllCatUrl = $_fstBaseUrl. '?ScoreFilled=1';
+		
 		echo '<tr>';
-		echo '<td class="Center" style="padding:4px 8px;font-style:italic">Toutes catégories</td>';
+		echo '<td class="Center" style="padding:4px 8px;font-weight:bold;font-style:italic">';
+		echo '<a href="' . $_fstAllCatUrl . '" class="Link" target="PrintOut" title="Toutes catégories">'
+					.'Toutes catégories '. $_fstPdfImgSmall
+					. '</a>';
+		echo ' </td>';
+		
+		
 		foreach ($_fstSessions as $_fstSesKey => $_fstSes) {
 			$_fstUrl = $_fstBaseUrl
 				. '?x_Session=' . urlencode($_fstSesKey)
 				. '&amp;Barcode=1' . $_fstFilledParam;
-			$_fstSesIcon = $_fstSes['printable'] ? $_fstPdfImgLarge : $_fstPdfImgSmall;
-			echo '<td class="Center" style="padding:4px 4px">';
+			$_fstSesIcon  = $_fstSes['printable'] ? $_fstPdfImgLarge : $_fstPdfImgSmall;
+			$_fstSesClass = 'cell-' . ($_fstSes['status'] ?? 'waiting');
+			echo '<td class="Center ' . $_fstSesClass . '" style="padding:4px 4px">';
 			echo '<a href="' . $_fstUrl . '" class="Link" target="PrintOut">'
 				. $_fstSesIcon
 				. '</a>';
