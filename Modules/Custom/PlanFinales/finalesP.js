@@ -68,6 +68,7 @@ function pfSetZoom(val) {
 
     // 4. Persister dans localStorage
     try { localStorage.setItem('pfZoom', pfZoom); } catch (e) {}
+	pfUniCellWidth();
 }
 
 /* ============================================================
@@ -289,6 +290,25 @@ function pfRender() {
     pfSetZoom(pfZoom);
 }
 
+function pfUniCellWidth() {
+	var $table = $('#pfGrid table').first();
+	if(!$table.length) return;
+	
+	var $cells =  $table.find('.pf-th-target');
+	$cells.css("width","auto");
+	$cells.css("min-width","auto");
+	
+	let max = 0;
+	$cells.each(function () {
+		var w = $(this).outerWidth();
+		console.log("size: " + w);
+		if(w > max) max = w;
+	});
+	
+	$cells.css("min-width", max + "px");
+	$cells.css("width", max + "px");
+}
+
 function pfBuildTable() {
     var targets = pfData.targets;
     var slots   = pfData.slots;
@@ -394,6 +414,7 @@ function pfBuildWaveRow(slot, slotIdx, waveRow, waveIdx, totalWaves, blocks) {
         h += '<td class="pf-slot-header" data-slot-idx="' + slotIdx + '"' + rowspanAttr + '>'
            + '<span class="pf-slot-rm-btn" onclick="pfRemoveSlot(' + slotIdx + ')" title="Supprimer ce créneau">✕</span>'
            + '<span class="pf-slot-clear-btn" onclick="pfClearSlotBlocks(' + slotIdx + ')" title="Vider la ligne (renvoyer les phases en non-planifiés)">⬇</span>'
+		   + '<span class="pf-slot-insert-btn" onclick="pfInsertSlot(' + slotIdx + ')" title="Inséser un créneau">✚</span>'
            + '<div class="pf-slot-content">'
            +   '<div class="pf-slot-display">'
            +     '<span class="pf-slot-date">' + slot.date + '</span>'
@@ -939,8 +960,42 @@ function pfAddSlot() {
     pfRefreshDragula();
 }
 
+function pfInsertSlot(slotIdx) {
+    var currentSlot = pfData.slots[slotIdx];
+    var date = currentSlot ? currentSlot.date : pfTodayStr();
+    var time = currentSlot ? pfAddMinutes(currentSlot.time, currentSlot.duration * pfSlotWaveCount(currentSlot)) : '09:00';
+	
+	var curDate=currentSlot.date;
+	var curTime=pfAddMinutes(currentSlot.time, currentSlot.duration * pfSlotWaveCount(currentSlot));
+	
+    
+
+    var newSlot = {
+        id:       'slot_new_' + Date.now(),
+        date:     date,
+        time:     time,
+        duration: 30,
+        blocks:   []
+    };
+
+
+    pfData.slots.splice(slotIdx + 1, 0,newSlot);
+	
+	if ($('#chkAutoShift').is(':checked')  && slotIdx + 2 < pfData.slots.length) {
+        for (var si = slotIdx + 2; si < pfData.slots.length; si++) {
+            pfData.slots[si] = pfShiftSlot(pfData.slots[si], 30);
+        }
+    }
+	
+	
+	
+    pfDirty = true;
+    pfRender();
+    pfRefreshDragula();
+}
 function pfRemoveSlot(slotIdx) {
     var slot = pfData.slots[slotIdx];
+	var Delta = 0 - slot.duration
     if (!slot) return;
     if (slot.blocks.length > 0) {
         if (!confirm('Ce créneau contient des phases. Confirmer la suppression ?')) return;
@@ -968,6 +1023,12 @@ function pfRemoveSlot(slotIdx) {
         });
     }
     pfData.slots.splice(slotIdx, 1);
+	
+	if ($('#chkAutoShift').is(':checked') && slotIdx < pfData.slots.length - 1) {
+        for (var si = slotIdx ; si < pfData.slots.length; si++) {
+            pfData.slots[si] = pfShiftSlot(pfData.slots[si], Delta);
+        }
+    }
     pfDirty = true;
     pfRender();
     pfRefreshDragula();

@@ -5,12 +5,25 @@
    QP_ROOT, QP_SESS_ID, QP_SORT : injectés par index.php
    ============================================================ */
 
-document.addEventListener('DOMContentLoaded', function () {
+/* document.addEventListener('DOMContentLoaded', function () {
     blasonRecap();
     loadPickingList($('#PickingList'));
     $('[id^=Cible-]').each(function () { getCible(this); });
     loadDragula();
+
+}); */
+
+$(function () {
+    blasonRecap();
+    loadPickingList($('#PickingList'));
+    $('[id^=Cible-]').each(function () { getCible(this); });
+    loadDragula();
+    pqInitHoverStructure();
+	pqInitHoverCategory();
+	pqInitHoverBlason();
 });
+
+
 
 /* ----------------------------------------------------------
    Accordion natif (sans Bootstrap)
@@ -75,6 +88,12 @@ function loadOnePickingItem(elt) {
         var affected = $(elt).find('.blasonContent .affected').length;
         $(elt).closest('.qp-accordion-item').find('.memberCount').text(total);
         $(elt).closest('.qp-accordion-item').find('.memberAffectedCount').text(affected);
+		if(affected != total) {
+			$(elt).closest('.qp-accordion-item').find('.memberAffectedCount').addClass('memberAffectedCount-hl');
+		}
+		else {
+			$(elt).closest('.qp-accordion-item').find('.memberAffectedCount').removeClass('memberAffectedCount-hl');
+		}
         hideAffectedSwitch();
         loadDragula();
     });
@@ -160,30 +179,65 @@ function hideAffectedSwitch() {
 /* ----------------------------------------------------------
    Halo survol blason
 ---------------------------------------------------------- */
-function haloBlason(elt) {
-    var id = $(elt).closest('.qp-accordion-item').attr('id');
-    if (id) $('.' + id).addClass('halo');
+
+function pqInitHoverStructure() {
+    $(document).on('mouseenter', '.pq-halo-archer', function () {
+        var structData = $(this).data('pq-struct');
+        $('.pq-halo-archer').each(function () {
+            if ($(this).data('pq-struct') === structData) {
+                $(this).addClass('pq-archer-hl').removeClass('pq-archer-dim');
+            } else {
+                $(this).addClass('pq-archer-dim').removeClass('pq-archer-hl');
+            }
+        });
+    });
+    $(document).on('mouseleave', '.pq-halo-archer', function () {
+        $('.pq-halo-archer').removeClass('pq-archer-hl pq-archer-dim');
+    });
 }
-function haloBlasonOut(elt) {
-    var id = $(elt).closest('.qp-accordion-item').attr('id');
-    if (id) $('.' + id).removeClass('halo');
+
+function pqInitHoverCategory() {
+    $(document).on('mouseenter', '.pq-halo-category', function () {
+        var catData = $(this).data('pq-category');
+        $('.pq-halo-archer').each(function () {
+            if ($(this).data('pq-category') === catData) {
+                $(this).addClass('pq-archer-hl').removeClass('pq-archer-dim');
+            } else {
+                $(this).addClass('pq-archer-dim').removeClass('pq-archer-hl');
+            }
+        });
+    });
+    $(document).on('mouseleave', '.pq-halo-category', function () {
+        $('.pq-halo-archer').removeClass('pq-archer-hl pq-archer-dim');
+    });
 }
-function haloCat(elt) {
-    var id = $(elt).closest('.qp-accordion-item').attr('id');
-    if (id) $('.' + id).addClass('halo');
+
+function pqInitHoverBlason() {
+    $(document).on('mouseenter', '.pq-halo-blason', function () {
+        var blasonData = $(this).data('pq-blason');
+        $('.pq-halo-archer').each(function () {
+            if ($(this).data('pq-blason') === blasonData) {
+                $(this).addClass('pq-archer-hl').removeClass('pq-archer-dim');
+            } else {
+                $(this).addClass('pq-archer-dim').removeClass('pq-archer-hl');
+            }
+        });
+		$('.pq-halo-blason').each(function () {
+            if ($(this).data('pq-blason') === blasonData) {
+                $(this).addClass('pq-archer-hl').removeClass('pq-archer-dim');
+            } else {
+                $(this).addClass('pq-archer-dim').removeClass('pq-archer-hl');
+            }
+        });
+    });
+    $(document).on('mouseleave', '.pq-halo-blason', function () {
+        $('.pq-halo-archer').removeClass('pq-archer-hl pq-archer-dim');
+		$('.pq-halo-blason').removeClass('pq-archer-hl pq-archer-dim');
+    });
 }
-function haloCatOut(elt) {
-    var id = $(elt).closest('.qp-accordion-item').attr('id');
-    if (id) $('.' + id).removeClass('halo');
-}
-function haloStruct(elt) {
-    var sid = $(elt).data('struct');
-    if (sid !== undefined) $('.bgstru' + sid).addClass('halobgstru');
-}
-function haloStructOut(elt) {
-    var sid = $(elt).data('struct');
-    if (sid !== undefined) $('.bgstru' + sid).removeClass('halobgstru');
-}
+
+
+
 
 /* ----------------------------------------------------------
    Récap global (impression dans nouvelle fenêtre)

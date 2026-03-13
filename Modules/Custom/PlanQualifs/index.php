@@ -152,11 +152,11 @@ include('Common/Templates/head.php');
       <?php if ($sortBy == 1): ?>
         <!-- Groupé par catégorie -->
         <?php foreach ($session->listByCategory() as $cat): ?>
-          <div class="qp-accordion-item" id="tcat-<?= htmlspecialchars($cat->name) ?>">
+          <div class="pq-halo-category qp-accordion-item" id="tcat-<?= htmlspecialchars($cat->name) ?>"
+		  data-pq-category="<?= $cat->name ?>"
+		  >
             <div class="qp-accordion-header"
-                 onclick="qpToggle(this)"
-                 onmouseenter="haloCat(this)"
-                 onmouseleave="haloCatOut(this)">
+                 onclick="qpToggle(this)">
               <span><?= htmlspecialchars($cat->name) ?></span>
               <span class="qp-counts">
                 (<span class="memberAffectedCount">-</span>/<span class="memberCount">-</span>)
@@ -176,11 +176,11 @@ include('Common/Templates/head.php');
       <?php else: ?>
         <!-- Groupé par blason -->
         <?php foreach ($session->blasonCount() as $blId => $blason): ?>
-          <div class="qp-accordion-item" id="tgl-<?= $blId ?>">
+          <div class="pq-halo-blason qp-accordion-item" id="tgl-<?= $blId ?>"
+		  data-pq-blason="<?= $blId ?>"
+		  >
             <div class="qp-accordion-header"
-                 onclick="qpToggle(this)"
-                 onmouseenter="haloBlason(this)"
-                 onmouseleave="haloBlasonOut(this)">
+                 onclick="qpToggle(this)">
               <span><?= htmlspecialchars($blason->name) ?></span>
               <span class="qp-counts">
                 (<span class="memberAffectedCount">-</span>/<span class="memberCount">-</span>)

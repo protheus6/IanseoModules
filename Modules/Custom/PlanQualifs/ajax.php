@@ -110,8 +110,9 @@ switch ($action) {
         $items   = $session->blasonCountGrouped();
         $html    = '';
         foreach ($items as $blId => $blason) {
-            $html .= '<span class="qp-recap-item"'
+            $html .= '<span class="pq-halo-blason qp-recap-item"'
                    . ' data-blason-id="' . $blId . '"'
+                   . ' data-pq-blason="' . $blason->id . '"'
                    . ' data-face="'     . htmlspecialchars($blason->displayName()) . '"'
                    . ' data-count="'   . $blason->physicalCount . '">'
                    . htmlspecialchars($blason->displayName()) . '&nbsp;: <strong>' . $blason->physicalCount . '</strong>'
@@ -174,17 +175,20 @@ switch ($action) {
                 ? 'acc-' . $item->blason->imgH . '-' . $item->blason->imgV
                 : '';
             ?>
-            <div class="qp-picker-item<?= $affected ? ' affected' : '' ?>">
+            <div class="pq-halo-archer qp-picker-item<?= $affected ? ' affected' : '' ?>"
+			data-pq-struct="<?= $item->structId ?>"
+			data-pq-category="<?= $cat ?>"
+			data-pq-blason="<?= $item->blason->id ?>"
+			>
               <input type="hidden" class="archerId"   value="<?= $item->id ?>">
               <input type="hidden" class="cibleNum"   value="<?= $item->target ?>">
               <input type="hidden" class="blasonType" value="<?= $blasonType ?>">
               <!-- Ligne visible dans zone cible (ddtrg) -->
               <div class="<?= $bgcol ?> disptrg" data-struct="<?= $item->structId ?>">
-                <span class="archers"><?= htmlspecialchars($item->classe . ' - ' . $item->nom) ?></span>
+                <span class="archers"><?= htmlspecialchars($item->getCategory() . ' - ' . $item->getNomCourt()) ?></span>
               </div>
               <!-- Ligne visible dans picking list (dispsrc) -->
               <div class="dispsrc <?= $bgcol ?> qp-src-card"
-                   onmouseenter="haloStruct(this)" onmouseleave="haloStructOut(this)"
                    data-struct="<?= $item->structId ?>">
                 <?php if ($affected): ?>
                   <span class="qp-check">✔</span>
@@ -354,7 +358,9 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
           <?php if ($blasonUnique): ?>
             <!-- Blason pleine largeur (imgV>=4) -->
             <?php $hasRealArcher = count(array_filter($cible->vagues, fn($v) => isset($v->blason) && !$v->overlay)) > 0; ?>
-            <div style="flex:1; display:flex; flex-direction:column; align-items:center; <?= !$hasRealArcher ? 'opacity:.35;' : '' ?>">
+            <div class="pq-halo-blason" style="flex:1; display:flex; flex-direction:column; align-items:center; <?= !$hasRealArcher ? 'opacity:.35;' : '' ?>"
+			data-pq-blason="<?= $blasonUnique->id ?>"
+			>
               <?php if ($svgBase): ?>
                 <img src="<?= htmlspecialchars($svgBase . $blasonUnique->svgFile) ?>"
                      alt="<?= htmlspecialchars($blasonUnique->label) ?>"
@@ -382,7 +388,9 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
                   $isOverlay = $entry['overlay'];
                   ?>
                   <?php if ($svgBase): ?>
-                    <div style="<?= $isOverlay ? 'opacity:.35;' : '' ?>display:flex; flex-direction:column; align-items:center;">
+                    <div class="pq-halo-blason" style="<?= $isOverlay ? 'opacity:.35;' : '' ?>display:flex; flex-direction:column; align-items:center;"
+					data-pq-blason="<?= $blason->id ?>"
+					>
                       <img src="<?= htmlspecialchars($svgBase . $blason->svgFile) ?>"
                            alt="<?= htmlspecialchars($blason->label) ?>"
                            title="<?= htmlspecialchars($blason->name) ?>"
@@ -422,13 +430,17 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
             <div class="qp-vague-slot-label"><?= $vague->label ?></div>
             <div class="dragula-container ddtrg <?= $blasonType ?>" style="min-height:50px;">
               <?php if (isset($vague->participant)): ?>
-                <div class="qp-picker-item" id="archer-container">
+                <div class="pq-halo-archer qp-picker-item" id="archer-container"
+				data-pq-struct="<?= $vague->participant->structId ?>"
+				data-pq-category="<?= $vague->participant->getCategory() ?>"
+				data-pq-blason="<?= $vague->blason->id ?>"
+				>
                   <input type="hidden" class="blasonType" value="<?= $blasonType ?>">
                   <input type="hidden" class="archerId"   value="<?= $vague->participant->id ?>">
                   <input type="hidden" class="cibleNum"   value="<?= $vague->participant->target ?>">
                   <div class="<?= $bgcol ?> disptrg"
                        data-struct="<?= $vague->participant->structId ?>"
-                       onmouseenter="haloStruct(this)" onmouseleave="haloStructOut(this)">
+					   >
                     <span class="archers">
                       <?= htmlspecialchars($vague->participant->getCategory() . ' — ' . $vague->participant->getNomCourt()) ?>
                     </span>

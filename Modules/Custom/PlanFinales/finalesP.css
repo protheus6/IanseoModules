@@ -230,7 +230,7 @@ body {
     border: 1px solid #b0bedc;
     border-radius: 2px;
     cursor: pointer;
-    font-size: .80em;
+    font-size: 1em;
     user-select: none;
     line-height: 1.4;
 }
@@ -515,6 +515,18 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 }
 .pf-slot-clear-btn:hover { opacity: 1; color: #a60; }
 
+.pf-slot-insert-btn {
+    position: absolute;
+    bottom: 2px; left: 3px;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #729572;
+    opacity: .35;
+}
+.pf-slot-insert-btn:hover { opacity: 1; color: #14bb13; }
+
+
+
 /* Inputs inline édition horaire */
 .pf-slot-inputs input[type=date],
 .pf-slot-inputs input[type=time] {
@@ -578,7 +590,6 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 .pf-tile-hl {
     box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 2px 7px rgba(0,0,0,.22);
     position: relative;
-    z-index: 10;
     transition: box-shadow .12s, opacity .12s, filter .12s;
 }
 .pf-tile-dim {
@@ -719,7 +730,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 }
 .pf-pos-sep {
     color: rgba(0,0,0,.45);
-    font-size: .72em;
+    font-size: 2.5em;
     margin: 0 1px;
 }
 /* Badge équipe (1 équipe / cible) — plus grand, seul élément dans le slot */

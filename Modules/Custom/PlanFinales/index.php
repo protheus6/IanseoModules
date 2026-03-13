@@ -40,13 +40,13 @@ $indivMatch         = 30;
 $PAGE_TITLE    = 'Plan de cible — Finales';
 $IncludeJquery = true;
 
-$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/svg/';
+$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanFinales/svg/';
 $pfRoot  = $CFG->ROOT_DIR . 'Modules/Custom/PlanFinales/';
 
 $JS_SCRIPT = [
-    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/lib/dragula.min.css">',
+    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanFinales/lib/dragula.min.css">',
     '<link rel="stylesheet" href="' . $pfRoot . 'finalesP.css">',
-    '<script src="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/lib/dragula.min.js"></script>',
+    '<script src="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanFinales/lib/dragula.min.js"></script>',
     '<script>var PF_ROOT = ' . json_encode($pfRoot) . ';
              var PF_SVG  = ' . json_encode($svgBase) . ';
              var PF_AJAX = ' . json_encode($pfRoot . 'ajax.php') . ';
