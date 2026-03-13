@@ -1,0 +1,470 @@
+/* ============================================================
+   QualifsP — Plan de cible
+   CSS autonome, aucune dépendance Bootstrap.
+   S'appuie sur les variables CSS d'ianseo (colors.css).
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   Mise en page générale
+---------------------------------------------------------- */
+.qp-bandeau {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 6px;
+    margin: 4px 0;
+    border: 1px solid var(--input-border);
+    background: var(--row-background);
+}
+.qp-label {
+    font-weight: bold;
+    font-size: .85em;
+    white-space: nowrap;
+}
+.qp-recap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex: 1;
+}
+.qp-recap-item {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--input-border);
+    border-radius: 3px;
+    background: var(--row-background);
+    font-size: .82em;
+    white-space: nowrap;
+}
+
+/* Layout principal (picking | cibles) */
+.qp-layout {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+    height: calc(100vh - 180px); /* hauteur dispo sous l'entête */
+}
+
+/* Colonne picking (gauche) */
+.qp-picking-col {
+    width: 210px;
+    min-width: 180px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+.qp-picking-list {
+    overflow-y: auto;
+    flex: 1;
+    border: 1px solid var(--input-border);
+    background: var(--row-background);
+}
+
+/* Colonne cibles (droite) */
+.qp-targets-col {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.qp-targets-area {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 4px;
+    overflow-y: auto;
+    flex: 1;
+    padding: 4px;
+}
+
+/* ----------------------------------------------------------
+   Accordion (picking list) — CSS pur, JS minimal
+---------------------------------------------------------- */
+.qp-accordion-item {
+    border-bottom: 1px solid var(--input-border);
+}
+.qp-accordion-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    cursor: pointer;
+    background: var(--bg-cell-header);
+    font-size: .82em;
+    font-weight: bold;
+    user-select: none;
+}
+.qp-accordion-header:hover {
+    background: var(--header-light);
+}
+.qp-counts {
+    font-weight: normal;
+    color: var(--text-muted);
+    font-size: .9em;
+}
+.memberAffectedCount-hl {
+    font-weight: bolder;
+    color: red;
+}
+
+
+.qp-chevron {
+    margin-left: auto;
+    transition: transform .2s;
+    font-size: .75em;
+}
+.qp-accordion-item.qp-open .qp-chevron {
+    transform: rotate(180deg);
+}
+.qp-accordion-body {
+    padding: 4px;
+}
+.qp-hidden {
+    display: none;
+}
+
+/* ----------------------------------------------------------
+   Carte cible
+---------------------------------------------------------- */
+.qp-cible-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Tailles fixes des cartes */
+.qp-cible-card,
+.qp-cible-names {
+    min-width: 148px;
+    max-width: 148px;
+    box-sizing: border-box;
+    padding: 3px;
+    border-radius: 3px;
+    position: relative;
+}
+.qp-cible-card {
+    min-height: 130px;
+    border: 2px solid;
+}
+.qp-cible-names {
+    border: 1px solid;
+    display: flex;
+    flex-direction: row;
+}
+
+/* Couleurs de bordure selon warnLevel */
+.qp-border-primary { border-color: var(--header-dark); }
+.qp-border-success { border-color: var(--text-success); }
+.qp-border-warning { border-color: var(--bg-orange); }
+.qp-border-danger  { border-color: var(--dark-red); }
+
+/* Badge warn */
+.qp-warn-badge {
+    display: block;
+    text-align: center;
+    font-size: .7em;
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 2px;
+    color: #fff;
+    margin-bottom: 2px;
+}
+.qp-bg-primary { background: var(--header-dark); }
+.qp-bg-success { background: var(--text-success); }
+.qp-bg-warning { background: var(--bg-orange); color: #333; }
+.qp-bg-danger  { background: var(--dark-red); }
+
+/* Entête de la carte */
+.qp-cible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: .82em;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+/* Bouton effacement — masqué par défaut */
+.btRm {
+    display: none;
+    cursor: pointer;
+    color: var(--dark-red);
+    font-weight: bold;
+    font-size: .9em;
+    padding: 0 2px;
+}
+.cibleNum:hover .btRm { display: inline; }
+.btRm:hover { font-size: 1em; }
+
+/* Étiquettes A/B C/D */
+.qp-vagues-labels {
+    display: flex;
+    border: 1px solid #000;
+    border-radius: 2px;
+    margin-bottom: 2px;
+    font-size: .78em;
+    text-align: center;
+}
+.qp-vague-label {
+    flex: 1;
+    padding: 1px 2px;
+    border-right: 1px solid #ccc;
+}
+.qp-vague-label:last-child { border-right: none; }
+
+/* Zone blasons : hauteur fixe pour accueillir le plus grand blason (⌀122 = 122px) */
+.qp-blasons-row {
+    background: cornsilk;
+    height: 130px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Slot vague (drag & drop) */
+.qp-vague-slot {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    flex: 1;
+}
+.qp-vague-slot-label {
+    border: 1px solid #ccc;
+    padding: 1px 3px;
+    font-size: .78em;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* ----------------------------------------------------------
+   Picking item (archer dans la liste)
+---------------------------------------------------------- */
+.qp-picker-item {
+    padding: 2px;
+}
+.qp-src-card {
+    border: 1px solid var(--input-border);
+    border-radius: 2px;
+    padding: 2px 4px;
+    position: relative;
+    cursor: grab;
+}
+/* Archer non placé : mise en valeur avec bordure colorée et fond légèrement teinté */
+.qp-picker-item:not(.affected) .qp-src-card {
+    border: 2px solid var(--color-warning, #e6a817);
+    background-color: #fffbe6;
+    font-weight: bold;
+}
+/* Archer déjà placé : discret */
+.qp-picker-item.affected .qp-src-card {
+    opacity: 0.55;
+}
+.qp-check {
+    position: absolute;
+    top: 0;
+    left: 2px;
+    color: var(--text-success);
+    font-size: .85em;
+}
+
+/* ----------------------------------------------------------
+   Affichage drag source / cible
+---------------------------------------------------------- */
+.disptrg {
+    display: none !important;
+    border: 2px solid grey !important;
+    border-radius: 3px !important;
+}
+.dispsrc {
+    display: block;
+    border: 1px solid var(--input-border);
+    border-radius: 3px;
+}
+.ddtrg .disptrg { display: block !important; }
+.ddtrg .dispsrc { display: none  !important; }
+.ddsrc .disptrg { display: none  !important; }
+.ddsrc .dispsrc { display: block !important; }
+
+/* ----------------------------------------------------------
+   Texte archers
+---------------------------------------------------------- */
+.ddtrg .archers {
+    font-size: .7em;
+    writing-mode: vertical-lr;
+}
+.ddsrc .archers {
+    font-size: .78em;
+    font-weight: bold;
+}
+
+/* ----------------------------------------------------------
+   Halo survol
+---------------------------------------------------------- */
+.halo {
+    outline: 2px solid var(--text-success) !important;
+    border-radius: 3px;
+}
+.halobgstru {
+    outline: 2px solid var(--dark-red) !important;
+    border-radius: 3px;
+}
+
+.pq-archer-hl {
+    box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 2px 7px rgba(0,0,0,.22);
+    position: relative;
+    transition: box-shadow .12s, opacity .12s, filter .12s;
+}
+.pq-archer-dim {
+    opacity: .60;
+    filter: grayscale(20%);
+    transition: opacity .12s, filter .12s;
+}
+
+
+/* ----------------------------------------------------------
+   Dragula
+---------------------------------------------------------- */
+.dragula-container > div {
+    cursor: grab;
+}
+.gu-mirror {
+    cursor: grabbing;
+    opacity: .8;
+}
+.gu-hide    { display: none; }
+.gu-unselectable { user-select: none; }
+
+/* ----------------------------------------------------------
+   Visibilité archers (toggles)
+---------------------------------------------------------- */
+.qp-hidden-archers .nameArcher { display: none !important; }
+
+/* ============================================================
+   IMPRESSION
+   ============================================================ */
+#printHeader      { display: none; }
+#printBlasonRecap { display: none; }
+
+@media print {
+    @page { margin: 1cm; }
+
+    /* Masquer tout sauf les blocs d'impression */
+    .qp-picking-col,
+    .qp-bandeau,
+    table.Tabella,
+    #orderModal,
+    #targetsArea .btRm,
+    #targetsArea [id^="cb"] { display: none !important; }
+
+    /* Flux normal pour l'impression */
+    body, html { overflow: visible !important; height: auto !important; }
+    body { padding-top: 0; }
+
+    /* ---- PAGE 1 : page de garde bilan ---- */
+
+    /* Page de garde bilan — occupe toute la page 1 puis saut de page */
+    #printBlasonRecap {
+        display: block;
+        width: 100%;
+        padding-top: 1cm; /* espace sous l'en-tête fixe */
+        page-break-after: always;
+        break-after: page;
+    }
+    #printBlasonRecap .pbr-title {
+        font-size: 1.1em;
+        font-weight: bold;
+        margin-bottom: .4cm;
+    }
+
+    /* Tableau des blasons avec images généré par AJAX */
+    .pbr-print-table {
+        border-collapse: collapse;
+        width: auto;
+        font-size: .95em;
+    }
+    .pbr-print-table th,
+    .pbr-print-table td {
+        border: 1px solid #999;
+        padding: 4px 12px;
+        text-align: left;
+        vertical-align: middle;
+    }
+    .pbr-print-table th {
+        background: #eee;
+        font-weight: bold;
+    }
+    .pbr-svg-cell {
+        text-align: center;
+        vertical-align: middle;
+        padding: 4px 8px;
+    }
+    .pbr-svg-cell img {
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    /* ---- PAGES 2+ : en-tête répété (injecté par JS) + cibles ---- */
+
+    /* L'en-tête principal est masqué — les copies JS prennent le relais */
+    #printHeader {
+        display: none !important;
+    }
+
+    /* En-tête injecté par JS — commun */
+    .qp-print-page-header {
+        display: block !important;
+        width: 100%;
+        padding: .15cm 0 .2cm 0;
+        border-bottom: 2px solid #000;
+        margin-bottom: .3cm;
+        font-size: initial;
+        font-weight: bold;
+        page-break-before: always;
+        break-before: page;
+    }
+    /* Page de garde : pas de saut avant l'en-tête */
+    .qp-print-page-header--first {
+        page-break-before: auto;
+        break-before: auto;
+    }
+    .qp-layout {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    .qp-targets-col {
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    .qp-targets-area,
+    #targetsArea {
+        overflow: visible !important;
+        height: auto !important;
+        display: block !important;
+        font-size: 0;
+        padding-top: 0;
+    }
+
+    .qp-cible-wrap {
+        display: inline-block !important;
+        vertical-align: top;
+        font-size: initial;
+        page-break-inside: avoid;
+        break-inside:      avoid;
+        overflow: visible !important;
+        margin: 2px 2px 6px 2px;
+    }
+    .qp-cible-card,
+    .qp-cible-names {
+        page-break-inside: avoid;
+        break-inside:      avoid;
+        overflow: visible !important;
+    }
+
+    /* Masquer les noms d'archers à l'impression */
+    .nameArcher { display: none !important; }
+}
