@@ -1,6 +1,6 @@
 <?php
 
-if (!empty($on) && (subFeatureAcl($acl, AclCompetition, 'cSchedule') >= AclReadOnly)) {
+if (!empty($on) && (subFeatureAcl($acl, AclCompetition, 'cSchedule') >= AclReadOnly) && ($_SESSION['MenuFinIDo'] || $_SESSION['MenuFinTDo'])) {
     if (!isset($ret['MODS']['Tools'])) {
         $ret['MODS']['Tools'][] = 'Outils';
     }
