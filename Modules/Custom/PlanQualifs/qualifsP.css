@@ -103,6 +103,12 @@
     color: var(--text-muted);
     font-size: .9em;
 }
+.memberAffectedCount-hl {
+    font-weight: bolder;
+    color: red;
+}
+
+
 .qp-chevron {
     margin-left: auto;
     transition: transform .2s;
@@ -305,6 +311,18 @@
     outline: 2px solid var(--dark-red) !important;
     border-radius: 3px;
 }
+
+.pq-archer-hl {
+    box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 2px 7px rgba(0,0,0,.22);
+    position: relative;
+    transition: box-shadow .12s, opacity .12s, filter .12s;
+}
+.pq-archer-dim {
+    opacity: .60;
+    filter: grayscale(20%);
+    transition: opacity .12s, filter .12s;
+}
+
 
 /* ----------------------------------------------------------
    Dragula
