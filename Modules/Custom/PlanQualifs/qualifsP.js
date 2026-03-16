@@ -21,6 +21,7 @@ $(function () {
     pqInitHoverStructure();
 	pqInitHoverCategory();
 	pqInitHoverBlason();
+    $('#qpSearch').on('input', filterPickingList);
 });
 
 
@@ -77,11 +78,12 @@ function loadPickingList(container) {
 
 function loadOnePickingItem(elt) {
     $.get(QP_ROOT + 'ajax.php', {
-        action:  'pickingList',
-        sessId:  $('#departId').val(),
-        tfId:    $(elt).data('blason')   || '',
-        cat:     $(elt).data('category') || '',
-        sort:    QP_SORT
+        action:       'pickingList',
+        sessId:       $('#departId').val(),
+        tfId:         $(elt).data('blason')       || '',
+        blasonAlias:  $(elt).data('blasonAlias')  || '',
+        cat:          $(elt).data('category')     || '',
+        sort:         QP_SORT
     }, function (data) {
         $(elt).find('.blasonContent').html(data);
         var total    = $(elt).find('.blasonContent').children().length;
@@ -95,6 +97,7 @@ function loadOnePickingItem(elt) {
 			$(elt).closest('.qp-accordion-item').find('.memberAffectedCount').removeClass('memberAffectedCount-hl');
 		}
         hideAffectedSwitch();
+        filterPickingList();
         loadDragula();
     });
 }
@@ -169,11 +172,62 @@ function hideSwitch() {
 }
 
 function hideAffectedSwitch() {
+    // Si une recherche est active, laisser filterPickingList gérer la visibilité
+    if (($('#qpSearch').val() || '').trim()) {
+        filterPickingList();
+        return;
+    }
     if ($('#toggleAffected').prop('checked')) {
         $('#PickingList .affected').show();
     } else {
         $('#PickingList .affected').hide();
     }
+}
+
+/* ----------------------------------------------------------
+   Recherche dans la picking list (filtre live sur nom + structure)
+---------------------------------------------------------- */
+function filterPickingList() {
+    var q            = ($('#qpSearch').val() || '').toLowerCase().trim();
+    var showAffected = $('#toggleAffected').prop('checked');
+
+    $('#qpSearchClear').toggle(q.length > 0);
+
+    if (!q) {
+        // Pas de recherche : tout afficher puis appliquer le filtre "affectés"
+        $('#PickingList .qp-picker-item').show();
+        $('#PickingList .qp-accordion-item').show();
+        if (!showAffected) {
+            $('#PickingList .affected').hide();
+        }
+        return;
+    }
+
+    // Filtrer chaque archer sur nom et structure
+    $('#PickingList .qp-picker-item').each(function () {
+        var name   = ($(this).data('pq-name')        || '').toLowerCase();
+        var struct = ($(this).data('pq-struct-name') || '').toLowerCase();
+        var match  = name.indexOf(q) !== -1 || struct.indexOf(q) !== -1;
+        var isAffected = $(this).hasClass('affected');
+        $(this).toggle(match && (showAffected || !isAffected));
+    });
+
+    // Afficher/masquer chaque groupe selon s'il contient des archers correspondants
+    // NB : on contrôle le style inline de l'item (pas :visible qui dépend des ancêtres)
+    $('#PickingList .qp-accordion-item').each(function () {
+        var hasMatch = $(this).find('.qp-picker-item').filter(function () {
+            return this.style.display !== 'none';
+        }).length > 0;
+        $(this).toggle(hasMatch);
+        if (hasMatch) {
+            $(this).find('.qp-accordion-body').removeClass('qp-hidden');
+            $(this).addClass('qp-open');
+        }
+    });
+}
+
+function clearSearch() {
+    $('#qpSearch').val('').trigger('input');
 }
 
 /* ----------------------------------------------------------
@@ -214,16 +268,16 @@ function pqInitHoverCategory() {
 
 function pqInitHoverBlason() {
     $(document).on('mouseenter', '.pq-halo-blason', function () {
-        var blasonData = $(this).data('pq-blason');
+        var blasonAlias = $(this).data('pq-blason'); // contient l'alias (type physique)
         $('.pq-halo-archer').each(function () {
-            if ($(this).data('pq-blason') === blasonData) {
+            if ($(this).data('pq-blason-alias') === blasonAlias) {
                 $(this).addClass('pq-archer-hl').removeClass('pq-archer-dim');
             } else {
                 $(this).addClass('pq-archer-dim').removeClass('pq-archer-hl');
             }
         });
-		$('.pq-halo-blason').each(function () {
-            if ($(this).data('pq-blason') === blasonData) {
+        $('.pq-halo-blason').each(function () {
+            if ($(this).data('pq-blason') === blasonAlias) {
                 $(this).addClass('pq-archer-hl').removeClass('pq-archer-dim');
             } else {
                 $(this).addClass('pq-archer-dim').removeClass('pq-archer-hl');
@@ -232,7 +286,7 @@ function pqInitHoverBlason() {
     });
     $(document).on('mouseleave', '.pq-halo-blason', function () {
         $('.pq-halo-archer').removeClass('pq-archer-hl pq-archer-dim');
-		$('.pq-halo-blason').removeClass('pq-archer-hl pq-archer-dim');
+        $('.pq-halo-blason').removeClass('pq-archer-hl pq-archer-dim');
     });
 }
 
