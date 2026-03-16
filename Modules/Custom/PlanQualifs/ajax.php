@@ -163,10 +163,11 @@ switch ($action) {
     // Picking list : liste des archers (par blason ou par catégorie)
     // ---------------------------------------------------------------
     case 'pickingList':
-        $tfId   = isset($_GET['tfId'])  ? intval($_GET['tfId'])  : 0;
-        $cat    = isset($_GET['cat'])   ? trim($_GET['cat'])      : '';
-        $sort   = isset($_GET['sort'])  ? intval($_GET['sort'])   : 0;
-        $session = new QP_Session($tourId, $sessId, $tfId, 0, $cat);
+        $tfId        = isset($_GET['tfId'])        ? intval($_GET['tfId'])        : 0;
+        $cat         = isset($_GET['cat'])         ? trim($_GET['cat'])           : '';
+        $blasonAlias = isset($_GET['blasonAlias']) ? trim($_GET['blasonAlias'])   : '';
+        $sort        = isset($_GET['sort'])        ? intval($_GET['sort'])        : 0;
+        $session = new QP_Session($tourId, $sessId, $tfId, 0, $cat, $blasonAlias);
 
         foreach ($session->participants as $item):
             $bgcol    = 'bgstru' . $item->structId;
@@ -179,6 +180,9 @@ switch ($action) {
 			data-pq-struct="<?= $item->structId ?>"
 			data-pq-category="<?= $cat ?>"
 			data-pq-blason="<?= $item->blason->id ?>"
+			data-pq-blason-alias="<?= htmlspecialchars($item->blason ? $item->blason->displayName() : '', ENT_QUOTES) ?>"
+			data-pq-name="<?= htmlspecialchars($item->getNomCourt(), ENT_QUOTES) ?>"
+			data-pq-struct-name="<?= htmlspecialchars($item->structName, ENT_QUOTES) ?>"
 			>
               <input type="hidden" class="archerId"   value="<?= $item->id ?>">
               <input type="hidden" class="cibleNum"   value="<?= $item->target ?>">
@@ -251,8 +255,8 @@ switch ($action) {
 // ---------------------------------------------------------------
 function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 {
-    $warnColors = [0 => 'primary', 1 => 'success', 2 => 'warning', 3 => 'danger', 4 => 'danger'];
-    $warnLabels = [0 => 'libre', 1 => 'Complet', 2 => 'Struct majoritaire', 3 => 'Structure unique', 4 => 'Dist. mixtes'];
+    $warnColors = [0 => 'primary', 1 => 'success', 2 => 'warning', 3 => 'danger', 4 => 'danger', 5 => 'danger'];
+    $warnLabels = [0 => 'libre', 1 => 'Complet', 2 => 'Struct majoritaire', 3 => 'Structure unique', 4 => 'Dist. mixtes', 5 => 'Blason incompatible'];
     $wc = $warnColors[$cible->warnLevel] ?? 'primary';
     $wl = $warnLabels[$cible->warnLevel] ?? '';
     ?>
@@ -341,19 +345,27 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
           }
       }
 
-      // Blason unique pleine largeur : imgV>=4, même blason dans les 2 cols
+      // Blason unique pleine largeur : imgV>=4
+      // Col1 peut être vide (archers seulement en A/C) → on prend le premier blason disponible
       $blasonUnique = null;
       $col0first = $colBlasons[0][0]['blason'] ?? null;
       $col1first = $colBlasons[1][0]['blason'] ?? null;
-      if ($col0first && $col1first
-          && $col0first->id === $col1first->id
-          && $col0first->imgV >= 4) {
-          $blasonUnique = $col0first;
+      $refBlason = $col0first ?? $col1first;
+      if ($refBlason !== null
+          && $refBlason->imgV >= 4
+          && ($col0first === null || $col0first->id === $refBlason->id)
+          && ($col1first === null || $col1first->id === $refBlason->id)) {
+          $blasonUnique = $refBlason;
       }
 
+      // Alignement bas pour U11 (blason placé en bas de la cible physique)
+      $isU11 = false;
+      foreach ($cible->participants as $p) {
+          if (stripos($p->classe, 'U11') !== false) { $isU11 = true; break; }
+      }
       ?>
       <!-- Représentation blasons : hauteur fixe CSS (voir .qp-blasons-row) -->
-      <div class="qp-blasons-row">
+      <div class="qp-blasons-row" style="<?= $isU11 ? 'align-items:flex-end;' : '' ?>">
         <?php if ($hasBlason): ?>
           <?php if ($blasonUnique): ?>
             <!-- Blason pleine largeur (imgV>=4) -->
@@ -361,15 +373,18 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
             <div class="pq-halo-blason" style="flex:1; display:flex; flex-direction:column; align-items:center; <?= !$hasRealArcher ? 'opacity:.35;' : '' ?>"
 			data-pq-blason="<?= $blasonUnique->id ?>"
 			>
+              <?php if ($isU11): ?>
+              <div class="qp-cible-subtitle"><?= htmlspecialchars($blasonUnique->label) ?></div>
+              <?php endif; ?>
               <?php if ($svgBase): ?>
                 <img src="<?= htmlspecialchars($svgBase . $blasonUnique->svgFile) ?>"
                      alt="<?= htmlspecialchars($blasonUnique->label) ?>"
                      title="<?= htmlspecialchars($blasonUnique->name) ?>"
-                     style="width:<?= $blasonUnique->imgTaille ?>px; height:auto; display:block; margin:auto;">
+                     style="max-width:<?= $blasonUnique->imgTaille ?>px; max-height:106px; width:auto; height:auto; display:block; margin:auto;">
               <?php endif; ?>
-              <div style="font-size:.68em; text-align:center; color:#555; line-height:1.1;">
-                <?= htmlspecialchars($blasonUnique->label) ?>
-              </div>
+              <?php if (!$isU11): ?>
+              <div class="qp-cible-subtitle"><?= htmlspecialchars($blasonUnique->label) ?></div>
+              <?php endif; ?>
             </div>
           <?php else: ?>
             <!-- Blasons par colonne -->
@@ -395,9 +410,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
                            alt="<?= htmlspecialchars($blason->label) ?>"
                            title="<?= htmlspecialchars($blason->name) ?>"
                            style="width:<?= $blason->imgTaille ?>px; height:auto; display:block; margin:auto;">
-                      <div style="font-size:.68em; text-align:center; color:#555; line-height:1.1;">
-                        <?= htmlspecialchars($blason->label) ?>
-                      </div>
+                      <div class="qp-cible-subtitle"><?= htmlspecialchars($blason->label) ?></div>
                     </div>
                   <?php endif; ?>
                 <?php endforeach; ?>
@@ -434,6 +447,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 				data-pq-struct="<?= $vague->participant->structId ?>"
 				data-pq-category="<?= $vague->participant->getCategory() ?>"
 				data-pq-blason="<?= $vague->blason->id ?>"
+				data-pq-blason-alias="<?= htmlspecialchars($vague->blason ? $vague->blason->displayName() : '', ENT_QUOTES) ?>"
 				>
                   <input type="hidden" class="blasonType" value="<?= $blasonType ?>">
                   <input type="hidden" class="archerId"   value="<?= $vague->participant->id ?>">

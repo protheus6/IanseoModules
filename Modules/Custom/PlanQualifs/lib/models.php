@@ -97,6 +97,21 @@ class QP_Blason
         return ($this->alias !== '') ? $this->alias : $this->name;
     }
 
+    /**
+     * Clé de compatibilité physique : deux blasons avec la même clé
+     * peuvent coexister sur la même colonne d'une cible.
+     * CL et CO trispot 40 sont physiquement identiques → même clé.
+     */
+    public function physicalCompatKey(): string
+    {
+        static $compatMap = [
+            'TrgIndSmall-40'   => 'trispot40',
+            'TrgCOIndSmall-40' => 'trispot40',
+        ];
+        $key = $this->targetName . '-' . $this->diameter;
+        return $compatMap[$key] ?? $key;
+    }
+
     // Retourne fichier SVG + taille px pour une clé targetName-diameter
     public static function svgForKey(string $key): string
     {
@@ -245,13 +260,13 @@ class QP_Session
      * @param int    $cibleNum  Filtrer par numéro de cible (0 = toutes)
      * @param string $cat       Filtrer par catégorie ('' = toutes)
      */
-    public function __construct(int $tId, int $sessOrder = 1, int $tfId = 0, int $cibleNum = 0, string $cat = '')
+    public function __construct(int $tId, int $sessOrder = 1, int $tfId = 0, int $cibleNum = 0, string $cat = '', string $blasonAlias = '')
     {
         $this->tour  = new QP_TourInfo($tId);
         $this->order = $sessOrder;
         $this->loadSession();
         $this->loadBlasons();
-        $this->loadParticipants($tfId, $cibleNum, $cat);
+        $this->loadParticipants($tfId, $cibleNum, $cat, $blasonAlias);
         usort($this->participants, fn($a, $b) => strcmp($a->structName, $b->structName));
         usort($this->categories,  fn($a, $b) => strcmp($a->name, $b->name));
     }
@@ -342,7 +357,7 @@ class QP_Session
         }
     }
 
-    private function loadParticipants(int $tfId = 0, int $cibleNum = 0, string $cat = '')
+    private function loadParticipants(int $tfId = 0, int $cibleNum = 0, string $cat = '', string $blasonAlias = '')
     {
         $sql = "SELECT E.EnId, E.EnCode, E.EnDivision, E.EnClass,
                        E.EnCountry, E.EnName, E.EnFirstName,
@@ -388,6 +403,11 @@ class QP_Session
 
             // Filtre par catégorie si demandé
             if ($cat !== '' && $p->getCategory() !== $cat) {
+                continue;
+            }
+
+            // Filtre par alias de blason (groupe physique) si demandé
+            if ($blasonAlias !== '' && ($p->blason === null || $p->blason->displayName() !== $blasonAlias)) {
                 continue;
             }
 
@@ -661,6 +681,39 @@ class QP_Cible
         } else {
             $this->warnLevel = 0; // Libre
         }
+
+        // Blason incompatible : priorité maximale (écrase les autres niveaux)
+        if ($this->checkBlasonIncompatibility()) {
+            $this->warnLevel = 5;
+        }
+    }
+
+    /**
+     * Détecte les incompatibilités de blasons sur la cible :
+     * - Deux blasons différents dans la même colonne (A/C ou B/D)
+     * - Deux blasons pleine largeur (imgV>=4) différents entre les colonnes
+     */
+    private function checkBlasonIncompatibility(): bool
+    {
+        // Uniquement les vagues avec un archer réel (pas overlay)
+        $real = array_filter($this->vagues, fn($v) => isset($v->participant) && isset($v->blason) && !$v->overlay);
+        if (count($real) <= 1) return false;
+
+        $colAC = array_filter($real, fn($v) => in_array($v->order, [1, 3]));
+        $colBD = array_filter($real, fn($v) => in_array($v->order, [2, 4]));
+
+        // Blasons distincts dans la même colonne (par clé physique)
+        if (count(array_unique(array_map(fn($v) => $v->blason->physicalCompatKey(), $colAC))) > 1) return true;
+        if (count(array_unique(array_map(fn($v) => $v->blason->physicalCompatKey(), $colBD))) > 1) return true;
+
+        // Blasons pleine largeur (imgV>=4) différents entre les deux colonnes
+        $bAC = !empty($colAC) ? array_values($colAC)[0]->blason : null;
+        $bBD = !empty($colBD) ? array_values($colBD)[0]->blason : null;
+        if ($bAC && $bBD && $bAC->physicalCompatKey() !== $bBD->physicalCompatKey()) {
+            if ($bAC->imgV >= 4 || $bBD->imgV >= 4) return true;
+        }
+
+        return false;
     }
 
     public function makeVagues()

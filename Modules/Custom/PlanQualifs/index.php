@@ -148,6 +148,10 @@ include('Common/Templates/head.php');
 
   <!-- Colonne gauche : liste de picking -->
   <div class="qp-picking-col">
+    <div class="qp-search-wrap">
+      <input type="text" id="qpSearch" placeholder="Rechercher archer / structure…" autocomplete="off">
+      <span id="qpSearchClear" title="Effacer" onclick="clearSearch()">✕</span>
+    </div>
     <div id="PickingList" class="qp-picking-list">
       <?php if ($sortBy == 1): ?>
         <!-- Groupé par catégorie -->
@@ -174,14 +178,14 @@ include('Common/Templates/head.php');
           </div>
         <?php endforeach; ?>
       <?php else: ?>
-        <!-- Groupé par blason -->
-        <?php foreach ($session->blasonCount() as $blId => $blason): ?>
-          <div class="pq-halo-blason qp-accordion-item" id="tgl-<?= $blId ?>"
-		  data-pq-blason="<?= $blId ?>"
+        <!-- Groupé par blason (type physique) -->
+        <?php $blasonIdx = 0; foreach ($session->blasonCountGrouped() as $alias => $blason): $blasonIdx++; ?>
+          <div class="pq-halo-blason qp-accordion-item" id="tgl-<?= $blasonIdx ?>"
+		  data-pq-blason="<?= htmlspecialchars($alias, ENT_QUOTES) ?>"
 		  >
             <div class="qp-accordion-header"
                  onclick="qpToggle(this)">
-              <span><?= htmlspecialchars($blason->name) ?></span>
+              <span><?= htmlspecialchars($alias) ?></span>
               <span class="qp-counts">
                 (<span class="memberAffectedCount">-</span>/<span class="memberCount">-</span>)
               </span>
@@ -189,8 +193,9 @@ include('Common/Templates/head.php');
             </div>
             <div class="qp-accordion-body qp-hidden">
               <div class="ddsrc"
-                   id="blsItem-<?= $blId ?>"
-                   data-blason="<?= $blId ?>"
+                   id="blsItem-<?= $blasonIdx ?>"
+                   data-blason=""
+                   data-blason-alias="<?= htmlspecialchars($alias, ENT_QUOTES) ?>"
                    data-category="">
                 <div class="blasonContent dragula-container"></div>
               </div>
