@@ -16,6 +16,10 @@ if (safe_num_rows($_rs) == 1) {
 $_numDist  = $_tourRow ? intval($_tourRow->ToNumDist) : 1;
 $_sessions = GetSessions('Q');
 
+// ── Mode ISK-NG ──────────────────────────────────────────────────────────────
+$_iskMode     = getModuleParameter('ISK-NG', 'Mode', '');
+$_iskIsNgLite = ($_iskMode === 'ng-lite');
+
 // ── Données pour le tableau des feuilles de marque des finales ───────────────
 // Filtres venant des checkboxes
 $_fscOnlyToday  = !empty($_GET['fsc_today']);
@@ -116,7 +120,7 @@ foreach ($_fscSessions as $_sk => $_s) {
 	}
 }
 
-$_fscQRParam     = '';
+$_fscQRParam     = ($_iskIsNgLite && !$_fscFilled) ? '&amp;QRCode[]=ISK-NG' : '';
 $_fscFilledParam = $_fscFilled ? '&amp;ScoreFilled=1' : '';
 
 // ── Données pour le tableau des feuilles de marque des finales PAR ÉQUIPE ────
@@ -210,6 +214,7 @@ foreach ($_fstSessions as $_sk => $_s) {
 }
 
 $_fstFilledParam = $_fstFilled ? '&amp;ScoreFilled=1' : '';
+$_fstQRParam     = ($_iskIsNgLite && !$_fstFilled) ? '&amp;QRCode[]=ISK-NG' : '';
 
 $IncludeJquery = true;
 include('Common/Templates/head.php');
@@ -259,9 +264,9 @@ echo '<style>
 .acc-body.collapsed { display: none; }
 
 /* ── Statut des cellules feuilles de marque ── */
-.cell-done    { background:#d4edda !important; outline:2px solid #28a745; border-radius:4px; }
-.cell-ongoing { background:#cce5ff !important; outline:2px solid #0066cc; border-radius:4px; }
-.cell-waiting { background:#fff3cd !important; outline:2px solid #d4a017; border-radius:4px; }
+.cell-done    { background:#d4edda !important; outline:2px solid #28a745; border-radius:4px; transition: background 0.5s ease, outline-color 0.5s ease; }
+.cell-ongoing { background:#cce5ff !important; outline:2px solid #0066cc; border-radius:4px; transition: background 0.5s ease, outline-color 0.5s ease; }
+.cell-waiting { background:#fff3cd !important; outline:2px solid #d4a017; border-radius:4px; transition: background 0.5s ease, outline-color 0.5s ease; }
 </style>';
 echo '<script>
 $(function(){
@@ -461,6 +466,7 @@ echo "document.getElementById('hScoreDraw').value='Complete';";
 echo "document.getElementById('hScoreBarcode').value='1';";
 echo "document.getElementById('hPersonalScore').value='';";
 echo "document.getElementById('hScoreFilled').value='';";
+echo "var _q=document.getElementById('hQRCode');if(_q)_q.disabled=false;";
 echo '">' . $pdf_img . '&nbsp;Marque Vide</button>';
 echo '&nbsp;&nbsp;';
 
@@ -470,6 +476,7 @@ echo "document.getElementById('hScoreDraw').value='Draw';";
 echo "document.getElementById('hScoreBarcode').value='';";
 echo "document.getElementById('hPersonalScore').value='';";
 echo "document.getElementById('hScoreFilled').value='';";
+echo "var _q=document.getElementById('hQRCode');if(_q)_q.disabled=true;";
 echo '">' . $pdf_img . '&nbsp;Feuille Vierge</button>';
 echo '&nbsp;&nbsp;';
 
@@ -479,6 +486,7 @@ echo "document.getElementById('hScoreDraw').value='CompleteTotals';";
 echo "document.getElementById('hScoreBarcode').value='';";
 echo "document.getElementById('hPersonalScore').value='1';";
 echo "document.getElementById('hScoreFilled').value='1';";
+echo "var _q=document.getElementById('hQRCode');if(_q)_q.disabled=true;";
 echo '">' . $pdf_img . '&nbsp;Marque Complètes</button>';
 
 // Champs cachés dynamiques
@@ -486,6 +494,9 @@ echo '<input type="hidden" name="ScoreDraw"    id="hScoreDraw"    value="Complet
 echo '<input type="hidden" name="ScoreBarcode" id="hScoreBarcode" value="">';
 echo '<input type="hidden" name="PersonalScore" id="hPersonalScore" value="">';
 echo '<input type="hidden" name="ScoreFilled"  id="hScoreFilled"  value="">';
+if ($_iskIsNgLite) {
+	echo '<input type="hidden" name="QRCode[]" id="hQRCode" value="ISK-NG" disabled>';
+}
 
 echo '</form>';
 echo '</td></tr>';
@@ -581,7 +592,7 @@ if ($_SESSION['MenuFinIDo'] ) {
 				if (isset($_fscSes['cells'][$_fscEvCode])) {
 					$_fscCell      = $_fscSes['cells'][$_fscEvCode];
 					$_fscCellClass = 'cell-' . ($_fscCell['status'] ?? 'waiting');
-					echo '<td class="Center ' . $_fscCellClass . '" style="padding:4px 4px">';
+					echo '<td class="Center ' . $_fscCellClass . '" style="padding:4px 4px" data-section="ind" data-ses="' . htmlspecialchars($_fscSesKey) . '" data-ev="' . htmlspecialchars($_fscEvCode) . '">';
 					$_fscEvPhases = $_fscCell['phases'];
 					$_fscCellIcon = $_fscCell['printable'] ? $_fscPdfImgLarge : $_fscPdfImgSmall;
 					if (count($_fscEvPhases) === 1) {
@@ -643,7 +654,7 @@ if ($_SESSION['MenuFinIDo'] ) {
 				. '&amp;Barcode=1' . $_fscQRParam . $_fscFilledParam;
 			$_fscSesIcon  = $_fscSes['printable'] ? $_fscPdfImgLarge : $_fscPdfImgSmall;
 			$_fscSesClass = 'cell-' . ($_fscSes['status'] ?? 'waiting');
-			echo '<td class="Center ' . $_fscSesClass . '" style="padding:4px 4px">';
+			echo '<td class="Center ' . $_fscSesClass . '" style="padding:4px 4px" data-section="ind" data-ses="' . htmlspecialchars($_fscSesKey) . '" data-ses-total="1">';
 			echo '<a href="' . $_fscUrl . '" class="Link" target="PrintOut">'
 				. $_fscSesIcon
 				. '</a>';
@@ -744,7 +755,7 @@ if ($_SESSION['MenuFinTDo'] ) {
 				if (isset($_fstSes['cells'][$_fstEvCode])) {
 					$_fstCell      = $_fstSes['cells'][$_fstEvCode];
 					$_fstCellClass = 'cell-' . ($_fstCell['status'] ?? 'waiting');
-					echo '<td class="Center ' . $_fstCellClass . '" style="padding:4px 4px">';
+					echo '<td class="Center ' . $_fstCellClass . '" style="padding:4px 4px" data-section="team" data-ses="' . htmlspecialchars($_fstSesKey) . '" data-ev="' . htmlspecialchars($_fstEvCode) . '">';
 					$_fstEvPhases = $_fstCell['phases'];
 					$_fstCellIcon = $_fstCell['printable'] ? $_fstPdfImgLarge : $_fstPdfImgSmall;
 					if (count($_fstEvPhases) === 1) {
@@ -758,7 +769,7 @@ if ($_SESSION['MenuFinTDo'] ) {
 					$_fstUrl = $_fstBaseUrl
 						. '?Event=' . urlencode($_fstEvCode)
 						. $_fstPhPart
-						. '&amp;Barcode=1' . $_fstFilledParam;
+						. '&amp;Barcode=1' . $_fstQRParam . $_fstFilledParam;
 					echo '<a href="' . $_fstUrl . '" class="Link" target="PrintOut" title="' . htmlspecialchars($_fstPhTip) . '">'
 						. $_fstCellIcon
 						. '<br><small>' . htmlspecialchars($_fstPhTip) . '</small>'
@@ -798,10 +809,10 @@ if ($_SESSION['MenuFinTDo'] ) {
 		foreach ($_fstSessions as $_fstSesKey => $_fstSes) {
 			$_fstUrl = $_fstBaseUrl
 				. '?x_Session=' . urlencode($_fstSesKey)
-				. '&amp;Barcode=1' . $_fstFilledParam;
+				. '&amp;Barcode=1' . $_fstQRParam . $_fstFilledParam;
 			$_fstSesIcon  = $_fstSes['printable'] ? $_fstPdfImgLarge : $_fstPdfImgSmall;
 			$_fstSesClass = 'cell-' . ($_fstSes['status'] ?? 'waiting');
-			echo '<td class="Center ' . $_fstSesClass . '" style="padding:4px 4px">';
+			echo '<td class="Center ' . $_fstSesClass . '" style="padding:4px 4px" data-section="team" data-ses="' . htmlspecialchars($_fstSesKey) . '" data-ses-total="1">';
 			echo '<a href="' . $_fstUrl . '" class="Link" target="PrintOut">'
 				. $_fstSesIcon
 				. '</a>';
@@ -845,5 +856,70 @@ echo '</td></tr>';
 
 echo '</tbody>';
 echo '</table>';
+
+echo '<script>
+(function(){
+    var REFRESH_MS = 15000;
+    // Construire la query-string des filtres actifs
+    var qs = [];
+    if (document.querySelector("input[name=fsc_today]:checked"))      qs.push("fsc_today=1");
+    if (document.querySelector("input[name=fsc_unfinished]:checked")) qs.push("fsc_unfinished=1");
+    if (document.querySelector("input[name=fst_today]:checked"))      qs.push("fst_today=1");
+    if (document.querySelector("input[name=fst_unfinished]:checked")) qs.push("fst_unfinished=1");
+    var ajaxUrl = "AjaxFinStatus.php" + (qs.length ? "?" + qs.join("&") : "");
+
+    function updateCellClass(td, newStatus) {
+        var want = "cell-" + newStatus;
+        if (td.classList.contains(want)) return;
+        td.classList.remove("cell-done", "cell-ongoing", "cell-waiting");
+        td.classList.add(want);
+    }
+
+    function refreshStatuses() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", ajaxUrl, true);
+        xhr.onload = function() {
+            if (xhr.status !== 200) return;
+            try { var data = JSON.parse(xhr.responseText); } catch(e) { return; }
+
+            // Individual cells
+            if (data.ind) {
+                for (var ses in data.ind) {
+                    for (var ev in data.ind[ses]) {
+                        var td = document.querySelector("td[data-section=ind][data-ses=\"" + ses + "\"][data-ev=\"" + ev + "\"]");
+                        if (td) updateCellClass(td, data.ind[ses][ev]);
+                    }
+                }
+            }
+            // Individual session totals
+            if (data.indSes) {
+                for (var ses in data.indSes) {
+                    var td = document.querySelector("td[data-section=ind][data-ses=\"" + ses + "\"][data-ses-total]");
+                    if (td) updateCellClass(td, data.indSes[ses]);
+                }
+            }
+            // Team cells
+            if (data.team) {
+                for (var ses in data.team) {
+                    for (var ev in data.team[ses]) {
+                        var td = document.querySelector("td[data-section=team][data-ses=\"" + ses + "\"][data-ev=\"" + ev + "\"]");
+                        if (td) updateCellClass(td, data.team[ses][ev]);
+                    }
+                }
+            }
+            // Team session totals
+            if (data.teamSes) {
+                for (var ses in data.teamSes) {
+                    var td = document.querySelector("td[data-section=team][data-ses=\"" + ses + "\"][data-ses-total]");
+                    if (td) updateCellClass(td, data.teamSes[ses]);
+                }
+            }
+        };
+        xhr.send();
+    }
+
+    setInterval(refreshStatuses, REFRESH_MS);
+})();
+</script>';
 
 include('Common/Templates/tail.php');
