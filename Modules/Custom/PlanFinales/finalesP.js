@@ -358,9 +358,13 @@ function pfBuildSlotRows(slot, slotIdx) {
 
     // Respecter le nombre de vagues forcé manuellement (slot.waves)
     var forcedWaves = slot.waves || 1;
-    while (waveRowNums.length < forcedWaves) {
-        waveRowNums.push(waveRowNums.length);
+    // Remplir les indices manquants 0..forcedWaves-1.
+    // NOTE : on ne peut pas faire push(waveRowNums.length) car si waveRowNums=[1]
+    // (seule la vague CD existe), cela produirait [1,1] au lieu de [0,1].
+    for (var wri = 0; wri < forcedWaves; wri++) {
+        if (waveRowNums.indexOf(wri) < 0) waveRowNums.push(wri);
     }
+    waveRowNums.sort(function (a, b) { return a - b; });
     var totalWaves = waveRowNums.length;
 
     var html = '';
@@ -504,9 +508,26 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
 
     // Boutons dans l'en-tête
     h += '<span class="pf-tile-rm" onclick="pfRemoveTile(\'' + pfEsc(tileId) + '\',event)" title="Retirer cette phase">✕</span>';
-    // Bouton segment uniquement pour les blocs non-vague
+    // Bouton segmentation (blocs phase non-vague uniquement, si la tuile est segmentable)
     if (block.type === 'phase' && !isWaveBlk) {
-        h += '<span class="pf-tile-seg" onclick="pfSegmentTile(\'' + pfEsc(block.id) + '\',' + slotIdx + ',event)" title="Segmenter">⊕</span>';
+        var nM = (block.matches || []).length;
+        // Pas de segmentation sur les demi-tuiles _s0/_s1 (déjà segmentées).
+        // Pas de segmentation sur les blocs ×1 sans miroir réel (noMirrorMatchNo=true) :
+        // pour ces blocs, matchNo+1 appartient à une autre phase — créer un _s1 corromprait
+        // les données de cette autre phase lors de la sauvegarde.
+        var canSeg = !block._canonOnly && !block._mirrorOnly &&
+                     ((nM > 1) || (nM === 1 && block.twoPerTarget === false && !block.noMirrorMatchNo && (block.targetList || []).length >= 2));
+        if (canSeg) {
+            h += '<span class="pf-tile-seg" onclick="pfSegmentTile(\'' + pfEsc(block.id) + '\',' + slotIdx + ',event)" title="Segmenter">⊕</span>';
+        }
+    }
+    // Bouton bascule 1/2-archer-par-cible (tous les blocs phase individuel, vague ou non)
+    if (block.type === 'phase' && parseInt(block.teamEvent) !== 1) {
+        var twoLbl   = block.twoPerTarget === false ? '×1' : '×2';
+        var twoTitle = block.twoPerTarget === false
+            ? '1 archer/cible — cliquer pour passer à 2'
+            : '2 archers/cible — cliquer pour passer à 1';
+        h += '<span class="pf-tile-two" onclick="pfToggleTwoPerTarget(\'' + pfEsc(block.id) + '\',' + slotIdx + ',event)" title="' + twoTitle + '">' + twoLbl + '</span>';
     }
 
     // Titre + badge vague
@@ -566,19 +587,30 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
         var anyPlaced = false;
 
         if (block.twoPerTarget === false && !isTeam) {
-            // 1 archer par cible : pos1 dans la colonne canonique (match.target),
-            // pos2 dans la colonne miroir adjacente (match.target + 1).
+            // 1 archer par cible.
+            // _mirrorOnly → toujours pos2 en col 0 (target miroir = col de dépôt).
+            // _canonOnly  → toujours pos1 en col 0 (target canonical = col de dépôt).
+            // Tuile normale → pos1 dans la col du match.target, pos2 dans la col suivante.
             matchesToShow.forEach(function (m) {
-                var colIdx = pfData.targets.indexOf(m.target);
-                var rel    = colIdx - startCol;
-                if (rel >= 0 && rel < span) {
-                    colSlots[rel].push({ pos1: m.pos1, _solo: true });
+                if (block._mirrorOnly) {
+                    colSlots[0].push({ pos1: m.pos2, _solo: true });
                     anyPlaced = true;
-                }
-                // Miroir = colonne suivante
-                var relMirror = rel + 1;
-                if (relMirror >= 0 && relMirror < span) {
-                    colSlots[relMirror].push({ pos1: m.pos2, _solo: true });
+                } else if (block._canonOnly) {
+                    colSlots[0].push({ pos1: m.pos1, _solo: true });
+                    anyPlaced = true;
+                } else {
+                    var colIdx = pfData.targets.indexOf(m.target);
+                    var rel    = colIdx - startCol;
+                    if (rel >= 0 && rel < span) {
+                        colSlots[rel].push({ pos1: m.pos1, _solo: true });
+                        anyPlaced = true;
+                    }
+                    // Miroir = colonne suivante
+                    var relMirror = rel + 1;
+                    if (relMirror >= 0 && relMirror < span) {
+                        colSlots[relMirror].push({ pos1: m.pos2, _solo: true });
+                        anyPlaced = true;
+                    }
                 }
             });
         } else {
@@ -715,17 +747,11 @@ function pfFetchBlock(blockId, slotIdx) {
     var siblings = [];
 
     if (foundInSlot) {
-        var remaining = [];
-        foundInSlot.blocks.forEach(function (b) {
-            var match = isWaveBlock
-                // vague : regrouper tous les sous-blocs partageant le même baseBlockId
-                ? (b.baseBlockId === baseId && (b.id === baseId || waveSubRx.test(b.id)))
-                // non-vague : uniquement le bloc lui-même
-                : (b.id === foundBlk.id);
-            if (match) siblings.push(b);
-            else remaining.push(b);
-        });
-        foundInSlot.blocks = remaining;
+        // Bloc dans un créneau planifié : retirer UNIQUEMENT ce bloc.
+        // Les sous-blocs de vague (AB / CD) sont gérés indépendamment dans la grille ;
+        // on ne les fusionne pas ici pour ne pas déplacer accidentellement les siblings.
+        foundInSlot.blocks = foundInSlot.blocks.filter(function (b) { return b.id !== foundBlk.id; });
+        return foundBlk;
     } else {
         var uRemaining = [];
         pfData.unscheduled.forEach(function (b) {
@@ -843,6 +869,10 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
     blk._newDate = dstSlot.date;
     blk._newTime = dstSlot.time;
 
+    // Pour les équipes, le miroir iAnseo (canonical+1) ne s'applique pas :
+    // chaque équipe a son propre matchNo dans FinSchedule.
+    var isTeamBlk = parseInt(blk.teamEvent) === 1;
+
     // Recalculer le span
     var segs, seg, span;
     if (blk.type === 'training') {
@@ -860,7 +890,13 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
             // ignorer _segments (stale), span = nombre de matches
             // × 2 si "1 archer par cible" (chaque match occupe 2 colonnes adjacentes)
             var matchCount = (blk.matches && blk.matches.length) || 1;
-            span = blk.twoPerTarget === false ? matchCount * 2 : matchCount;
+            // Le miroir (×2) ne s'applique qu'aux individuels ; pour les équipes, 1 cible/match.
+            // Demi-tuile _s0/_s1 : toujours 1 colonne (ne pas doubler).
+            if (blk._canonOnly || blk._mirrorOnly) {
+                span = 1;
+            } else {
+                span = (blk.twoPerTarget === false && !isTeamBlk) ? matchCount * 2 : matchCount;
+            }
         }
     }
 
@@ -882,10 +918,31 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
         // Pour "1 archer par cible" (twoPerTarget=false) :
         //   chaque match canonique → colonne paire (0, 2, 4…), la colonne impaire étant
         //   réservée au miroir iAnseo (écrit par le serveur lors du save).
+        // Cas spécial : demi-tuile miroir (_s1 après segmentation d'un match ×1) :
+        //   m.target absent de targetList → la colonne de dépôt est la colonne miroir.
+        //   Le target canonique = colonne miroir - 1.
         // Pour "2 archers par cible" (twoPerTarget=true) : assignement habituel (mi % span).
+        // Flag explicite prioritaire sur la heuristique (target absent de targetList).
+        // _mirrorOnly = demi-tuile miroir (_s1), _canonOnly = demi-tuile canonique (_s0).
+        var isMirrorHalf;
+        if (blk._mirrorOnly) {
+            isMirrorHalf = true;
+        } else if (blk._canonOnly) {
+            isMirrorHalf = false;
+        } else {
+            isMirrorHalf = (blk.twoPerTarget === false && !isTeamBlk
+                            && segMatches.length === 1
+                            && segMatches[0].target > 0   // target=0 = non-planifié → toujours canonical
+                            && (blk.targetList || []).indexOf(segMatches[0].target) < 0);
+        }
         for (var mi = 0; mi < segMatches.length; mi++) {
-            var tgtIdx = (blk.twoPerTarget === false) ? (mi * 2) : (mi % newTargets.length);
-            segMatches[mi].target = newTargets[tgtIdx % newTargets.length] || newTargets[0];
+            if (isMirrorHalf) {
+                // Colonne de dépôt = miroir → canonical = miroir - 1
+                segMatches[mi].target = (newTargets[0] || 2) - 1;
+            } else {
+                var tgtIdx = (blk.twoPerTarget === false && !isTeamBlk) ? (mi * 2) : (mi % newTargets.length);
+                segMatches[mi].target = newTargets[tgtIdx % newTargets.length] || newTargets[0];
+            }
         }
 
         // Nombre de vagues nécessaires
@@ -915,8 +972,8 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
             // Pour twoPerTarget=false (1 archer/cible), chaque match canonique occupe 2 colonnes
             // adjacentes (la sienne + celle du miroir iAnseo). newTargets a déjà été calculé
             // avec span×2, donc on l'utilise directement comme targetList.
-            if (blk.twoPerTarget === false) {
-                blk.targetList = newTargets.slice();   // [col, col+1] déjà calculé
+            if (blk.twoPerTarget === false && !isTeamBlk) {
+                blk.targetList = newTargets.slice();   // [col, col+1] déjà calculé (ind. seulement)
             } else {
                 blk.targetList = blk.matches.map(function (m) { return m.target; })
                                              .filter(function (t) { return t > 0; });
@@ -1297,9 +1354,16 @@ function pfRemoveTileById(blockId, slotIdx) {
     if (!blk) return;
 
     blk.targetList = [];
-    if (blk.type === 'phase') blk.matches && blk.matches.forEach(function (m) { m.target = 0; });
-
-    pfData.unscheduled.push(blk);
+    if (blk.type === 'phase') {
+        blk.matches && blk.matches.forEach(function (m) { m.target = 0; });
+        // Demi-tuile _s0/_s1 : fusionner dans le bloc de base (sans suffixe _s0/_s1)
+        var unschId = (blk._canonOnly || blk._mirrorOnly)
+            ? blockId.replace(/_s[01]$/, '')
+            : blockId;
+        pfAddToUnscheduled(unschId, blk, blk.matches || []);
+    } else {
+        pfData.unscheduled.push(blk);
+    }
     pfRender();
     pfRefreshDragula();
     pfLoadUnscheduled();
@@ -1319,11 +1383,19 @@ function pfAddToUnscheduled(blockId, blkTemplate, matches) {
         }
     }
     if (existing) {
-        // Fusionner les matches dans l'entrée existante
+        // Fusionner les matches dans l'entrée existante (dédupliquer par matchNo)
         matches.forEach(function (m) {
-            existing.matches.push({ matchNo: m.matchNo, pos1: m.pos1, pos2: m.pos2, target: 0 });
+            var isDup = (existing.matches || []).some(function (em) { return em.matchNo === m.matchNo; });
+            if (!isDup) {
+                (existing.matches = existing.matches || []).push(
+                    { matchNo: m.matchNo, pos1: m.pos1, pos2: m.pos2, target: 0 }
+                );
+            }
         });
         existing.matches.sort(function (a, b) { return a.matchNo - b.matchNo; });
+        // Nettoyer les flags de demi-tuile (les deux moitiés sont maintenant réunies)
+        delete existing._canonOnly;
+        delete existing._mirrorOnly;
     } else {
         // Créer une nouvelle entrée avec l'id d'origine (pas _r0, _r1…)
         var unBlk = JSON.parse(JSON.stringify(blkTemplate));
@@ -1331,9 +1403,19 @@ function pfAddToUnscheduled(blockId, blkTemplate, matches) {
         unBlk.matches    = matches.map(function (m) {
             return { matchNo: m.matchNo, pos1: m.pos1, pos2: m.pos2, target: 0 };
         });
+        // Dédupliquer par matchNo (cas _s0/_s1 avec même match)
+        var seenNos = {};
+        unBlk.matches = unBlk.matches.filter(function (m) {
+            if (seenNos[m.matchNo]) return false;
+            seenNos[m.matchNo] = true;
+            return true;
+        });
         unBlk.targetList = [];
         delete unBlk.baseBlockId;
         delete unBlk._segments;
+        // Nettoyer les flags de demi-tuile pour que le bloc soit traité normalement
+        delete unBlk._canonOnly;
+        delete unBlk._mirrorOnly;
         pfData.unscheduled.push(unBlk);
     }
 }
@@ -1396,7 +1478,11 @@ function pfRemoveTile(tileId, e) {
         blk.targetList = [];
         if (blk.type === 'phase') {
             (blk.matches || []).forEach(function (m) { m.target = 0; });
-            pfAddToUnscheduled(blockId, blk, blk.matches || []);
+            // Demi-tuile _s0/_s1 : fusionner dans le bloc de base (sans suffixe _s0/_s1)
+            var unschId = (blk._canonOnly || blk._mirrorOnly)
+                ? blockId.replace(/_s[01]$/, '')
+                : blockId;
+            pfAddToUnscheduled(unschId, blk, blk.matches || []);
         } else {
             pfData.unscheduled.push(blk);
         }
@@ -1421,15 +1507,30 @@ function pfSegmentTile(blockId, slotIdx, e) {
     if (!blk || blk.type !== 'phase') return;
 
     var nMatches = blk.matches.length;
-    if (nMatches < 2) { return; }  // déjà 1 seul match, rien à faire
-
     var tl = blk.targetList || [];
     var T  = tl.length;
-    var N  = nMatches;
 
-    // Distribuer les cibles entre les segments (répartition équitable)
-    // Segment i reçoit les cibles de l'index [i*T/N … (i+1)*T/N - 1]
-    var newBlocks = blk.matches.map(function (m, i) {
+    var newBlocks;
+    if (nMatches === 1 && blk.twoPerTarget === false) {
+        // ×1 (1 archer/cible) : 1 match occupe 2 colonnes (canonical + miroir).
+        // Segmenter en 2 sous-tuiles : colonne canonical (pos1) + colonne miroir (pos2).
+        newBlocks = [0, 1].map(function (i) {
+            var seg = JSON.parse(JSON.stringify(blk));
+            seg.id         = blk.id + '_s' + i;
+            seg.matches    = [JSON.parse(JSON.stringify(blk.matches[0]))];
+            delete seg.baseBlockId;
+            delete seg._segments;
+            seg.targetList = tl.slice(i, i + 1);
+            // Marquer pour la persistance côté PHP
+            if (i === 0) { seg._canonOnly  = true;  delete seg._mirrorOnly; }
+            else          { seg._mirrorOnly = true;  delete seg._canonOnly;  }
+            return seg;
+        });
+    } else if (nMatches >= 2) {
+        // Cas normal : distribuer les cibles entre les segments (répartition équitable)
+        // Segment i reçoit les cibles de l'index [i*T/N … (i+1)*T/N - 1]
+        var N = nMatches;
+        newBlocks = blk.matches.map(function (m, i) {
         var seg = JSON.parse(JSON.stringify(blk));
         seg.id      = blk.id + '_s' + i;
         seg.matches = [JSON.parse(JSON.stringify(m))];
@@ -1443,7 +1544,10 @@ function pfSegmentTile(blockId, slotIdx, e) {
         seg.targetList = (T > 0) ? tl.slice(from, to) : [];
 
         return seg;
-    });
+        });
+    } else {
+        return;  // nMatches < 2 et twoPerTarget !== false → rien à faire
+    }
 
     // Remplacer le bloc original par les segments
     slot.blocks.splice(blkIdx, 1);
@@ -1453,6 +1557,61 @@ function pfSegmentTile(blockId, slotIdx, e) {
     pfRender();
     pfRefreshDragula();
     pfLoadUnscheduled();
+}
+
+/* ============================================================
+   Bascule 1 archer / 2 archers par cible
+   ============================================================ */
+function pfToggleTwoPerTarget(blockId, slotIdx, e) {
+    e && e.stopPropagation();
+    var blk = null;
+    if (slotIdx >= 0 && pfData.slots[slotIdx]) {
+        pfData.slots[slotIdx].blocks.forEach(function (b) {
+            if (b.id === blockId) blk = b;
+        });
+    }
+    if (!blk || blk.type !== 'phase') return;
+
+    // Basculer : false (×1) → true (×2) et vice-versa
+    var newVal = (blk.twoPerTarget === false);   // false→true, true→false
+
+    // Applique twoPerTarget + reconstruit targetList pour un bloc donné
+    function applyToggle(b) {
+        b.twoPerTarget = newVal;
+        if (b.matches && b.matches.length > 0) {
+            var tSet = {}, tl = [];
+            b.matches.forEach(function (m) {
+                if (m.target > 0 && !tSet[m.target]) {
+                    tSet[m.target] = true;
+                    tl.push(m.target);
+                    if (!newVal) {                      // ×1 : ajouter la colonne miroir
+                        var mirror = m.target + 1;
+                        if (!tSet[mirror]) { tSet[mirror] = true; tl.push(mirror); }
+                    }
+                }
+            });
+            tl.sort(function (a, b) {
+                return pfData.targets.indexOf(a) - pfData.targets.indexOf(b);
+            });
+            b.targetList = tl;
+        }
+    }
+
+    applyToggle(blk);
+
+    // Propager aux siblings de vague (même baseBlockId) dans le même créneau
+    var baseId = blk.baseBlockId || blk.id;
+    pfData.slots[slotIdx].blocks.forEach(function (b) {
+        if (b !== blk && b.type === 'phase') {
+            var bBase = b.baseBlockId || b.id;
+            if (bBase === baseId) applyToggle(b);
+        }
+    });
+
+    pfDirty = true;
+    pfStatus('Modifications non sauvegardées', '');
+    pfRender();
+    pfRefreshDragula();
 }
 
 /* ============================================================
@@ -1495,8 +1654,17 @@ function pfMergeUnscheduledSegments() {
         merged.id         = baseId;
         merged.targetList = [];
         merged.matches    = [];
+        delete merged._canonOnly;
+        delete merged._mirrorOnly;
+        var seenMatchNos = {};
         segs.forEach(function (s) {
-            (s.matches || []).forEach(function (m) { merged.matches.push(m); });
+            (s.matches || []).forEach(function (m) {
+                // Dédupliquer par matchNo (cas _s0/_s1 avec même match ×1)
+                if (!seenMatchNos[m.matchNo]) {
+                    seenMatchNos[m.matchNo] = true;
+                    merged.matches.push({ matchNo: m.matchNo, pos1: m.pos1, pos2: m.pos2, target: 0 });
+                }
+            });
         });
 
         // Retirer tous les segments et ajouter le bloc fusionné
