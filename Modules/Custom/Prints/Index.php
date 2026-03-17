@@ -394,6 +394,29 @@ foreach ($_sessions as $s) {
 }
 echo '</td></tr>';
 
+// ── Paiements ─────────────────────────────────────────────────────────────────────
+echo '<tr class="acc-header"><th class="SubTitle">Status Paiements</th></tr>';
+echo '<tr class="acc-body"><td class="Center" style="padding:8px">';
+echo '	<a href="../../../Accreditation/PrnSession.php?OperationType=Payments&Submit=Ok" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Tous les départs</a>';
+foreach ($_sessions as $s) {
+	echo '	&nbsp;&nbsp;';
+	echo '	<a href="../../../Accreditation/PrnSession.php?OperationType=Payments&Submit=Ok&Session=' . $s->SesOrder . '" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;' . htmlspecialchars($s->Descr) . '</a>';
+}
+echo '</td></tr>';
+
+
+// ── Control materiel ─────────────────────────────────────────────────────────────────────
+echo '<tr class="acc-header"><th class="SubTitle">Control matériel</th></tr>';
+echo '<tr class="acc-body"><td class="Center" style="padding:8px">';
+echo '	<a href="../../../Accreditation/PrnSession.php?OperationType=ControlMaterial&Submit=Ok" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Tous les départs</a>';
+foreach ($_sessions as $s) {
+	echo '	&nbsp;&nbsp;';
+	echo '	<a href="../../../Accreditation/PrnSession.php?OperationType=ControlMaterial&Submit=Ok&Session=' . $s->SesOrder . '" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;' . htmlspecialchars($s->Descr) . '</a>';
+}
+echo '</td></tr>';
+
+
+
 echo '<tr class="acc-title"><th class="Title">Qualification</th></tr>';
 
 // ── Feuilles de marque ────────────────────────────────────────────────────────

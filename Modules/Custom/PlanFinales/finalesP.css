@@ -654,6 +654,20 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 }
 .pf-tile-seg:hover { opacity: 1; color: #00a; }
 
+/* Bouton bascule 1/2 archers par cible */
+.pf-tile-two {
+    position: absolute;
+    bottom: 2px; left: 3px;
+    font-size: .72em;
+    cursor: pointer;
+    opacity: .5;
+    z-index: 1;
+    color: #333;
+    line-height: 1;
+    font-weight: bold;
+}
+.pf-tile-two:hover { opacity: 1; color: #00a; }
+
 /* Zone blason (optionnel) */
 .pf-tile-svg {
     display: none;
@@ -861,7 +875,7 @@ tr.pf-wave-row .pf-drop-zone {
 
     /* Masquer tout ce qui n'est pas la grille */
     .pf-toolbar, .pf-config-col, .pf-grid-actions,
-    .pf-tile-rm, .pf-tile-seg, .pf-training-resize,
+    .pf-tile-rm, .pf-tile-seg, .pf-tile-two, .pf-training-resize,
     .pf-slot-wave-strip, .pf-slot-inputs, .pf-slot-edit-btn,
     .pf-rm-col, .pf-slot-rm-btn, .pf-slot-clear-btn, .pf-th-add, .pf-cell-add { display: none !important; }
     .pf-tile-hl  { box-shadow: none !important; z-index: auto !important; }
