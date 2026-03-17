@@ -79,6 +79,8 @@ class PF_Block
     public $waveRow      = 0;    // 0 = vague A (AB), 1 = vague B (CD)
     public $baseBlockId  = '';   // id du bloc de base (même pour bloc A et sous-bloc _w1)
     public $twoPerTarget = true; // false = 1 archer par cible (EvFinalAthTarget bit=0)
+    public $canonOnly  = false; // true = demi-tuile canonique (_s0) après segmentation ×1
+    public $mirrorOnly = false; // true = demi-tuile miroir (_s1) après segmentation ×1
 }
 
 // ---------------------------------------------------------------
@@ -151,6 +153,7 @@ class PF_Plan
         $tId      = $this->tour->id;
         $slotsMap = [];
         $usedTargets = [];
+
 
         // --- Phases individuelles ---
         $sqlInd = "SELECT e.EvCode, e.EvEventName, e.EvFinalFirstPhase, e.EvFinalAthTarget,
@@ -264,19 +267,6 @@ class PF_Plan
         $maxT = max($maxT, 16);
         $this->targets = range(1, $maxT);
 
-        // --- Charger config persistée (cibles + créneaux vides) ---
-        $saved = $this->loadSavedConfig();
-        if (!empty($saved['targets'])) {
-            $this->targets = $saved['targets'];
-        }
-        // Fusionner les créneaux vides sauvegardés
-        foreach ($saved['emptySlots'] ?? [] as $es) {
-            $key = $es['date'] . '|' . $es['time'] . '|' . intval($es['duration']);
-            if (!isset($slotsMap[$key])) {
-                $slotsMap[$key] = ['date' => $es['date'], 'time' => $es['time'],
-                                   'duration' => intval($es['duration']), 'blocks' => []];
-            }
-        }
 
         // --- Trier et créer les PF_Slot ---
         ksort($slotsMap);
@@ -347,6 +337,65 @@ class PF_Plan
 
             if ($target > 0) {
                 $usedTargets[$target] = true;
+            }
+        }
+
+        // --- Détecter les tuiles ×1 splittées (cible miroir non-consécutive) ---
+        // Pour chaque matchNo canonique d'une phase ×1 individuelle, récupérer la cible
+        // du miroir (matchNo+1) depuis FinSchedule. Si mirrorTarget ≠ canonTarget+1 ou
+        // si les créneaux diffèrent → la tuile a été splittée → deux sous-blocs séparés.
+        // [evCode][mirrorMatchNo => ['target','date','time','dur']]
+        // IMPORTANT : indexé par (evCode, matchNo) pour éviter la collision entre événements
+        // qui partagent les mêmes numéros de matchNo (ex : ScratchHCO et ScratchFCO ont tous
+        // deux un matchNo=4 — sans la clé evCode, l'un écrase l'autre et provoque de faux splits).
+        //
+        // IMPORTANT 2 : pour certains brackets (ex. Bronze en ×1), matchNo+1 peut coïncider
+        // avec le matchNo CANONIQUE d'une autre phase (ex. Bronze matchNo=3, Semis matchNo=4).
+        // Dans ce cas, matchNo+1 n'est pas un miroir réel — l'inclure dans mirrorSchedule
+        // produirait un faux split en lisant le créneau FinSchedule de l'autre phase.
+        // On filtre donc tout mirrorNo qui est lui-même un canonique d'une phase quelconque.
+        $allPhaseCanonicalsPerEv = [];  // [evCode][matchNo] = true
+        foreach ($evPhases as $evCode => $phases) {
+            $allPhaseCanonicalsPerEv[$evCode] = [];
+            foreach ($phases as $phase => $pd) {
+                foreach ($pd['matchMap'] as $matchNo => $m) {
+                    $allPhaseCanonicalsPerEv[$evCode][intval($matchNo)] = true;
+                }
+            }
+        }
+
+        $mirrorSchedule   = [];
+        $mirrorNosToFetch = [];  // [evCode => [mirrorMatchNo, ...]]
+        foreach ($evPhases as $evCode => $phases) {
+            foreach ($phases as $phase => $pd) {
+                if ($pd['twoPerTarget'] || $pd['teamEvent'] !== 0) continue;
+                foreach ($pd['matchMap'] as $matchNo => $m) {
+                    if ($m->target > 0) {
+                        $mirrorNo = intval($matchNo) + 1;
+                        // Ne pas chercher un miroir si mirrorNo est lui-même un canonique
+                        // d'une autre phase (évite le faux split Bronze↔Semis).
+                        if (!isset($allPhaseCanonicalsPerEv[$evCode][$mirrorNo])) {
+                            $mirrorNosToFetch[$evCode][] = $mirrorNo;
+                        }
+                    }
+                }
+            }
+        }
+        foreach ($mirrorNosToFetch as $evCode => $nos) {
+            $inList = implode(',', array_unique($nos));
+            $evCodeSafe = StrSafe_DB($evCode);
+            $rsm = safe_r_sql("SELECT FSMatchNo, FSTarget, FSScheduledDate, FSScheduledTime, FSScheduledLen
+                               FROM FinSchedule
+                               WHERE FSTournament=" . intval($this->tour->id) . "
+                               AND FSEvent=$evCodeSafe
+                               AND FSMatchNo IN ($inList)");
+            while ($rm = safe_fetch($rsm)) {
+                $mirrorSchedule[$evCode][intval($rm->FSMatchNo)] = [
+                    'target' => intval($rm->FSTarget),
+                    'date'   => $rm->FSScheduledDate ?? null,
+                    'time'   => substr($rm->FSScheduledTime ?? '00:00:00', 0, 5),
+                    'dur'    => intval($rm->FSScheduledLen) ?: 30,
+                ];
             }
         }
 
@@ -421,6 +470,38 @@ class PF_Plan
                     $matches = array_values($pd['matchMap']);
                 }
 
+                // --- Séparer les matches splittés (miroir à cible non-consécutive) ---
+                // Pour les phases ×1 individuelles : si matchNo miroir (N+1) est dans un
+                // créneau ou à une cible différente de canonical+1 → tuile splittée.
+                $splitPairs = [];
+                if (!$pd['twoPerTarget'] && $pd['teamEvent'] === 0) {
+                    $filteredMatches = [];
+                    foreach ($matches as $m) {
+                        $mirrorNo   = $m->matchNo + 1;
+                        $canonSched = $pd['schedByMatch'][$m->matchNo] ?? null;
+                        if ($m->target > 0 && isset($mirrorSchedule[$evCode][$mirrorNo]) && $canonSched) {
+                            $mi        = $mirrorSchedule[$evCode][$mirrorNo];
+                            $canonKey  = $canonSched['date'] . '|' . $canonSched['time'] . '|' . $canonSched['dur'];
+                            $mirrorKey = ($mi['date'] ?? '') . '|' . ($mi['time'] ?? '') . '|' . ($mi['dur'] ?? 30);
+                            // Split réel : cible miroir valide (>0) et non-consécutive,
+                            // OU créneaux différents (date miroir non-null).
+                            // Si la cible miroir est 0/NULL (non-assignée), ce n'est pas un split
+                            // (données incomplètes — la prochaine sauvegarde corrigera la cible miroir).
+                            $isSplit = $mi['target'] > 0
+                                       && (($mi['target'] !== $m->target + 1)
+                                           || ($mi['date'] !== null && $canonKey !== $mirrorKey));
+                            if ($isSplit) {
+                                $splitPairs[] = ['match' => $m, 'mirrorInfo' => $mi, 'canonSched' => $canonSched];
+                            } else {
+                                $filteredMatches[] = $m;
+                            }
+                        } else {
+                            $filteredMatches[] = $m;
+                        }
+                    }
+                    $matches = $filteredMatches;
+                }
+
                 $rawName   = namePhase($pd['startPhase'], $phase);
                 $phaseName = $this->formatPhaseName(intval($rawName));
 
@@ -436,15 +517,36 @@ class PF_Plan
                 $block->matches      = $matches;
                 $block->twoPerTarget = $pd['twoPerTarget'];
 
+                // Marquer les blocs ×1 individuels dont le mirrorNo (matchNo+1) est le canonique
+                // d'une autre phase (ex. Bronze matchNo=3, mirrorNo=4 = Demis).
+                // Dans ce cas, il n'existe pas de FinSchedule "miroir" séparé : le match occupe
+                // 2 colonnes (canonical + canonical+1) mais n'a qu'une seule entrée FinSchedule.
+                // Le client utilise ce flag pour désactiver la segmentation (_s0/_s1).
+                if (!$pd['twoPerTarget'] && $pd['teamEvent'] === 0 && !empty($matches)) {
+                    $allMirrorsAreCanonicals = true;
+                    foreach ($matches as $m) {
+                        $mirNo = $m->matchNo + 1;
+                        if (!isset($allPhaseCanonicalsPerEv[$evCode][$mirNo])) {
+                            $allMirrorsAreCanonicals = false;
+                            break;
+                        }
+                    }
+                    if ($allMirrorsAreCanonicals) {
+                        $block->noMirrorMatchNo = true;
+                    }
+                }
+
                 // Construire targetList.
-                // Pour "1 archer par cible" (twoPerTarget=false) : chaque match canonique
-                // occupe sa propre cible ET la cible du miroir (canonical+1 dans iAnseo).
+                // Pour "1 archer par cible" (twoPerTarget=false) en individuel : chaque match
+                // canonique occupe sa propre cible ET la cible du miroir (canonical+1 dans iAnseo).
+                // Pour les équipes : pas de miroir — chaque équipe a son propre matchNo dans
+                // FinSchedule et occupe directement sa cible canonique.
                 $targets = [];
                 foreach ($matches as $m) {
                     if ($m->target > 0) {
                         $targets[] = $m->target;
-                        if (!$pd['twoPerTarget']) {
-                            $targets[] = $m->target + 1;  // cible du matchNo miroir (pair+1)
+                        if (!$pd['twoPerTarget'] && $pd['teamEvent'] === 0) {
+                            $targets[] = $m->target + 1;  // cible du matchNo miroir (ind. seulement)
                         }
                     }
                 }
@@ -487,28 +589,42 @@ class PF_Plan
 
                         // Sous-bloc vague A (waveRow=0)
                         if (!empty($matchesA)) {
-                            $blockA              = clone $block;
-                            $blockA->matches     = $matchesA;
-                            $blockA->targetList  = array_values(array_unique(array_filter(
-                                array_map(fn($m) => $m->target, $matchesA)
-                            )));
+                            $blockA          = clone $block;
+                            $blockA->matches = $matchesA;
+                            $tgtsA = [];
+                            foreach ($matchesA as $m) {
+                                if ($m->target > 0) {
+                                    $tgtsA[] = $m->target;
+                                    if (!$pd['twoPerTarget'] && $pd['teamEvent'] === 0) {
+                                        $tgtsA[] = $m->target + 1;
+                                    }
+                                }
+                            }
+                            $blockA->targetList  = array_values(array_unique($tgtsA));
                             sort($blockA->targetList);
                             $blockA->waveRow     = 0;
-                            $blockA->baseBlockId = $baseId;  // ← pfFetchBlock en a besoin
+                            $blockA->baseBlockId = $baseId;
                             $slotsMap[$key]['blocks'][] = $blockA;
                         }
 
                         // Sous-bloc vague B (waveRow=1), id suffixé _w1
                         if (!empty($matchesB)) {
-                            $blockB              = clone $block;
-                            $blockB->id          = $baseId . '_w1';
-                            $blockB->matches     = $matchesB;
-                            $blockB->targetList  = array_values(array_unique(array_filter(
-                                array_map(fn($m) => $m->target, $matchesB)
-                            )));
+                            $blockB          = clone $block;
+                            $blockB->id      = $baseId . '_w1';
+                            $blockB->matches = $matchesB;
+                            $tgtsB = [];
+                            foreach ($matchesB as $m) {
+                                if ($m->target > 0) {
+                                    $tgtsB[] = $m->target;
+                                    if (!$pd['twoPerTarget'] && $pd['teamEvent'] === 0) {
+                                        $tgtsB[] = $m->target + 1;
+                                    }
+                                }
+                            }
+                            $blockB->targetList  = array_values(array_unique($tgtsB));
                             sort($blockB->targetList);
                             $blockB->waveRow     = 1;
-                            $blockB->baseBlockId = $baseId;  // ← pfFetchBlock en a besoin
+                            $blockB->baseBlockId = $baseId;
                             $slotsMap[$key]['blocks'][] = $blockB;
                         }
                     } else {
@@ -516,7 +632,46 @@ class PF_Plan
                         $slotsMap[$key]['blocks'][] = $block;
                     }
                 } else {
-                    $this->unscheduled[] = $block;
+                    if (!empty($matches)) $this->unscheduled[] = $block;
+                }
+
+                // --- Sous-blocs pour les matches splittés ---
+                foreach ($splitPairs as $sp) {
+                    $sm          = $sp['match'];
+                    $mi          = $sp['mirrorInfo'];
+                    $canonSched  = $sp['canonSched'];
+
+                    // Sous-bloc canonical (_s0) : pos1 à la cible canonique
+                    $blockS0             = clone $block;
+                    $blockS0->id         = $block->id . '_s0';
+                    $blockS0->matches    = [$sm];
+                    $blockS0->targetList = [$sm->target];
+                    $blockS0->canonOnly  = true;
+                    $usedTargets[$sm->target] = true;
+                    $keyC = $canonSched['date'] . '|' . $canonSched['time'] . '|' . $canonSched['dur'];
+                    if (!isset($slotsMap[$keyC])) {
+                        $slotsMap[$keyC] = ['date' => $canonSched['date'], 'time' => $canonSched['time'],
+                                            'duration' => $canonSched['dur'], 'blocks' => [], 'waves' => 1];
+                    }
+                    $slotsMap[$keyC]['blocks'][] = $blockS0;
+
+                    // Sous-bloc miroir (_s1) : pos2 à la cible miroir
+                    $blockS1             = clone $block;
+                    $blockS1->id         = $block->id . '_s1';
+                    $blockS1->matches    = [$sm];
+                    $blockS1->targetList = [$mi['target']];
+                    $blockS1->mirrorOnly = true;
+                    $usedTargets[$mi['target']] = true;
+                    if ($mi['date']) {
+                        $keyM = $mi['date'] . '|' . $mi['time'] . '|' . $mi['dur'];
+                        if (!isset($slotsMap[$keyM])) {
+                            $slotsMap[$keyM] = ['date' => $mi['date'], 'time' => $mi['time'],
+                                                'duration' => $mi['dur'], 'blocks' => [], 'waves' => 1];
+                        }
+                        $slotsMap[$keyM]['blocks'][] = $blockS1;
+                    } else {
+                        $this->unscheduled[] = $blockS1;
+                    }
                 }
             }
         }
@@ -539,30 +694,6 @@ class PF_Plan
         }
     }
 
-    // --- Config persistée (liste cibles + créneaux vides) ---
-    private function getConfigPath(): string
-    {
-        return __DIR__ . '/../data/plan_' . intval($this->tour->id) . '.json';
-    }
-
-    public function loadSavedConfig(): array
-    {
-        $path = $this->getConfigPath();
-        if (!file_exists($path)) return [];
-        $json = @file_get_contents($path);
-        if (!$json) return [];
-        $data = json_decode($json, true);
-        return is_array($data) ? $data : [];
-    }
-
-    public function saveConfig(array $targets, array $emptySlots)
-    {
-        $path = $this->getConfigPath();
-        file_put_contents($path, json_encode([
-            'targets'    => $targets,
-            'emptySlots' => $emptySlots,
-        ]));
-    }
 
     // --- Liste des épreuves disponibles (pour le sélecteur d'entraînement) ---
     public function getAvailableEvents(): array
@@ -634,6 +765,13 @@ class PF_Plan
         if ($block->baseBlockId !== '') {
             $arr['baseBlockId'] = $block->baseBlockId;
         }
+        // Demi-tuiles issues de segmentation ×1 : flags transmis au JS pour
+        // que le save sache quoi écrire (canonical seulement / miroir seulement).
+        if ($block->canonOnly)  $arr['_canonOnly']  = true;
+        if ($block->mirrorOnly) $arr['_mirrorOnly'] = true;
+        // Bloc ×1 sans miroir réel (ex. Bronze : mirrorNo=matchNo+1 est le canonique des Demis).
+        // Le JS désactive le bouton ⊕ de segmentation pour ces blocs.
+        if (!empty($block->noMirrorMatchNo)) $arr['noMirrorMatchNo'] = true;
 
         if ($block->type === 'phase') {
             $arr['phase']     = $block->phase;
@@ -691,19 +829,34 @@ class PF_Saver
             }
         }
 
-        // Sauvegarder la liste des cibles et des créneaux vides
-        $targets    = array_map('intval', $data['targets'] ?? []);
-        $emptySlots = [];
+        // Mettre à jour EvFinalAthTarget en base pour chaque phase dont twoPerTarget a été modifié
+        $athUpdates = [];  // [evCode => [e => bool]]
+        $allBlocks  = [];
         foreach ($data['slots'] ?? [] as $slot) {
-            if (empty($slot['blocks'])) {
-                $emptySlots[] = [
-                    'date'     => $slot['date'],
-                    'time'     => $slot['time'],
-                    'duration' => intval($slot['duration']),
-                ];
+            foreach ($slot['blocks'] ?? [] as $b) { $allBlocks[] = $b; }
+        }
+        foreach ($data['unscheduled'] ?? [] as $b) { $allBlocks[] = $b; }
+        foreach ($allBlocks as $b) {
+            if (($b['type'] ?? '') !== 'phase') continue;
+            $evCode = $b['event'] ?? '';
+            $phase  = intval($b['phase'] ?? 0);
+            $e = ($phase <= 1) ? $phase : (int)floor(log($phase, 2)) + 1;
+            $athUpdates[$evCode][$e] = (bool)($b['twoPerTarget'] ?? true);
+        }
+        foreach ($athUpdates as $evCode => $bits) {
+            $evCodeSafe = StrSafe_DB($evCode);
+            foreach ($bits as $e => $twoPerTarget) {
+                $bit = 1 << $e;
+                if ($twoPerTarget) {
+                    safe_w_sql("UPDATE Events SET EvFinalAthTarget = EvFinalAthTarget | " . intval($bit) .
+                               " WHERE EvCode=$evCodeSafe AND EvTournament=" . intval($this->tId));
+                } else {
+                    $clearMask = 0xFF & ~$bit;
+                    safe_w_sql("UPDATE Events SET EvFinalAthTarget = EvFinalAthTarget & " . intval($clearMask) .
+                               " WHERE EvCode=$evCodeSafe AND EvTournament=" . intval($this->tId));
+                }
             }
         }
-        $plan->saveConfig($targets, $emptySlots);
 
         // --- Pré-scan : recenser tous les matchNos canoniques par (event, teamEvent, phase) ---
         // Permet de supprimer les matchNos "miroirs" iAnseo (partenaires non-canoniques)
@@ -762,7 +915,7 @@ class PF_Saver
             $dur   = intval($slot['duration'] ?? 30);
             $waves = intval($slot['waves']    ?? 1);
             foreach ($slot['blocks'] ?? [] as $block) {
-                $this->saveBlock($block, $date, $time, $dur, $waves, $errors);
+                $this->saveBlock($block, $date, $time, $dur, $waves, $errors, $phaseCanonicals);
             }
         }
 
@@ -804,7 +957,7 @@ class PF_Saver
         return $nos;
     }
 
-    private function saveBlock(array $block, string $date, string $time, int $dur, int $waves, array &$errors)
+    private function saveBlock(array $block, string $date, string $time, int $dur, int $waves, array &$errors, array $phaseCanonicals = [])
     {
         if ($block['type'] === 'phase') {
             $evCode    = StrSafe_DB($block['event']);
@@ -815,67 +968,99 @@ class PF_Saver
             $waveRow = intval($block['waveRow'] ?? 0);
             $letter  = $waveRow > 0 ? "'B'" : "'A'";
 
-            foreach ($block['matches'] ?? [] as $match) {
-                $matchNo = intval($match['matchNo']);
-                $target  = intval($match['target']);
+            $isCanonOnly  = !empty($block['_canonOnly']);
+            $isMirrorOnly = !empty($block['_mirrorOnly']);
 
-                // Supprimer TOUS les enregistrements existants pour ce match
-                // (quelle que soit la valeur de FSTeamEvent, y compris NULL).
-                // Cela élimine les doublons potentiels créés par iAnseo ou
-                // des sauvegardes précédentes, garantissant un seul enregistrement propre.
-                safe_w_sql("DELETE FROM FinSchedule
-                    WHERE FSTournament=" . intval($this->tId) . "
-                    AND FSEvent=$evCode AND FSMatchNo=$matchNo");
-
-                // Insérer l'enregistrement correct avec FSTeamEvent normalisé.
-                safe_w_sql("INSERT INTO FinSchedule
-                    (FSTournament,FSEvent,FSMatchNo,FSTeamEvent,FSScheduledDate,FSScheduledTime,FSScheduledLen,FSTarget,FsLetter)
-                    VALUES(" . intval($this->tId) . ",$evCode,$matchNo,$teamEvent,
-                           $dateSql,$timeSql," . intval($dur) . "," .
-                           ($target > 0 ? intval($target) : 'NULL') . ",$letter)");
-            }
-
-            // --- Miroirs iAnseo (matchNo canonical+1) ---
-            // Convention iAnseo : matchNo pair = canonical, matchNo impair = miroir.
-            // Pour "1 archer par cible" (twoPerTarget=false) : le miroir doit avoir
-            // sa propre entrée FinSchedule à la cible adjacente (cible du canonical+1).
-            // Pour "2 archers par cible" (twoPerTarget=true) : le miroir est supprimé.
-            $twoPerTarget = ($block['twoPerTarget'] ?? true);
-            $evCodeStr    = $block['event'];
-            $phase        = intval($block['phase'] ?? 0);
-            $allMatchNos  = $this->getPhaseMatchNos(StrSafe_DB($evCodeStr), $phase, $teamEvent);
-            $canonicalNos = array_map('intval', array_column($block['matches'] ?? [], 'matchNo'));
-            $mirrorNos    = array_values(array_diff($allMatchNos, $canonicalNos));
-
-            if (!$twoPerTarget && !empty($mirrorNos)) {
-                // 1 archer par cible : UPSERT chaque miroir à la cible canonical+1.
-                // On construit un index canonical → target pour retrouver la cible miroir.
-                $canonicalTargetMap = [];
-                foreach ($block['matches'] ?? [] as $m) {
-                    $canonicalTargetMap[intval($m['matchNo'])] = intval($m['target']);
+            if ($isMirrorOnly) {
+                // Demi-tuile miroir : sauvegarder UNIQUEMENT le matchNo miroir (canonical+1)
+                // à la cible du canonical+1 dans ce créneau.
+                // Le canonical N n'est pas touché ici (géré par _s0/_canonOnly).
+                //
+                // Safety net : si noMirrorMatchNo=true (ex. Bronze dont mirrorNo = canonique Demis),
+                // ne rien écrire — il n'existe pas de FinSchedule miroir pour ce match.
+                if (!empty($block['noMirrorMatchNo'])) {
+                    return;
                 }
-                foreach ($mirrorNos as $mn) {
-                    // Le canonical correspondant = mn-1 (convention iAnseo pair/impair)
-                    $canonicalMn  = $mn - 1;
-                    $canonTgt     = $canonicalTargetMap[$canonicalMn] ?? 0;
-                    $mirrorTarget = ($canonTgt > 0) ? $canonTgt + 1 : 0;
-
+                foreach ($block['matches'] ?? [] as $match) {
+                    $matchNo     = intval($match['matchNo']);
+                    $mirrorNo    = $matchNo + 1;
+                    $canonTarget = intval($match['target']);
+                    $mirrorTarget = $canonTarget + 1;
                     safe_w_sql("DELETE FROM FinSchedule
                         WHERE FSTournament=" . intval($this->tId) . "
-                        AND FSEvent=$evCode AND FSMatchNo=$mn");
-                    if ($mirrorTarget > 0) {
-                        safe_w_sql("INSERT INTO FinSchedule
-                            (FSTournament,FSEvent,FSMatchNo,FSTeamEvent,FSScheduledDate,FSScheduledTime,FSScheduledLen,FSTarget,FsLetter)
-                            VALUES(" . intval($this->tId) . ",$evCode,$mn,$teamEvent,
-                                   $dateSql,$timeSql," . intval($dur) . ",$mirrorTarget,$letter)");
-                    }
+                        AND FSEvent=$evCode AND FSMatchNo=$mirrorNo");
+                    safe_w_sql("INSERT INTO FinSchedule
+                        (FSTournament,FSEvent,FSMatchNo,FSTeamEvent,FSScheduledDate,FSScheduledTime,FSScheduledLen,FSTarget,FsLetter)
+                        VALUES(" . intval($this->tId) . ",$evCode,$mirrorNo,$teamEvent,
+                               $dateSql,$timeSql," . intval($dur) . ",$mirrorTarget,$letter)");
                 }
             } else {
-                // 2 archers par cible : les miroirs n'ont pas besoin d'entrée séparée
-                foreach ($mirrorNos as $mn) {
+                foreach ($block['matches'] ?? [] as $match) {
+                    $matchNo = intval($match['matchNo']);
+                    $target  = intval($match['target']);
+
                     safe_w_sql("DELETE FROM FinSchedule
                         WHERE FSTournament=" . intval($this->tId) . "
-                        AND FSEvent=$evCode AND FSMatchNo=$mn");
+                        AND FSEvent=$evCode AND FSMatchNo=$matchNo");
+
+                    safe_w_sql("INSERT INTO FinSchedule
+                        (FSTournament,FSEvent,FSMatchNo,FSTeamEvent,FSScheduledDate,FSScheduledTime,FSScheduledLen,FSTarget,FsLetter)
+                        VALUES(" . intval($this->tId) . ",$evCode,$matchNo,$teamEvent,
+                               $dateSql,$timeSql," . intval($dur) . "," .
+                               ($target > 0 ? intval($target) : 'NULL') . ",$letter)");
+                }
+
+                if (!$isCanonOnly) {
+                    // --- Miroirs iAnseo (matchNo canonical+1) ---
+                    // Convention iAnseo : matchNo pair = canonical, matchNo impair = miroir.
+                    // Pour "1 archer par cible" (twoPerTarget=false) : le miroir doit avoir
+                    // sa propre entrée FinSchedule à la cible adjacente (cible du canonical+1).
+                    // Pour "2 archers par cible" (twoPerTarget=true) : le miroir est supprimé.
+                    //
+                    // IMPORTANT (segments) : un bloc segmenté donne plusieurs sous-blocs avec le même
+                    // event+phase. Chaque saveBlock ne doit traiter que les miroirs DONT LE CANONICAL
+                    // appartient à CE sous-bloc — sinon les matchNos des autres sous-blocs seraient
+                    // supprimés par erreur lors du calcul mirrorNos = allMatchNos - canonicalNos.
+                    // On utilise donc l'ensemble complet des canoniques de la phase (tous segments
+                    // confondus) pour calculer mirrorNos, et pour twoPerTarget=false on ne traite
+                    // que les miroirs dont le canonical est dans CE sous-bloc.
+                    $twoPerTarget  = ($block['twoPerTarget'] ?? true);
+                    $evCodeStr     = $block['event'];
+                    $phase         = intval($block['phase'] ?? 0);
+                    $allMatchNos   = $this->getPhaseMatchNos(StrSafe_DB($evCodeStr), $phase, $teamEvent);
+                    $canonicalNos  = array_map('intval', array_column($block['matches'] ?? [], 'matchNo'));
+                    $phaseKey      = $block['event'] . '|' . intval($block['teamEvent']) . '|' . $phase;
+                    $allCanonicals = !empty($phaseCanonicals[$phaseKey]['canonicals'])
+                                     ? array_map('intval', $phaseCanonicals[$phaseKey]['canonicals'])
+                                     : $canonicalNos;
+                    $mirrorNos     = array_values(array_diff($allMatchNos, $allCanonicals));
+
+                    if (!$twoPerTarget && !empty($mirrorNos)) {
+                        // 1 archer par cible : UPSERT le miroir du canonical de CE bloc seulement.
+                        $canonicalTargetMap = [];
+                        foreach ($block['matches'] ?? [] as $m) {
+                            $canonicalTargetMap[intval($m['matchNo'])] = intval($m['target']);
+                        }
+                        foreach ($mirrorNos as $mn) {
+                            $canonicalMn = $mn - 1;
+                            $canonTgt    = $canonicalTargetMap[$canonicalMn] ?? 0;
+                            if ($canonTgt <= 0) continue;
+                            $mirrorTarget = $canonTgt + 1;
+                            safe_w_sql("DELETE FROM FinSchedule
+                                WHERE FSTournament=" . intval($this->tId) . "
+                                AND FSEvent=$evCode AND FSMatchNo=$mn");
+                            safe_w_sql("INSERT INTO FinSchedule
+                                (FSTournament,FSEvent,FSMatchNo,FSTeamEvent,FSScheduledDate,FSScheduledTime,FSScheduledLen,FSTarget,FsLetter)
+                                VALUES(" . intval($this->tId) . ",$evCode,$mn,$teamEvent,
+                                       $dateSql,$timeSql," . intval($dur) . ",$mirrorTarget,$letter)");
+                        }
+                    } else {
+                        foreach ($mirrorNos as $mn) {
+                            safe_w_sql("DELETE FROM FinSchedule
+                                WHERE FSTournament=" . intval($this->tId) . "
+                                AND FSEvent=$evCode AND FSMatchNo=$mn");
+                        }
+                    }
                 }
             }
 
