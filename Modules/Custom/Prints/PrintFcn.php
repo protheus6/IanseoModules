@@ -15,6 +15,19 @@ $cutRank = (isset($_REQUEST['CutRank']) && is_numeric($_REQUEST['CutRank']) && i
 	? intval($_REQUEST['CutRank'])
 	: 0;
 
+// ── Paramètre optionnel : filtre région/département (CoCode LIKE 'XX%' ou 'XXYY%') ──
+// Format attendu : 2 chiffres (région) ou 4 chiffres (département)
+$coFilter = '';
+if (!empty($_REQUEST['CoFilter'])) {
+	$_raw = trim($_REQUEST['CoFilter']);
+	if (preg_match('/^\d{2}(\d{2})?$/', $_raw)) {
+		$coFilter = $_raw;
+	}
+}
+
+// ── Paramètre optionnel : renumérotation du classement après filtrage ─────────
+$reRank = !empty($_REQUEST['ReRank']);
+
 // ── 1. Charger les données ───────────────────────────────────────────────────
 
 $finalOptions = $cutRank ? array('cutRank' => $cutRank) : array();
@@ -23,6 +36,24 @@ $PdfDataFinalInd  = getRankingIndividual('', false, false);
 $PdfDataFinalTeam = getRankingTeams('', false, false);
 $PdfDataQualInd   = getQualificationIndividual();
 $PdfDataQualTeam  = getQualificationTeam();
+
+// ── 1b. Appliquer le filtre région/département ───────────────────────────────
+
+// Filtre items dont countryCode commence par $coFilter (CoCode : XXYYZZZ)
+function _applyCoFilter(&$rankData, $coFilter) {
+	if (empty($coFilter)) return;
+	foreach ($rankData['sections'] as $evCode => &$section) {
+		$section['items'] = array_values(array_filter($section['items'], function($item) use ($coFilter) {
+			return isset($item['countryCode']) && strpos($item['countryCode'], $coFilter) === 0;
+		}));
+	}
+	unset($section);
+}
+
+_applyCoFilter($PdfDataFinalInd->rankData,  $coFilter);
+_applyCoFilter($PdfDataFinalTeam->rankData, $coFilter);
+_applyCoFilter($PdfDataQualInd->rankData,   $coFilter);
+_applyCoFilter($PdfDataQualTeam->rankData,  $coFilter);
 
 // ── 2. Identifier les catégories qui ont eu des finales ──────────────────────
 
@@ -74,7 +105,26 @@ function _applyCutRank(&$rankData, $cutRank) {
 	unset($section);
 }
 
-// Appliquer la troncature sur toutes les données
+// ── Fonction utilitaire : renumérotation séquentielle des classements ─────────
+function _applyReRank(&$rankData) {
+	foreach ($rankData['sections'] as $evCode => &$section) {
+		$pos = 0;
+		foreach ($section['items'] as &$item) {
+			$item['rank'] = ++$pos;
+		}
+		unset($item);
+	}
+	unset($section);
+}
+
+// Ordre : ReRank d'abord (sur les rangs filtrés), puis CutRank (sur les nouveaux rangs)
+if ($reRank) {
+	_applyReRank($PdfDataFinalInd->rankData);
+	_applyReRank($PdfDataFinalTeam->rankData);
+	_applyReRank($PdfDataQualInd->rankData);
+	_applyReRank($PdfDataQualTeam->rankData);
+}
+
 _applyCutRank($PdfDataFinalInd->rankData, $cutRank);
 _applyCutRank($PdfDataFinalTeam->rankData, $cutRank);
 _applyCutRank($PdfDataQualInd->rankData, $cutRank);
@@ -264,6 +314,9 @@ foreach ($PdfDataFinalTeam->rankData['sections'] as $section) {
 // ════════════════════════════════════════════════════════════════════════════
 if (count($eventsQualOnlyInd)) {
 	$PdfData  = getQualificationIndividual($eventsQualOnlyInd);
+	_applyCoFilter($PdfData->rankData, $coFilter);
+	if ($reRank) _applyReRank($PdfData->rankData);
+	_applyCutRank($PdfData->rankData, $cutRank);
 	$rankData = $PdfData->rankData;
 	$pdf->NumberThousandsSeparator = $PdfData->NumberThousandsSeparator;
 	$pdf->NumberDecimalSeparator   = $PdfData->NumberDecimalSeparator;
@@ -315,6 +368,9 @@ if (count($eventsQualOnlyInd)) {
 // ════════════════════════════════════════════════════════════════════════════
 if (count($eventsQualOnlyTeam)) {
 	$PdfData  = getQualificationTeam($eventsQualOnlyTeam);
+	_applyCoFilter($PdfData->rankData, $coFilter);
+	if ($reRank) _applyReRank($PdfData->rankData);
+	_applyCutRank($PdfData->rankData, $cutRank);
 	$rankData = $PdfData->rankData;
 	$pdf->NumberThousandsSeparator = $PdfData->NumberThousandsSeparator;
 	$pdf->NumberDecimalSeparator   = $PdfData->NumberDecimalSeparator;

@@ -403,10 +403,34 @@ echo '	<a href="../../../Partecipants/PrnStatEvents.php" class="Link" target="Pr
 echo '	&nbsp;&nbsp;';
 echo '	<a href="../../../Tournament/PrnStaffField.php" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Liste Arbitres</a>';
 echo '	&nbsp;&nbsp;';
-echo '	<a href="../../../Partecipants/PrnCategory.php" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Liste Archers</a>';
-echo '	&nbsp;&nbsp;';
+
 echo '	<a href="../../../Partecipants/PrnBirthday.php" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Anniversaires</a>';
+
+echo '	<br >';
+echo '	<a style="margin:5px" href="../../../Partecipants/PrnCategory.php" class="Link generalCatLink" id="generalCatLink" target="PrintOut">' . $pdf_img . '&nbsp;Liste Archers</a>';
+echo '	<br style="margin:6px 0 2px">';
+echo '	<label style="vertical-align:middle;font-size:0.9em">Région/Dépt :&nbsp;';
+echo '		<input type="text" id="generalCoFilter" maxlength="4" pattern="\d{2}(\d{2})?" style="width:5em;text-align:center" placeholder="ex:&nbsp;0893">';
+echo '	</label>'; 	
+
+
 echo '</td></tr>';
+echo '<script>
+(function(){
+    function _updateCatLink() {
+        var cf = (document.getElementById("generalCoFilter") || {}).value || "";
+        var a = document.getElementById("generalCatLink");
+        if (!a) return;
+        if (cf.trim()) {
+            a.href = "PrnCategoryRegion.php?CoFilter=" + encodeURIComponent(cf.trim());
+        } else {
+            a.href = "../../../Partecipants/PrnCategory.php";
+        }
+    }
+    var inp = document.getElementById("generalCoFilter");
+    if (inp) inp.addEventListener("input", _updateCatLink);
+})();
+</script>';
 
 // ── Greffe ─────────────────────────────────────────────────────────────────────
 echo '<tr class="acc-header"><th class="SubTitle">Greffe</th></tr>';
@@ -414,7 +438,7 @@ echo '<tr class="acc-body"><td class="Center" style="padding:8px">';
 echo '	<a href="../../../Partecipants/PrnAlphabetical.php?tf=1" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Tous les départs</a>';
 foreach ($_sessions as $s) {
 	echo '	&nbsp;&nbsp;';
-	echo '	<a href="../../../Partecipants/PrnAlphabetical.php?Session=' . $s->SesOrder . '&tf=1" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;' . htmlspecialchars($s->Descr) . '</a>';
+	echo '	<a href="../../../Partecipants/PrnAlphabetical.php?Session=' . $s->SesOrder . '&amp;tf=1" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;' . htmlspecialchars($s->Descr) . '</a>';
 }
 echo '</td></tr>';
 
@@ -532,7 +556,7 @@ echo "document.getElementById('hScoreBarcode').value='1';";
 echo "document.getElementById('hPersonalScore').value='';";
 echo "document.getElementById('hScoreFilled').value='';";
 echo "var _q=document.getElementById('hQRCode');if(_q)_q.disabled=false;";
-echo '">' . $pdf_img . '&nbsp;Marque Vide</button>';
+echo '">' . $pdf_img . '&nbsp;Marque</button>';
 echo '&nbsp;&nbsp;';
 
 // Bouton 2 : Vierge — ScoreDraw=Draw, pas de barcode
@@ -552,7 +576,7 @@ echo "document.getElementById('hScoreBarcode').value='';";
 echo "document.getElementById('hPersonalScore').value='1';";
 echo "document.getElementById('hScoreFilled').value='1';";
 echo "var _q=document.getElementById('hQRCode');if(_q)_q.disabled=true;";
-echo '">' . $pdf_img . '&nbsp;Marque Complètes</button>';
+echo '">' . $pdf_img . '&nbsp;Marque + scores</button>';
 
 // Champs cachés dynamiques
 echo '<input type="hidden" name="ScoreDraw"    id="hScoreDraw"    value="Complete">';
@@ -572,10 +596,54 @@ echo '<tr class="acc-header"><th class="SubTitle">Résultats Qualification</th><
 echo '<tr class="acc-body"><td class="Center" style="padding:8px">';
 echo '	<a href="../../../Qualification/PrnShootoff.php" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Shoot-Off/PF</a>';
 echo '	&nbsp;&nbsp;';
-echo '	<a href="../../../Qualification/PrnIndividualAbs.php" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Individuel</a>';
+echo '	<a href="../../../Qualification/PrnIndividualAbs.php" class="Link" target="PrintOut" id="qualIndLink">' . $pdf_img . '&nbsp;Individuel</a>';
 echo '	&nbsp;&nbsp;';
-echo '	<a href="../../../Qualification/PrnTeamAbs.php" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Équipe</a>';
+echo '	<a href="../../../Qualification/PrnTeamAbs.php" class="Link" target="PrintOut" id="qualTeamLink">' . $pdf_img . '&nbsp;Équipe</a>';
+echo '	<br style="margin:6px 0 2px">';
+
+echo '	<label style="vertical-align:middle;font-size:0.9em">Nb places :&nbsp;';
+echo '		<input type="number" id="qualCutRank" min="1" style="width:4em;text-align:center" placeholder="tout">';
+echo '	</label>';
+echo '	&nbsp;&nbsp;';
+echo '	<label style="vertical-align:middle;font-size:0.9em">Région/Dépt :&nbsp;';
+echo '		<input type="text" id="qualCoFilter" maxlength="4" pattern="\d{2}(\d{2})?" style="width:5em;text-align:center" placeholder="ex:&nbsp;0893">';
+echo '	</label>';
+echo '	&nbsp;&nbsp;';
+echo '	<label style="vertical-align:middle;cursor:pointer;font-size:0.9em">';
+echo '		<input type="checkbox" id="qualReRank" value="1">&nbsp;Refaire le classement';
+echo '	</label>';
+
 echo '</td></tr>';
+echo '<script>
+(function(){
+    function _updateQualLinks() {
+        var cf = (document.getElementById("qualCoFilter")  || {}).value   || "";
+        var rr = (document.getElementById("qualReRank")    || {}).checked || false;
+        var cr = (document.getElementById("qualCutRank")   || {}).value   || "";
+        var lnkI = document.getElementById("qualIndLink");
+        var lnkT = document.getElementById("qualTeamLink");
+        if (!lnkI || !lnkT) return;
+        if (cf.trim() || rr || cr.trim()) {
+            var qs = [];
+            if (cf.trim())  qs.push("CoFilter=" + encodeURIComponent(cf.trim()));
+            if (rr)         qs.push("ReRank=1");
+            if (cr.trim())  qs.push("CutRank=" + encodeURIComponent(cr.trim()));
+            var qstr = qs.join("&");
+            lnkI.href = "PrnQualIndRegion.php?"  + qstr;
+            lnkT.href = "PrnQualTeamRegion.php?" + qstr;
+        } else {
+            lnkI.href = "../../../Qualification/PrnIndividualAbs.php";
+            lnkT.href = "../../../Qualification/PrnTeamAbs.php";
+        }
+    }
+    ["qualCoFilter","qualCutRank"].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.addEventListener("input", _updateQualLinks);
+    });
+    var chk = document.getElementById("qualReRank");
+    if (chk) chk.addEventListener("change", _updateQualLinks);
+})();
+</script>';
 
 
 if ($_SESSION['MenuFinIDo'] ) {
@@ -910,14 +978,40 @@ echo '			' . $pdf_img . '&nbsp;Livret des résultats';
 echo '		</button>';
 echo '		&nbsp;&nbsp;';
 echo '		<label style="vertical-align:middle">Nb de places :&nbsp;';
-echo '			<input type="number" name="CutRank" min="1" style="width:4em;text-align:center" placeholder="tout">';
+echo '			<input type="number" name="CutRank" id="finCutRank" min="1" style="width:4em;text-align:center" placeholder="tout">';
 echo '		</label>';
-echo '		&nbsp;&nbsp;<small style="color:#555"><i>Finales si disponibles, sinon qualifications. Vide = tout afficher.</i></small>';
+echo '		&nbsp;&nbsp;';
+echo '		<label style="vertical-align:middle">Région/Dépt :&nbsp;';
+echo '			<input type="text" name="CoFilter" id="finCoFilter" maxlength="4" pattern="\d{2}(\d{2})?" style="width:5em;text-align:center" placeholder="ex:&nbsp;0893">';
+echo '		</label>';
+echo '		&nbsp;&nbsp;';
+echo '		<label style="vertical-align:middle;cursor:pointer">';
+echo '			<input type="checkbox" name="ReRank" id="finReRank" value="1">';
+echo '			&nbsp;Refaire le classement';
+echo '		</label>';
 echo '	</form>';
 echo '</td></tr>';
 echo '<tr class="acc-body"><td class="Center" style="padding:6px 10px">';
-echo '	<a href="PrintFcn.php?CutRank=3" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Liste des médailles</a>';
+echo '	<a href="PrintFcn.php?CutRank=3" class="Link" target="PrintOut" id="finLinkMedailles">' . $pdf_img . '&nbsp;Liste des médailles</a>';
 echo '</td></tr>';
+echo '<script>
+(function(){
+    function _updateMedailles() {
+        var lnk = document.getElementById("finLinkMedailles");
+        if (!lnk) return;
+        var v  = (document.getElementById("finCoFilter") || {}).value   || "";
+        var rr = (document.getElementById("finReRank")   || {}).checked || false;
+        var qs = "PrintFcn.php?CutRank=3";
+        if (v.trim())  qs += "&CoFilter=" + encodeURIComponent(v.trim());
+        if (rr)        qs += "&ReRank=1";
+        lnk.href = qs;
+    }
+    var inp = document.getElementById("finCoFilter");
+    var chk = document.getElementById("finReRank");
+    if (inp) inp.addEventListener("input",  _updateMedailles);
+    if (chk) chk.addEventListener("change", _updateMedailles);
+})();
+</script>';
 
 echo '</tbody>';
 echo '</table>';
