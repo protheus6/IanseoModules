@@ -8,12 +8,36 @@ $PAGE_TITLE= "Prints Helper";
 
 // ── Données tournoi pour les feuilles de marque ───────────────────────────────
 $_tourRow = null;
-$_rs = safe_r_sql('SELECT ToNumDist FROM Tournament WHERE ToId=' . StrSafe_DB($_SESSION['TourId']));
+$_rs = safe_r_sql('SELECT ToNumDist, ToType FROM Tournament WHERE ToId=' . StrSafe_DB($_SESSION['TourId']));
 if (safe_num_rows($_rs) == 1) {
 	$_tourRow = safe_fetch($_rs);
 	safe_free_result($_rs);
 }
 $_numDist  = $_tourRow ? intval($_tourRow->ToNumDist) : 1;
+// ToType=3 : TAE 70m/50m - 2 distances → afficher les liens spécifiques TAEDI/TAEDN
+$_isTae    = $_tourRow ? (intval($_tourRow->ToType) === 3) : false;
+
+// ── ClIds TAE : groupés par type (TAEDI = last char F/H, TAEDN = last char W/M) ──
+// Les divisions = armes (CL/CO/BB…), le genre est encodé dans les Classes (S1F, U18H, S2W, S1M…)
+// $_taeClsIds['TAEDI'] = ClIds se terminant par F ou H
+// $_taeClsIds['TAEDN'] = ClIds se terminant par W ou M
+$_taeClsIds = array('TAEDI' => array(), 'TAEDN' => array());
+if ($_isTae) {
+	$_taeRs = safe_r_sql(
+		"SELECT ClId FROM Classes"
+		. ' WHERE ClTournament=' . StrSafe_DB($_SESSION['TourId'])
+		. " AND ClAthlete=1"
+		. " AND (ClId LIKE '%F' OR ClId LIKE '%H' OR ClId LIKE '%W' OR ClId LIKE '%M')"
+		. " ORDER BY ClId"
+	);
+	while ($_tRow = safe_fetch($_taeRs)) {
+		$_lc = strtoupper(substr(trim($_tRow->ClId), -1));
+		if ($_lc === 'F' || $_lc === 'H') $_taeClsIds['TAEDI'][] = $_tRow->ClId;
+		else                               $_taeClsIds['TAEDN'][] = $_tRow->ClId;
+	}
+	safe_free_result($_taeRs);
+}
+
 $_sessions = GetSessions('Q');
 
 // ── Mode ISK-NG ──────────────────────────────────────────────────────────────
@@ -415,7 +439,25 @@ foreach ($_sessions as $s) {
 }
 echo '</td></tr>';
 
-
+// ── TAE DI / DN (section conditionnelle ToType=3) ─────────────────────────────
+if ($_isTae) {
+	echo '<tr class="acc-title"><th class="Title">TAE DI / DN</th></tr>';
+	echo '<tr class="acc-header"><th class="SubTitle">Listes &amp; Résultats</th></tr>';
+	echo '<tr class="acc-body"><td class="Center" style="padding:8px">';
+	foreach ($_taeClsIds as $_taeKey => $_taeClsList) {
+		if (empty($_taeClsList)) continue;
+		$_taeParts = array();
+		foreach ($_taeClsList as $_taeClsId) {
+			$_taeParts[] = 'Classes[]=' . rawurlencode($_taeClsId);
+		}
+		$_taeQStr = implode('&amp;', $_taeParts);
+		echo '	<a href="PrnAlphabeticalTAE.php?' . $_taeQStr . '" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Liste Archers ' . htmlspecialchars($_taeKey) . '</a>';
+		echo '	&nbsp;&nbsp;';
+		echo '	<a href="../../../Qualification/PrnComplete.php?' . $_taeQStr . '" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Résultat ' . htmlspecialchars($_taeKey) . '</a>';
+		echo '	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+	}
+	echo '</td></tr>';
+}
 
 echo '<tr class="acc-title"><th class="Title">Qualification</th></tr>';
 
