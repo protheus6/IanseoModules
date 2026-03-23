@@ -1,0 +1,895 @@
+/* ============================================================
+   PlanFinales — Plan de cible des Finales
+   ============================================================ */
+
+/* Variables : tailles des colonnes et des lignes */
+:root {
+    --pf-col-slot:    140px;   /* largeur colonne horaire */
+    --pf-col-target:   75px;   /* largeur d'une colonne cible */
+    --pf-col-add:      28px;   /* colonne bouton + */
+    --pf-row-h:        90px;   /* hauteur fixe des lignes normales */
+    --pf-wave-row-h:   68px;   /* hauteur des sous-lignes de vague */
+    --pf-font-scale:  .88em;   /* police de la table (mis à jour par le zoom) */
+}
+
+/* --- Barre d'outils --- */
+.pf-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 4px 8px;
+    margin: 4px 0;
+    border: 1px solid var(--input-border, #ccc);
+    background: var(--row-background, #f8f8f8);
+}
+.pf-toolbar-lbl {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .85em;
+    cursor: pointer;
+    user-select: none;
+}
+.pf-status {
+    font-size: .82em;
+    color: #666;
+    margin-left: 8px;
+}
+.pf-status.ok    { color: #2a7a2a; font-weight: bold; }
+.pf-status.error { color: #c00;    font-weight: bold; }
+
+/* ============================================================
+   Chaîne flexbox pour remplir exactement le viewport restant
+   sans calcul JS (s'adapte à tout bandeau haut/bas du template)
+   ============================================================ */
+body {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+}
+#TourInfo,
+#navigation {
+    flex-shrink: 0;
+}
+#Content {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 5px !important;   /* garde padding latéral, retire haut/bas */
+    display: flex !important;
+    flex-direction: column !important;
+}
+/* Tous les enfants directs de #Content ne s'étirent pas, sauf le layout */
+#Content > * { flex-shrink: 0; }
+
+/* --- Layout principal : remplit tout l'espace restant --- */
+.pf-layout {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+    margin-bottom: 15px;
+    flex: 1 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: hidden;
+}
+
+/* --- Panneau config (gauche) — flex colonne pour remplir la hauteur --- */
+.pf-config-col {
+    width: 170px;
+    min-width: 140px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.pf-config-panel {
+    border: 1px solid var(--input-border, #ccc);
+    background: var(--row-background, #f8f8f8);
+    font-size: .82em;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+.pf-config-title {
+    background: var(--bg-cell-header, #4a6fa8);
+    color: #fff;
+    font-weight: bold;
+    padding: 3px 6px;
+    font-size: .9em;
+}
+.pf-config-section {
+    padding: 4px 6px 6px;
+    border-bottom: 1px solid var(--input-border, #ccc);
+}
+.pf-config-section strong {
+    display: block;
+    margin-bottom: 3px;
+    font-size: .9em;
+    color: var(--text-header, #333);
+}
+.pf-config-row {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin: 2px 0;
+}
+.pf-config-row label { flex: 1; white-space: nowrap; }
+
+/* --- Section "Non planifiés" : occupe tout l'espace restant --- */
+#unscheduledPanel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;  /* ancre le modal absolu */
+}
+/* --- En-tête du panneau non-planifiés (titre + bouton + échauffement) --- */
+.pf-unsched-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    flex-shrink: 0;
+}
+#unscheduledPanel strong {
+    flex-shrink: 0;
+}
+.pf-add-train-btn {
+    font-size: .90em;
+    padding: 1px 6px;
+    cursor: pointer;
+    background: #e8f4e8;
+    border: 1px solid #8aac8a;
+    border-radius: 3px;
+    color: #2a5a2a;
+    white-space: nowrap;
+}
+.pf-add-train-btn:hover { background: #c8e8c8; border-color: #4a8a4a; }
+
+/* --- Bouton suppression sur tuile entraînement non-planifiée --- */
+.pf-ut-rm {
+    flex-shrink: 0;
+    cursor: pointer;
+    font-size: 1em;
+    opacity: .35;
+    padding: 0 2px;
+    border-radius: 2px;
+    align-self: flex-start;
+}
+.pf-ut-rm:hover { opacity: 1; color: #c00; background: rgba(200,0,0,.10); }
+
+/* --- Modal sélection épreuve entraînement --- */
+.pf-train-modal {
+    position: absolute;
+    z-index: 200;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.35);
+    border-radius: 4px;
+}
+.pf-train-modal-inner {
+    background: #fff;
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    padding: 14px 18px 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 220px;
+}
+.pf-train-modal-title {
+    font-weight: bold;
+    font-size: .95em;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 6px;
+}
+.pf-train-modal-lbl {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: .85em;
+}
+.pf-train-ev-select {
+    font-size: .95em;
+    padding: 3px 4px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+}
+.pf-train-modal-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* --- Liste non planifiés : scrollable, remplit la section --- */
+.pf-unscheduled-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    margin-top: 4px;
+}
+/* --- Groupes repliables dans "Non planifiés" --- */
+.pf-unsched-grp {
+    margin-bottom: 3px;
+}
+.pf-unsched-grp-hdr {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 5px;
+    background: #dce6f4;
+    border: 1px solid #b0bedc;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 1em;
+    user-select: none;
+    line-height: 1.4;
+}
+.pf-unsched-grp-hdr:hover { background: #c8d8f0; }
+.pf-unsched-grp-arrow {
+    font-size: .75em;
+    color: #1e3a5a;
+    flex-shrink: 0;
+}
+.pf-unsched-grp-count {
+    font-size: .75em;
+    color: #666;
+    margin-left: auto;
+}
+/* Zone de drop de chaque groupe (corps repliable) */
+.pf-unsched-grp > .pf-drop-zone {
+    padding: 2px 2px 2px 6px;
+    min-height: 8px;
+    border-left: 2px solid #b0bedc;
+}
+
+/* --- Tuiles non planifiées --- */
+.pf-unsched-tile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 3px 5px;
+    margin: 2px 0;
+    border-radius: 3px;
+    font-size: .82em;
+    cursor: grab;
+    border: 1px solid rgba(0,0,0,.15);
+}
+.pf-unsched-tile:active { cursor: grabbing; }
+.pf-ut-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.pf-ut-match {
+    flex-shrink: 0;
+    font-size: .88em;
+    font-weight: bold;
+    opacity: .85;
+    letter-spacing: .03em;
+}
+
+/* --- Zone grille (droite) --- */
+.pf-grid-col {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+/* Contrôle de zoom grille */
+.pf-zoom-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .85em;
+    margin-left: 8px;
+}
+.pf-zoom-control input[type=range] {
+    width: 90px;
+    cursor: pointer;
+    accent-color: #4a6fa8;
+    vertical-align: middle;
+}
+#pfZoomLbl {
+    min-width: 34px;
+    font-size: .82em;
+    color: #444;
+    text-align: right;
+}
+
+.pf-grid-actions {
+    display: flex;
+    gap: 4px;
+    padding: 2px 0 4px;
+    flex-shrink: 0;
+}
+.pf-grid-wrap {
+    flex: 1;
+    overflow: auto;
+}
+
+/* ============================================================
+   Tableau de la grille — largeurs et hauteurs fixes
+   ============================================================ */
+#pfGrid table.pf-table {
+    border-collapse: collapse;
+    table-layout: fixed;   /* OBLIGATOIRE pour que les <col> aient effet */
+    font-size: var(--pf-font-scale);
+}
+#pfGrid table.pf-table th,
+#pfGrid table.pf-table td {
+    border: 1px solid #c0c8d8;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Largeurs via <col> */
+col.pf-col-slot   { width: var(--pf-col-slot);   }
+col.pf-col-target { width: var(--pf-col-target);  }
+col.pf-col-add    { width: var(--pf-col-add);     }
+
+/* ============================================================
+   En-têtes fixes (sticky)
+   ============================================================ */
+
+/* Ligne de header : sticky en haut lors du scroll vertical */
+#pfGrid table.pf-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+}
+
+/* Cellule coin supérieur gauche : sticky haut ET gauche */
+#pfGrid table.pf-table thead th.pf-th-slot {
+    left: 0;
+    z-index: 7;
+}
+
+/* Colonne horaire (1ère colonne du corps) : sticky à gauche lors du scroll horizontal */
+#pfGrid table.pf-table tbody td.pf-slot-header {
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: #e8eef6;   /* fond solide indispensable pour masquer le contenu derrière */
+}
+
+/* Hauteur fixe identique pour toutes les lignes de données */
+#pfGrid table.pf-table tbody tr {
+    height: var(--pf-row-h);
+}
+#pfGrid table.pf-table tbody td {
+    height: var(--pf-row-h);
+    vertical-align: top;
+}
+
+/* --- Lignes de sous-vague (plus petites) --- */
+#pfGrid table.pf-table tbody tr.pf-wave-row {
+    height: var(--pf-wave-row-h);
+}
+#pfGrid table.pf-table tbody tr.pf-wave-row td {
+    height: var(--pf-wave-row-h);
+}
+
+/* Séparateur visuel entre deux lignes de vague consécutives */
+#pfGrid table.pf-table tbody tr.pf-wave-row + tr.pf-wave-row > td {
+    border-top: 2px dashed #8aaabb !important;
+}
+
+/* La cellule d'en-tête horaire avec rowspan ne doit pas forcer la hauteur */
+.pf-slot-header[rowspan] {
+    height: auto !important;
+    vertical-align: top;
+}
+
+/* En-tête colonne cible */
+.pf-th-target {
+    background: #2a507a;
+    color: #fff;
+    font-weight: bold;
+    text-align: center;
+    padding: 4px 2px;
+    white-space: nowrap;
+    font-size: 1.2em;
+    position: relative;
+}
+.pf-th-target .pf-rm-col {
+    position: absolute;
+    top: 1px; right: 3px;
+    font-size: .7em;
+    cursor: pointer;
+    opacity: .55;
+    color: #ffc;
+    line-height: 1;
+}
+.pf-th-target .pf-rm-col:hover { opacity: 1; }
+
+/* En-tête colonne horaire */
+.pf-th-slot {
+    background: #1e3a5a;
+    color: #fff;
+    font-weight: bold;
+    text-align: center;
+    padding: 4px 4px;
+    white-space: nowrap;
+    font-size: .9em;
+}
+
+/* Bouton ajout colonne */
+.pf-th-add {
+    background: #e8eef6;
+    text-align: center;
+}
+
+/* --- Cellule horaire (1ère colonne de chaque ligne) --- */
+.pf-slot-header {
+    background: #e8eef6;
+    padding: 4px 26px 4px 8px;   /* right réservé à la bande de vague */
+    vertical-align: middle;
+    position: relative;
+    height: var(--pf-row-h);
+    box-sizing: border-box;
+	align-content: center;
+}
+.pf-slot-date {
+    display: block;
+    font-size: 1em;
+    color: #555;
+    white-space: nowrap;
+    text-align: center;
+}
+.pf-slot-timerange {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1em;
+    color: #1e3a5a;
+    line-height: 1.3;
+    text-align: center;
+    margin: 2px 0;
+}
+.pf-slot-timerange span:nth-child(2) {
+    font-size: .8em;
+    font-weight: normal;
+    color: #888;
+    line-height: 1;
+}
+.pf-slot-inputs {
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 1em;
+}
+.pf-slot-header.editing .pf-slot-inputs  { display: flex; }
+.pf-slot-header.editing .pf-slot-display { display: none; }
+.pf-slot-display {
+    padding: 15px;
+    margin-right: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+}
+.pf-slot-edit-btn {
+    font-size: .72em;
+    cursor: pointer;
+    color: #4a6fa8;
+    text-decoration: underline;
+    display: block;
+    text-align: center;
+    margin-top: 2px;
+}
+
+.pf-slot-rm-btn {
+    position: absolute;
+    top: 2px; left: 3px;
+    font-size: 1em;
+    cursor: pointer;
+    color: #c00;
+    opacity: .4;
+}
+.pf-slot-rm-btn:hover { opacity: 1; }
+
+.pf-slot-clear-btn {
+    position: absolute;
+    top: 16px; left: 3px;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #666;
+    opacity: .35;
+}
+.pf-slot-clear-btn:hover { opacity: 1; color: #a60; }
+
+.pf-slot-insert-btn {
+    position: absolute;
+    bottom: 2px; left: 3px;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #729572;
+    opacity: .35;
+}
+.pf-slot-insert-btn:hover { opacity: 1; color: #14bb13; }
+
+
+
+/* Inputs inline édition horaire */
+.pf-slot-inputs input[type=date],
+.pf-slot-inputs input[type=time] {
+    width: 92px;
+    font-size: .9em;
+    padding: 1px 2px;
+}
+.pf-slot-inputs input[type=number] {
+    width: 38px;
+    font-size: .9em;
+    padding: 1px 2px;
+}
+.pf-slot-inputs button {
+    font-size: .78em;
+    padding: 1px 4px;
+    cursor: pointer;
+}
+
+/* --- Cellule de données --- */
+.pf-cell {
+    min-width: var(--pf-col-target);
+    padding: 2px;
+    position: relative;
+    box-sizing: border-box;
+}
+.pf-cell.pf-drop-over {
+    background: #d0e8ff !important;
+    outline: 2px dashed #5b9bd5;
+}
+
+/* Zone de dépôt : occupe toute la cellule */
+.pf-drop-zone {
+    padding: 3px;
+    width: 100%;
+    height: 100%;
+    min-height: calc(var(--pf-row-h) - 4px);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================================
+   Tuiles de phase / entraînement
+   ============================================================ */
+.pf-tile {
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,.22);
+    cursor: grab;
+    user-select: none;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;           /* remplit la hauteur de la drop-zone */
+    min-height: 0;
+    box-sizing: border-box;
+}
+.pf-tile:active { cursor: grabbing; }
+
+/* Mise en évidence au survol : même catégorie */
+.pf-tile-hl {
+    box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 2px 7px rgba(0,0,0,.22);
+    position: relative;
+    transition: box-shadow .12s, opacity .12s, filter .12s;
+}
+.pf-tile-dim {
+    opacity: .60;
+    filter: grayscale(20%);
+    transition: opacity .12s, filter .12s;
+}
+
+/* En-tête de la tuile */
+.pf-tile-hdr {
+    font-weight: bold;
+    text-align: center;
+    padding: 3px 18px 2px;
+    font-size: .93em;       /* texte agrandi */
+    line-height: 1.25;
+    position: relative;
+    flex-shrink: 0;
+    /* empêcher le débordement du texte */
+    overflow: hidden;
+}
+/* Code catégorie : premier, un peu plus gros, gras */
+.pf-tile-evcode {
+    display: block;
+    font-size: 1.05em;
+    font-weight: bold;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Nom de phase : dessous, même graisse, légèrement plus petit */
+.pf-tile-phase {
+    display: block;
+    font-size: .9em;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+/* Boutons dans l'en-tête */
+.pf-tile-rm {
+    position: absolute;
+    top: 2px; right: 3px;
+    font-size: 1em;
+    cursor: pointer;
+    opacity: .45;
+    z-index: 1;
+    color: #333;
+    line-height: 1;
+}
+.pf-tile-rm:hover { opacity: 1; color: #c00; }
+
+.pf-tile-seg {
+    position: absolute;
+    top: 2px; left: 3px;
+    font-size: 1.5em;
+    cursor: pointer;
+    opacity: .45;
+    z-index: 1;
+    color: #333;
+    line-height: 1;
+    font-weight: normal;
+}
+.pf-tile-seg:hover { opacity: 1; color: #00a; }
+
+/* Bouton bascule 1/2 archers par cible */
+.pf-tile-two {
+    position: absolute;
+    bottom: 2px; left: 3px;
+    font-size: .72em;
+    cursor: pointer;
+    opacity: .5;
+    z-index: 1;
+    color: #333;
+    line-height: 1;
+    font-weight: bold;
+}
+.pf-tile-two:hover { opacity: 1; color: #00a; }
+
+/* Zone blason (optionnel) */
+.pf-tile-svg {
+    display: none;
+    justify-content: center;
+    padding: 1px 0;
+    flex-shrink: 0;
+}
+.pf-tile-svg img { max-height: 26px; width: auto; }
+.pf-show-blason .pf-tile-svg { display: flex; }
+
+/* ============================================================
+   Boutons étendre/réduire des tuiles entraînement
+   ============================================================ */
+.pf-training-resize {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 4px 0;
+    flex-shrink: 0;
+}
+.pf-tr-btn {
+    cursor: pointer;
+    font-size: .8em;
+    opacity: .75;
+    user-select: none;
+    padding: 0 5px;
+    border-radius: 3px;
+    line-height: 1.6;
+    background: rgba(255,255,255,.25);
+}
+.pf-tr-btn:hover { opacity: 1; background: rgba(255,255,255,.45); }
+.pf-tr-disabled   { opacity: .25; cursor: default; background: transparent; }
+
+/* ============================================================
+   Corps de la tuile : slots alignés sur les cibles
+   ============================================================ */
+.pf-tile-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    align-items: center;   /* centrer verticalement */
+    padding: 0;
+}
+
+/* Un slot = une colonne cible dans l'empan de la tuile */
+.pf-tile-slot {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;   /* centrage horizontal */
+    padding: 1px 0;
+}
+
+/* Boîte de match (positions [A] ⚔ [B]) */
+.pf-match-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: .88em;     /* texte agrandi */
+    line-height: 1;
+}
+.pf-pos {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 2px;
+    padding: 0 3px;
+    font-weight: bold;
+    background: rgba(0,0,0,.18);
+    color: #fff;
+    font-size: .95em;
+}
+.pf-pos-sep {
+    color: rgba(0,0,0,.45);
+    font-size: 2.5em;
+    margin: 0 1px;
+}
+/* Badge équipe (1 équipe / cible) — plus grand, seul élément dans le slot */
+.pf-pos-solo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 26px;
+    border-radius: 3px;
+    padding: 0 4px;
+    font-weight: bold;
+    font-size: 1.05em;
+    background: rgba(0,0,0,.22);
+    color: #fff;
+}
+
+/* Fantôme Dragula */
+.gu-mirror .pf-tile { opacity: .88; }
+.gu-transit          { opacity: .35; }
+
+/* ============================================================
+   Gestion des vagues (multi-rows par créneau)
+   ============================================================ */
+
+/* Bande verticale de vague dans la cellule horaire (AB / AB+CD) */
+.pf-slot-wave-strip {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 18px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    background: rgba(30, 58, 90, 0.15);
+    border-left: 1px solid rgba(30, 58, 90, 0.25);
+    user-select: none;
+}
+.pf-slot-wave-strip:hover {
+    background: rgba(30, 58, 90, 0.28);
+}
+.pf-wave-strip-lbl {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    font-size: .68em;
+    font-weight: bold;
+    color: #1e3a5a;
+    letter-spacing: .1em;
+}
+.pf-wave-strip-lbl + .pf-wave-strip-lbl {
+    border-top: 1px dashed rgba(30, 58, 90, 0.35);
+}
+
+/* Colonne latérale de vague (remplace la colonne "+" dans les multi-vagues) */
+.pf-wave-side-lbl {
+    text-align: center;
+    vertical-align: middle !important;
+    padding: 0 !important;
+    width: var(--pf-col-add);
+}
+.pf-wave-side-lbl span {
+    display: inline-block;
+    writing-mode: vertical-rl;
+    font-size: .68em;
+    font-weight: bold;
+    color: #1e3a5a;
+    opacity: .55;
+    letter-spacing: .1em;
+}
+
+/* Badge de vague sur la tuile (AB / CD) */
+.pf-wave-tag {
+    display: inline-block;
+    font-size: .66em;
+    font-weight: bold;
+    padding: 0 3px;
+    margin-left: 3px;
+    border-radius: 2px;
+    background: rgba(0,0,0,.22);
+    vertical-align: middle;
+    letter-spacing: .05em;
+    line-height: 1.4;
+}
+
+/* Réduire la min-height des drop-zones dans les lignes de vague */
+tr.pf-wave-row .pf-drop-zone {
+    min-height: calc(var(--pf-wave-row-h) - 4px);
+}
+
+/* ============================================================
+   Modale segmentation
+   ============================================================ */
+#pfSegModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+}
+#pfSegModal.visible { display: flex; }
+#pfSegCard {
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.3);
+    padding: 14px 18px;
+    min-width: 300px;
+    max-width: 500px;
+}
+#pfSegCard h3 { margin: 0 0 8px; font-size: 1em; text-align: center; }
+#pfSegCard .pf-seg-row {
+    display: flex; align-items: center; gap: 6px; margin: 4px 0; font-size: .85em;
+}
+#pfSegCard .pf-seg-row label { min-width: 100px; }
+
+/* ============================================================
+   Impression
+   ============================================================ */
+@media print {
+    * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
+    @page { size: A4 landscape; margin: 8mm; }
+
+    /* Masquer tout ce qui n'est pas la grille */
+    .pf-toolbar, .pf-config-col, .pf-grid-actions,
+    .pf-tile-rm, .pf-tile-seg, .pf-tile-two, .pf-training-resize,
+    .pf-slot-wave-strip, .pf-slot-inputs, .pf-slot-edit-btn,
+    .pf-rm-col, .pf-slot-rm-btn, .pf-slot-clear-btn, .pf-th-add, .pf-cell-add { display: none !important; }
+    .pf-tile-hl  { box-shadow: none !important; z-index: auto !important; }
+    .pf-tile-dim { opacity: 1 !important;       filter: none !important; }
+    .pf-add-train-btn, .pf-ut-rm, .pf-train-modal { display: none !important; }
+
+    /* Mise en page pleine largeur */
+    .pf-layout  { display: block !important; height: auto; }
+    .pf-grid-col { width: 100%; overflow: visible; }
+    .pf-grid-wrap { overflow: visible !important; max-height: none !important; height: auto !important; }
+
+    /* Désactiver le positionnement sticky */
+    td.pf-slot-header { position: static !important; }
+
+    /* Éviter les coupures dans les tuiles */
+    .pf-tile { break-inside: avoid; page-break-inside: avoid; }
+}
