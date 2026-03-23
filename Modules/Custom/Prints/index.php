@@ -445,10 +445,10 @@ echo '</td></tr>';
 // ── Paiements ─────────────────────────────────────────────────────────────────────
 echo '<tr class="acc-header  collapsed"><th class="SubTitle">Status Paiements</th></tr>';
 echo '<tr class="acc-body collapsed"><td class="Center" style="padding:8px">';
-echo '	<a href="../../../Accreditation/PrnSession.php?OperationType=Payments&Submit=Ok" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Tous les départs</a>';
+echo '	<a href="../../../Accreditation/PrnAlphabetical.php?OperationType=Payments&Submit=Ok" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;Tous les départs</a>';
 foreach ($_sessions as $s) {
 	echo '	&nbsp;&nbsp;';
-	echo '	<a href="../../../Accreditation/PrnSession.php?OperationType=Payments&Submit=Ok&Session=' . $s->SesOrder . '" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;' . htmlspecialchars($s->Descr) . '</a>';
+	echo '	<a href="../../../Accreditation/PrnAlphabetical.php?OperationType=Payments&Submit=Ok&Session=' . $s->SesOrder . '" class="Link" target="PrintOut">' . $pdf_img . '&nbsp;' . htmlspecialchars($s->Descr) . '</a>';
 }
 echo '</td></tr>';
 
