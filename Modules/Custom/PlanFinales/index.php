@@ -40,7 +40,8 @@ $indivMatch         = 30;
 $PAGE_TITLE    = 'Plan de cible — Finales';
 $IncludeJquery = true;
 
-$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanFinales/svg/';
+//$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanFinales/svg/';
+$svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
 $pfRoot  = $CFG->ROOT_DIR . 'Modules/Custom/PlanFinales/';
 
 $JS_SCRIPT = [

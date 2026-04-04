@@ -34,7 +34,8 @@ foreach ($session->participants as $p) {
 
 $PAGE_TITLE = 'Plan de cible';
 $IncludeJquery = true;
-$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/svg/';
+//$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/svg/';
+$svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
 
 $JS_SCRIPT = [
     '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/lib/dragula.min.css">',
@@ -220,7 +221,7 @@ include('Common/Templates/head.php');
               <span class="btRm" onclick="removeCible(this)" title="Vider la cible">✕</span>
             </div>
             <div class="qp-blasons-row" style="background:cornsilk; min-height:40px; display:flex; align-items:center; justify-content:center;">
-              <img src="<?= htmlspecialchars($svgBase . 'Empty.svg') ?>"
+              <img src="<?= htmlspecialchars($svgBase . '0.svg') ?>"
                    alt="" style="max-height:40px; max-width:40px; width:auto; height:auto; opacity:.2;">
             </div>
             <div style="text-align:center; padding:2px;">
