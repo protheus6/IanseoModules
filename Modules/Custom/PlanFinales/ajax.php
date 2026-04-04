@@ -79,17 +79,22 @@ switch ($action) {
         while ($r = safe_fetch($rs)) {
             $key  = $r->TarDescr . '-' . intval($r->EvTargetSize);
             $svgMap = [
-                'TrgIndComplete-40' => 'D40.svg',   'TrgIndSmall-40'   => 'D40TCL.svg',
-                'TrgCOIndSmall-40'  => 'D40TCO.svg','vegas-40'         => 'D40V.svg',
-                'TrgIndComplete-60' => 'D60.svg',   'TrgIndSmall-60'   => 'D60T.svg',
-                'TrgIndComplete-80' => 'D80.svg',   'TrgCOOutdoor-80'  => 'D80R.svg',
-                'TrgOutdoor-80'     => 'D80.svg',   'TrgOutdoor-122'   => 'D122.svg',
-                'TrgFrBeursault-45' => 'Beursault.svg',
+			'TrgIndComplete-40'  => '1.svg', //'D40.svg',
+            'TrgIndSmall-40'     => '2.svg', //'D40TCL.svg',
+            'TrgCOIndSmall-40'   =>  '4.svg', //'D40TCO.svg',
+            'TrgProAMIndVegasSmall-40'  => '16.svg', //'D40V.svg',
+            'TrgIndComplete-60'  => '1.svg', //'D60.svg',
+            'TrgIndSmall-60'     => '2.svg', //'D60T.svg',
+            'TrgIndComplete-80'  => '1.svg', //'D80.svg',
+            'TrgCOOutdoor-80'    => '9.svg', //'D80R.svg',
+            'TrgOutdoor-80'      => '1.svg', //'D80.svg',
+            'TrgOutdoor-122'     => '5.svg', //'D122.svg',
+            'TrgFrBeursault-45'  => '27.svg',//'Beursault.svg',
             ];
             $faces[$r->TarId] = [
                 'id'      => $r->TarId,
                 'name'    => $r->TarDescr,
-                'svg'     => $svgMap[$key] ?? 'Empty.svg',
+                'svg'     => $svgMap[$key] ?? '0.svg',
                 'classes' => 'None',
             ];
         }
@@ -101,7 +106,7 @@ switch ($action) {
                            AND EvFinalFirstPhase != 0");
         while ($r = safe_fetch($rs2)) {
             $tfId = intval($r->EvFinalTargetType);
-            $evFaces[$r->EvCode] = isset($faces[$tfId]) ? $faces[$tfId]['svg'] : 'Empty.svg';
+            $evFaces[$r->EvCode] = isset($faces[$tfId]) ? $faces[$tfId]['svg'] : '0.svg';
         }
         echo json_encode(['faces' => $faces, 'eventFaces' => $evFaces]);
         break;

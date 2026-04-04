@@ -64,7 +64,7 @@ class QP_Blason
     public $imgTaille    = 40; // largeur d'affichage en px (même logique que ImgTFace::taille)
     public $imgNbArcher  = 0;
     public $label        = '';
-    public $svgFile      = 'Empty.svg';
+    public $svgFile      = '0.svg'; //'Empty.svg';
     public $count        = 0; // nb archers
     public $physicalCount = 0; // nb blasons physiques nécessaires
     public $alias        = ''; // nom d'affichage personnalisé (vide = utilise $name)
@@ -116,19 +116,19 @@ class QP_Blason
     public static function svgForKey(string $key): string
     {
         static $svgMap = [
-            'TrgIndComplete-40'  => 'D40.svg',
-            'TrgIndSmall-40'     => 'D40TCL.svg',
-            'TrgCOIndSmall-40'   => 'D40TCO.svg',
-            'TrgProAMIndVegasSmall-40'  => 'D40V.svg',
-            'TrgIndComplete-60'  => 'D60.svg',
-            'TrgIndSmall-60'     => 'D60T.svg',
-            'TrgIndComplete-80'  => 'D80.svg',
-            'TrgCOOutdoor-80'    => 'D80R.svg',
-            'TrgOutdoor-80'      => 'D80.svg',
-            'TrgOutdoor-122'     => 'D122.svg',
-            'TrgFrBeursault-45'  => 'Beursault.svg',
+            'TrgIndComplete-40'  => '1.svg', //'D40.svg',
+            'TrgIndSmall-40'     => '2.svg', //'D40TCL.svg',
+            'TrgCOIndSmall-40'   =>  '4.svg', //'D40TCO.svg',
+            'TrgProAMIndVegasSmall-40'  => '16.svg', //'D40V.svg',
+            'TrgIndComplete-60'  => '1.svg', //'D60.svg',
+            'TrgIndSmall-60'     => '2.svg', //'D60T.svg',
+            'TrgIndComplete-80'  => '1.svg', //'D80.svg',
+            'TrgCOOutdoor-80'    => '9.svg', //'D80R.svg',
+            'TrgOutdoor-80'      => '1.svg', //'D80.svg',
+            'TrgOutdoor-122'     => '5.svg', //'D122.svg',
+            'TrgFrBeursault-45'  => '27.svg',//'Beursault.svg',
         ];
-        return $svgMap[$key] ?? 'Empty.svg';
+        return $svgMap[$key] ?? '0.svg'; //'Empty.svg';
     }
 
     // Retourne la largeur d'affichage en px (identique à ImgTFace::taille)

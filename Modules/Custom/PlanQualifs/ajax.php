@@ -13,8 +13,8 @@ $sessId   = isset($_GET['sessId'])   ? intval($_GET['sessId'])   : 1;
 $tourId   = $_SESSION['TourId'];
 
 // Chemin URL vers le dossier svg/
-$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/svg/';
-
+//$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/svg/';
+$svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
 switch ($action) {
 
     // ---------------------------------------------------------------
@@ -420,7 +420,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
         <?php else: ?>
           <!-- Cible vide -->
           <?php if ($svgBase): ?>
-            <img src="<?= htmlspecialchars($svgBase . 'Empty.svg') ?>"
+            <img src="<?= htmlspecialchars($svgBase . '0.svg') ?>"
                  alt="Vide"
                  style="width:40px; height:auto; opacity:.2; display:block; margin:auto;">
           <?php endif; ?>
