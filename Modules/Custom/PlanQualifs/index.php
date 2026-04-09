@@ -21,13 +21,29 @@ if (empty($session->name) && !empty($session->tour->sessions)) {
     $session   = new QP_Session($_SESSION['TourId'], $sessId);
 }
 
-// Couleurs par structure (club/pays)
+// Couleurs par structure (club/pays) — inclut tous les inscrits du tournoi
 $structColors = [];
 $colorPalette = ['#FFD6D6','#D6FFD6','#D6D6FF','#FFFFD6','#FFD6FF','#D6FFFF','#FFE8D6','#E8D6FF','#D6FFE8','#FFD6E8'];
 $colorIdx = 0;
+// Session courante
 foreach ($session->participants as $p) {
     if (!isset($structColors[$p->structId])) {
         $structColors[$p->structId] = $colorPalette[$colorIdx % count($colorPalette)];
+        $colorIdx++;
+    }
+}
+// Archers sans départ (absents de la session courante)
+$rsAllStruct = safe_r_sql(
+    "SELECT DISTINCT E.EnCountry
+     FROM Entries E
+     LEFT JOIN Qualifications Q ON E.EnId = Q.QuId
+     WHERE E.EnAthlete = 1 AND E.EnTournament = " . intval($_SESSION['TourId']) . "
+       AND (Q.QuId IS NULL OR Q.QuSession = 0 OR Q.QuSession IS NULL)"
+);
+while ($rAllStruct = safe_fetch($rsAllStruct)) {
+    $sid = intval($rAllStruct->EnCountry);
+    if (!isset($structColors[$sid])) {
+        $structColors[$sid] = $colorPalette[$colorIdx % count($colorPalette)];
         $colorIdx++;
     }
 }
@@ -150,7 +166,7 @@ include('Common/Templates/head.php');
   <!-- Colonne gauche : liste de picking -->
   <div class="qp-picking-col">
     <div class="qp-search-wrap">
-      <input type="text" id="qpSearch" placeholder="Rechercher archer / structure…" autocomplete="off">
+      <input type="text" id="qpSearch" placeholder="Archer / License / Structure…" autocomplete="off">
       <span id="qpSearchClear" title="Effacer" onclick="clearSearch()">✕</span>
     </div>
     <div id="PickingList" class="qp-picking-list">
@@ -204,6 +220,22 @@ include('Common/Templates/head.php');
           </div>
         <?php endforeach; ?>
       <?php endif; ?>
+
+      <!-- Section archers sans départ (toujours affichée, chargée séparément) -->
+      <div class="qp-accordion-item qp-unassigned-section" id="tgl-unassigned">
+        <div class="qp-accordion-header qp-unassigned-header" onclick="qpToggle(this)">
+          <span>Sans départ</span>
+          <span class="qp-counts">
+            (<span class="memberAffectedCount">0</span>/<span class="memberCount">?</span>)
+          </span>
+          <span class="qp-chevron">▼</span>
+        </div>
+        <div class="qp-accordion-body qp-hidden">
+          <div class="ddsrc" id="blsItem-unassigned" data-unassigned="1" data-blason="" data-blason-alias="" data-category="">
+            <div class="blasonContent dragula-container"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

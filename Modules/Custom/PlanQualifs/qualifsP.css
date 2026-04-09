@@ -367,6 +367,25 @@
 
 
 /* ----------------------------------------------------------
+   Section "Sans départ"
+---------------------------------------------------------- */
+.qp-unassigned-section {
+    border-top: 2px solid var(--bg-orange, #e6a817);
+    margin-top: 4px;
+}
+.qp-unassigned-header {
+    background: #fff3cd !important;
+    color: #7a4f00;
+}
+.qp-unassigned-header:hover {
+    background: #ffe699 !important;
+}
+/* Laisser la couleur bgstru du div parent transparaître dans la card */
+#tgl-unassigned .qp-picker-item .qp-src-card {
+    background-color: transparent;
+}
+
+/* ----------------------------------------------------------
    Dragula
 ---------------------------------------------------------- */
 .dragula-container > div {

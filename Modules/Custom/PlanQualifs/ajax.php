@@ -182,6 +182,7 @@ switch ($action) {
 			data-pq-blason="<?= $item->blason->id ?>"
 			data-pq-blason-alias="<?= htmlspecialchars($item->blason ? $item->blason->displayName() : '', ENT_QUOTES) ?>"
 			data-pq-name="<?= htmlspecialchars($item->getNomCourt(), ENT_QUOTES) ?>"
+			data-pq-license="<?= $item->license ?>"
 			data-pq-struct-name="<?= htmlspecialchars($item->structName, ENT_QUOTES) ?>"
 			>
               <input type="hidden" class="archerId"   value="<?= $item->id ?>">
@@ -211,6 +212,93 @@ switch ($action) {
             </div>
             <?php
         endforeach;
+        break;
+
+    // ---------------------------------------------------------------
+    // Liste archers sans départ affecté (QuSession = 0)
+    // ---------------------------------------------------------------
+    case 'unassignedList':
+        // Blason map pour ce tournoi (même logique que QP_Session::loadBlasons)
+        static $imgMapU = [
+            'TrgIndComplete-40'  => [1, 2, '⌀40'],
+            'TrgIndSmall-40'     => [2, 1, 'CL'],
+            'TrgCOIndSmall-40'   => [2, 1, 'CO'],
+            'vegas-40'           => [1, 2, 'Vegas'],
+            'TrgIndComplete-60'  => [2, 2, '⌀60'],
+            'TrgIndSmall-60'     => [2, 2, '⌀60T'],
+            'TrgIndComplete-80'  => [2, 4, '⌀80'],
+            'TrgCOOutdoor-80'    => [1, 2, '⌀80CO'],
+            'TrgOutdoor-80'      => [2, 4, '⌀80'],
+            'TrgOutdoor-122'     => [2, 4, '⌀122'],
+            'TrgFrBeursault-45'  => [2, 4, 'Beursault'],
+        ];
+        $blasonMapU = [];
+        $rsB = safe_r_sql("SELECT TF.TfId, TF.TfW1, T.TarDescr
+                           FROM TargetFaces TF
+                           INNER JOIN Targets T ON T.TarId = TF.TfT1
+                           WHERE TF.TfTournament = " . intval($tourId));
+        while ($rB = safe_fetch($rsB)) {
+            $b           = new QP_Blason();
+            $b->id       = intval($rB->TfId);
+            $b->diameter = intval($rB->TfW1);
+            $b->targetName = $rB->TarDescr;
+            $key = $rB->TarDescr . '-' . intval($rB->TfW1);
+            if (isset($imgMapU[$key])) {
+                $b->imgH  = $imgMapU[$key][0];
+                $b->imgV  = $imgMapU[$key][1];
+                $b->label = $imgMapU[$key][2];
+            }
+            $b->alias = QP_Blason::aliasForKey($key);
+            $blasonMapU[$b->id] = $b;
+        }
+
+        $sql = "SELECT E.EnId, E.EnCode, E.EnDivision, E.EnClass,
+                       E.EnCountry, E.EnName, E.EnFirstName, E.EnTargetFace,
+                       C.CoName
+                FROM Entries E
+                INNER JOIN Countries C
+                    ON E.EnCountry = C.CoId AND E.EnTournament = C.CoTournament
+                LEFT JOIN Qualifications Q ON E.EnId = Q.QuId
+                WHERE E.EnAthlete = 1 AND E.EnTournament = " . intval($tourId) . "
+                  AND (Q.QuId IS NULL OR Q.QuSession = 0 OR Q.QuSession IS NULL)
+                ORDER BY E.EnName, E.EnFirstName";
+        $rs = safe_r_sql($sql);
+        $found = false;
+        while ($r = safe_fetch($rs)):
+            $found      = true;
+            $blason     = $blasonMapU[intval($r->EnTargetFace)] ?? null;
+            $blasonType = $blason ? 'acc-' . $blason->imgH . '-' . $blason->imgV : '';
+            $structId   = intval($r->EnCountry);
+            $cat        = $r->EnClass . $r->EnDivision;
+            $nomCourt   = substr($r->EnFirstName, 0, 1) . '.' . $r->EnName;
+            ?>
+            <div class="pq-halo-archer qp-picker-item bgstru<?= $structId ?>"
+                data-pq-struct="<?= $structId ?>"
+                data-pq-category="<?= htmlspecialchars($cat, ENT_QUOTES) ?>"
+                data-pq-blason="<?= $blason ? $blason->id : 0 ?>"
+                data-pq-blason-alias="<?= htmlspecialchars($blason ? $blason->displayName() : '', ENT_QUOTES) ?>"
+                data-pq-name="<?= htmlspecialchars($nomCourt, ENT_QUOTES) ?>":
+				data-pq-license="<?= htmlspecialchars($r->EnCode, ENT_QUOTES) ?>"
+                data-pq-struct-name="<?= htmlspecialchars($r->CoName, ENT_QUOTES) ?>"
+                >
+              <input type="hidden" class="archerId"   value="<?= intval($r->EnId) ?>">
+              <input type="hidden" class="cibleNum"   value="0">
+              <input type="hidden" class="blasonType" value="<?= $blasonType ?>">
+              <!-- Ligne visible dans zone cible (ddtrg) -->
+              <div class="bgstru<?= $structId ?> disptrg" data-struct="<?= $structId ?>">
+                <span class="archers"><?= htmlspecialchars($cat . ' — ' . $nomCourt) ?></span>
+              </div>
+              <!-- Ligne visible dans picking list (dispsrc) -->
+              <div class="dispsrc bgstru<?= $structId ?> qp-src-card" data-struct="<?= $structId ?>">
+                <span class="archers"><?= htmlspecialchars($cat . ' — ' . $nomCourt) ?></span><br>
+                <span class="archers" style="color:#555;"><?= htmlspecialchars($r->CoName) ?></span>
+              </div>
+            </div>
+            <?php
+        endwhile;
+        if (!$found) {
+            echo '<em style="color:#999; font-size:.82em; display:block; padding:4px;">Tous les archers ont un départ.</em>';
+        }
         break;
 
     // ---------------------------------------------------------------
