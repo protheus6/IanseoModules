@@ -361,7 +361,10 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 
       <!-- Étiquettes vagues -->
       <div class="qp-vagues-labels">
-        <?php if (count($cible->vagues) == 4): ?>
+        <?php if ($is3H1V2): ?>
+          <span class="qp-vague-label">B</span>
+          <span class="qp-vague-label">A/C</span>
+        <?php elseif (count($cible->vagues) == 4): ?>
           <span class="qp-vague-label"><?= $cible->vagues[1]->label ?>/<?= $cible->vagues[3]->label ?></span>
           <span class="qp-vague-label"><?= $cible->vagues[2]->label ?>/<?= $cible->vagues[4]->label ?></span>
         <?php else: ?>
@@ -379,6 +382,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
        */
       $hasBlason     = count(array_filter($cible->vagues, fn($v) => isset($v->blason))) > 0;
       $vaguesOrdered = $cible->getVaguesOrdered();
+      $is3H1V2       = $cible->is3ArcherH1V2Layout();
 
       /*
        * Règles d'affichage selon H/V :
@@ -454,7 +458,41 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
       ?>
       <!-- Représentation blasons : hauteur fixe CSS (voir .qp-blasons-row) -->
       <div class="qp-blasons-row" style="<?= $isU11 ? 'align-items:flex-end;' : '' ?>">
-        <?php if ($hasBlason): ?>
+        <?php if ($is3H1V2 && $hasBlason): ?>
+          <!-- Blason spécial 3 archers ABC : B haut-centre, A bas-gauche, C bas-droite -->
+          <?php
+          $vagueA   = $cible->vagues[1] ?? null;
+          $vagueB   = $cible->vagues[2] ?? null;
+          $vagueC   = $cible->vagues[3] ?? null;
+          $anyBl    = null;
+          foreach ($cible->vagues as $_v) { if (isset($_v->blason)) { $anyBl = $_v->blason; break; } }
+          $slots3bl = [
+              ['vague' => $vagueB, 'col' => '2/4', 'row' => '1'],
+              ['vague' => $vagueA, 'col' => '1/3', 'row' => '2'],
+              ['vague' => $vagueC, 'col' => '3/5', 'row' => '2'],
+          ];
+          ?>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(2,1fr); width:100%; height:100%;">
+            <?php foreach ($slots3bl as $s3):
+              $sv  = $s3['vague'];
+              $sbl = ($sv && isset($sv->blason)) ? $sv->blason : $anyBl;
+              if ($sbl === null) continue;
+              $sOvl = ($sv && isset($sv->blason)) ? $sv->overlay : true;
+            ?>
+            <div class="pq-halo-blason"
+                 data-pq-blason="<?= $sbl->id ?>"
+                 style="grid-column:<?= $s3['col'] ?>; grid-row:<?= $s3['row'] ?>; display:flex; flex-direction:column; justify-content:center; align-items:center; <?= $sOvl ? 'opacity:.35;' : '' ?>">
+              <?php if ($svgBase): ?>
+                <img src="<?= htmlspecialchars($svgBase . $sbl->svgFile) ?>"
+                     alt="<?= htmlspecialchars($sbl->label) ?>"
+                     title="<?= htmlspecialchars($sbl->name) ?>"
+                     style="width:<?= $sbl->imgTaille ?>px; height:auto; display:block; margin:auto;">
+                <div class="qp-cible-subtitle"><?= htmlspecialchars($sbl->label) ?></div>
+              <?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        <?php elseif ($hasBlason): ?>
           <?php if ($blasonUnique): ?>
             <!-- Blason pleine largeur (imgV>=4) -->
             <?php $hasRealArcher = count(array_filter($cible->vagues, fn($v) => isset($v->blason) && !$v->overlay)) > 0; ?>
@@ -517,14 +555,30 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
     </div>
 
     <!-- Zone noms archers (drag & drop) -->
+    <?php
+    $refBTfor3 = '';
+    if ($is3H1V2) {
+        foreach ($cible->vagues as $_v) {
+            if (isset($_v->blason)) { $refBTfor3 = 'acc-' . $_v->blason->imgH . '-' . $_v->blason->imgV; break; }
+        }
+    }
+    ?>
     <div id="cb<?= $cible->num ?>" class="qp-cible-names nameArcher qp-border-<?= $wc ?>">
-      <?php foreach ($cible->getVaguesOrdered() as $vaguesOrder): ?>
-        <?php foreach ($vaguesOrder as $vague): ?>
-          <?php
-            $bgcol      = isset($vague->participant) ? 'bgstru' . $vague->participant->structId : '';
-            $blasonType = isset($vague->blason) ? 'acc-' . $vague->blason->imgH . '-' . $vague->blason->imgV : '';
-            $catClass   = isset($vague->participant) ? 'tcat-' . htmlspecialchars($vague->participant->getCategory()) : '';
-          ?>
+      <?php if ($is3H1V2): ?>
+        <?php
+        // Ordre ABC (1, 2, 3) pour la ligne d'archers
+        $slots3dd = [
+            $cible->vagues[1] ?? null,
+            $cible->vagues[2] ?? null,
+            $cible->vagues[3] ?? null,
+        ];
+        ?>
+        <?php foreach ($slots3dd as $vague):
+          if (!$vague) continue;
+          $bgcol      = isset($vague->participant) ? 'bgstru' . $vague->participant->structId : '';
+          $blasonType = isset($vague->blason) ? 'acc-' . $vague->blason->imgH . '-' . $vague->blason->imgV : $refBTfor3;
+          $catClass   = isset($vague->participant) ? 'tcat-' . htmlspecialchars($vague->participant->getCategory()) : '';
+        ?>
           <div class="qp-vague-slot <?= isset($vague->blason) ? 'tgl-' . $vague->blason->id : '' ?> <?= $catClass ?>">
             <input type="hidden" class="cibleNum"    value="<?= $vague->target ?>">
             <input type="hidden" class="cibleLetter" value="<?= $vague->order ?>">
@@ -532,17 +586,14 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
             <div class="dragula-container ddtrg <?= $blasonType ?>" style="min-height:50px;">
               <?php if (isset($vague->participant)): ?>
                 <div class="pq-halo-archer qp-picker-item" id="archer-container"
-				data-pq-struct="<?= $vague->participant->structId ?>"
-				data-pq-category="<?= $vague->participant->getCategory() ?>"
-				data-pq-blason="<?= $vague->blason->id ?>"
-				data-pq-blason-alias="<?= htmlspecialchars($vague->blason ? $vague->blason->displayName() : '', ENT_QUOTES) ?>"
-				>
+                     data-pq-struct="<?= $vague->participant->structId ?>"
+                     data-pq-category="<?= $vague->participant->getCategory() ?>"
+                     data-pq-blason="<?= isset($vague->blason) ? $vague->blason->id : 0 ?>"
+                     data-pq-blason-alias="<?= htmlspecialchars($vague->blason ? $vague->blason->displayName() : '', ENT_QUOTES) ?>">
                   <input type="hidden" class="blasonType" value="<?= $blasonType ?>">
                   <input type="hidden" class="archerId"   value="<?= $vague->participant->id ?>">
                   <input type="hidden" class="cibleNum"   value="<?= $vague->participant->target ?>">
-                  <div class="<?= $bgcol ?> disptrg"
-                       data-struct="<?= $vague->participant->structId ?>"
-					   >
+                  <div class="<?= $bgcol ?> disptrg" data-struct="<?= $vague->participant->structId ?>">
                     <span class="archers">
                       <?= htmlspecialchars($vague->participant->getCategory() . ' — ' . $vague->participant->getNomCourt()) ?>
                     </span>
@@ -552,7 +603,41 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
             </div>
           </div>
         <?php endforeach; ?>
-      <?php endforeach; ?>
+      <?php else: ?>
+        <?php foreach ($cible->getVaguesOrdered() as $vaguesOrder): ?>
+          <?php foreach ($vaguesOrder as $vague): ?>
+            <?php
+              $bgcol      = isset($vague->participant) ? 'bgstru' . $vague->participant->structId : '';
+              $blasonType = isset($vague->blason) ? 'acc-' . $vague->blason->imgH . '-' . $vague->blason->imgV : '';
+              $catClass   = isset($vague->participant) ? 'tcat-' . htmlspecialchars($vague->participant->getCategory()) : '';
+            ?>
+            <div class="qp-vague-slot <?= isset($vague->blason) ? 'tgl-' . $vague->blason->id : '' ?> <?= $catClass ?>">
+              <input type="hidden" class="cibleNum"    value="<?= $vague->target ?>">
+              <input type="hidden" class="cibleLetter" value="<?= $vague->order ?>">
+              <div class="qp-vague-slot-label"><?= $vague->label ?></div>
+              <div class="dragula-container ddtrg <?= $blasonType ?>" style="min-height:50px;">
+                <?php if (isset($vague->participant)): ?>
+                  <div class="pq-halo-archer qp-picker-item" id="archer-container"
+                       data-pq-struct="<?= $vague->participant->structId ?>"
+                       data-pq-category="<?= $vague->participant->getCategory() ?>"
+                       data-pq-blason="<?= $vague->blason->id ?>"
+                       data-pq-blason-alias="<?= htmlspecialchars($vague->blason ? $vague->blason->displayName() : '', ENT_QUOTES) ?>">
+                    <input type="hidden" class="blasonType" value="<?= $blasonType ?>">
+                    <input type="hidden" class="archerId"   value="<?= $vague->participant->id ?>">
+                    <input type="hidden" class="cibleNum"   value="<?= $vague->participant->target ?>">
+                    <div class="<?= $bgcol ?> disptrg"
+                         data-struct="<?= $vague->participant->structId ?>">
+                      <span class="archers">
+                        <?= htmlspecialchars($vague->participant->getCategory() . ' — ' . $vague->participant->getNomCourt()) ?>
+                      </span>
+                    </div>
+                  </div>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php endforeach; ?>
+      <?php endif; ?>
     </div>
     <?php
 }
