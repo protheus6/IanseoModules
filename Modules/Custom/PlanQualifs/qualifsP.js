@@ -16,6 +16,7 @@
 $(function () {
     blasonRecap();
     loadPickingList($('#PickingList'));
+    loadUnassignedSection();
     $('[id^=Cible-]').each(function () { getCible(this); });
     loadDragula();
     pqInitHoverStructure();
@@ -40,10 +41,14 @@ function qpToggle(header) {
     } else {
         body.removeClass('qp-hidden');
         item.addClass('qp-open');
-        // Charger le contenu si pas encore fait
+        // Charger le contenu si pas encore fait (lazy loading)
         var container = body.find('[id^=blsItem-]');
         if (container.length && container.find('.blasonContent').children().length === 0) {
-            loadOnePickingItem(container[0]);
+            if (container.attr('id') === 'blsItem-unassigned') {
+                loadUnassignedSection();
+            } else {
+                loadOnePickingItem(container[0]);
+            }
         }
     }
 }
@@ -68,10 +73,10 @@ function blasonRecap() {
 }
 
 /* ----------------------------------------------------------
-   Picking list complète
+   Picking list complète (groupes session)
 ---------------------------------------------------------- */
 function loadPickingList(container) {
-    $(container).find('[id^=blsItem-]').each(function () {
+    $(container).find('[id^=blsItem-]').not('#blsItem-unassigned').each(function () {
         loadOnePickingItem(this);
     });
 }
@@ -97,6 +102,33 @@ function loadOnePickingItem(elt) {
 			$(elt).closest('.qp-accordion-item').find('.memberAffectedCount').removeClass('memberAffectedCount-hl');
 		}
         hideAffectedSwitch();
+        filterPickingList();
+        loadDragula();
+    });
+}
+
+/* ----------------------------------------------------------
+   Section "Sans départ"
+---------------------------------------------------------- */
+function loadUnassignedSection() {
+    var elt = document.getElementById('blsItem-unassigned');
+    if (!elt) return;
+    $.get(QP_ROOT + 'ajax.php', {
+        action: 'unassignedList',
+        sessId: $('#departId').val()
+    }, function (data) {
+        $(elt).find('.blasonContent').html(data);
+        var total = $(elt).find('.blasonContent .qp-picker-item').length;
+        var section = $('#tgl-unassigned');
+        section.find('.memberCount').text(total);
+        section.find('.memberAffectedCount').text(0);
+        if (total > 0) {
+            section.find('.memberAffectedCount').addClass('memberAffectedCount-hl');
+            section.show();
+        } else {
+            section.find('.memberAffectedCount').removeClass('memberAffectedCount-hl');
+            section.hide();
+        }
         filterPickingList();
         loadDragula();
     });
@@ -138,6 +170,7 @@ function moveArcher(archer, source, target) {
         var oldCible = $(archer).find('input.cibleNum').val();
         if (oldCible && oldCible !== '0') getCible($('#Cible-' + oldCible));
         loadPickingList($('#PickingList'));
+        loadUnassignedSection();
         blasonRecap();
     });
 }
@@ -156,6 +189,7 @@ function removeCible(item) {
     }, function () {
         getCible(cible);
         loadPickingList($('#PickingList'));
+        loadUnassignedSection();
         blasonRecap();
     });
 }
@@ -195,26 +229,31 @@ function filterPickingList() {
 
     if (!q) {
         // Pas de recherche : tout afficher puis appliquer le filtre "affectés"
-        $('#PickingList .qp-picker-item').show();
-        $('#PickingList .qp-accordion-item').show();
+        $('#PickingList .qp-picker-item, #tgl-unassigned .qp-picker-item').show();
+        $('#PickingList .qp-accordion-item').not('#tgl-unassigned').show();
         if (!showAffected) {
             $('#PickingList .affected').hide();
         }
+        // Section unassigned : réafficher si non vide
+        var unassignedCount = $('#tgl-unassigned .qp-picker-item').length;
+        if (unassignedCount > 0) $('#tgl-unassigned').show();
         return;
     }
 
-    // Filtrer chaque archer sur nom et structure
-    $('#PickingList .qp-picker-item').each(function () {
+    // Filtrer chaque archer sur nom et structure (sections session + unassigned)
+    $('#PickingList .qp-picker-item, #tgl-unassigned .qp-picker-item').each(function () {
+		var license   = ($(this).data('pq-license')        || '').toLowerCase();
         var name   = ($(this).data('pq-name')        || '').toLowerCase();
         var struct = ($(this).data('pq-struct-name') || '').toLowerCase();
-        var match  = name.indexOf(q) !== -1 || struct.indexOf(q) !== -1;
+        var match  = name.indexOf(q) !== -1 || struct.indexOf(q) !== -1 || license.indexOf(q) !== -1;
         var isAffected = $(this).hasClass('affected');
         $(this).toggle(match && (showAffected || !isAffected));
     });
 
-    // Afficher/masquer chaque groupe selon s'il contient des archers correspondants
+    // Afficher/masquer chaque groupe session selon s'il contient des archers correspondants
     // NB : on contrôle le style inline de l'item (pas :visible qui dépend des ancêtres)
-    $('#PickingList .qp-accordion-item').each(function () {
+    // Exclusion de #tgl-unassigned géré séparément ci-dessous
+    $('#PickingList .qp-accordion-item').not('#tgl-unassigned').each(function () {
         var hasMatch = $(this).find('.qp-picker-item').filter(function () {
             return this.style.display !== 'none';
         }).length > 0;
@@ -224,6 +263,16 @@ function filterPickingList() {
             $(this).addClass('qp-open');
         }
     });
+
+    // Section unassigned
+    var hasUnassignedMatch = $('#tgl-unassigned .qp-picker-item').filter(function () {
+        return this.style.display !== 'none';
+    }).length > 0;
+    $('#tgl-unassigned').toggle(hasUnassignedMatch);
+    if (hasUnassignedMatch) {
+        $('#tgl-unassigned .qp-accordion-body').removeClass('qp-hidden');
+        $('#tgl-unassigned').addClass('qp-open');
+    }
 }
 
 function clearSearch() {

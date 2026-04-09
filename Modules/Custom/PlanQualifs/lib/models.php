@@ -168,19 +168,20 @@ class QP_Blason
 // ---------------------------------------------------------------
 class QP_Participant
 {
-    public $id        = 0;
-    public $structId  = 0;
-    public $license   = '';
-    public $structName= '';
-    public $arme      = '';
-    public $classe    = '';
-    public $nom       = '';
-    public $prenom    = '';
-    public $target    = 0;
-    public $distance  = 0;
-    public $letter    = '';
-    public $targetId  = 0;
-    public $blason    = null; // QP_Blason
+    public $id           = 0;
+    public $structId     = 0;
+    public $license      = '';
+    public $structName   = '';
+    public $arme         = '';
+    public $classe       = '';
+    public $nom          = '';
+    public $prenom       = '';
+    public $target       = 0;
+    public $distance     = 0;
+    public $letter       = '';
+    public $targetId     = 0;
+    public $blason       = null;  // QP_Blason
+    public $isUnassigned = false; // vrai si QuSession = 0 (aucun départ affecté)
 
     public function getCible(): string
     {
@@ -372,7 +373,7 @@ class QP_Session
                     ON E.EnTargetFace = TF.TfId AND E.EnTournament = TF.TfTournament
                 INNER JOIN Qualifications Q
                     ON E.EnId = Q.QuId
-                WHERE E.EnTournament = " . intval($this->tour->id) . "
+                WHERE E.EnAthlete = 1 AND E.EnTournament = " . intval($this->tour->id) . "
                   AND Q.QuSession = " . intval($this->order);
 
         if ($cibleNum > 0) {
@@ -608,7 +609,7 @@ class QP_Cible
                 INNER JOIN TournamentDistances TD
                     ON E.EnTournament = TD.TdTournament
                     AND CONCAT(TRIM(E.EnDivision), TRIM(E.EnClass)) LIKE TD.TdClasses
-                WHERE E.EnTournament = " . intval($this->tour->id) . "
+                WHERE E.EnAthlete = 1 AND E.EnTournament = " . intval($this->tour->id) . "
                   AND Q.QuSession = " . intval($this->order);
         if ($cibleNum > 0) {
             $sql .= " AND Q.QuTarget = " . intval($cibleNum);
@@ -803,18 +804,20 @@ class QP_UpdateParticipant
 
     private function loadParticipant(int $partId)
     {
-        $sql = "SELECT E.EnId, Q.QuTarget, Q.QuLetter
+        // Chercher dans la session courante OU parmi les archers sans départ (QuSession=0)
+        $sql = "SELECT E.EnId, Q.QuTarget, Q.QuLetter, Q.QuSession
                 FROM Entries E
                 INNER JOIN Qualifications Q ON E.EnId = Q.QuId
-                WHERE E.EnTournament = " . intval($this->tour->id) . "
-                  AND Q.QuSession = " . intval($this->order) . "
+                WHERE E.EnAthlete = 1 AND  E.EnTournament = " . intval($this->tour->id) . "
+                  AND (Q.QuSession = " . intval($this->order) . " OR Q.QuSession = 0)
                   AND E.EnId = " . intval($partId);
         $rs = safe_r_sql($sql);
         if ($r = safe_fetch($rs)) {
-            $p         = new QP_Participant();
-            $p->id     = intval($r->EnId);
-            $p->target = intval($r->QuTarget);
-            $p->letter = $r->QuLetter;
+            $p               = new QP_Participant();
+            $p->id           = intval($r->EnId);
+            $p->target       = intval($r->QuTarget);
+            $p->letter       = $r->QuLetter;
+            $p->isUnassigned = (intval($r->QuSession) === 0);
             $this->participant = $p;
         }
     }
@@ -845,12 +848,22 @@ class QP_UpdateParticipant
         $letterSafe = StrSafe_DB($letterStr);
         $tnoSafe    = StrSafe_DB($targetNo);
 
-        $sql = "UPDATE Qualifications
-                SET QuTarget = $cNumSql,
-                    QuLetter = $letterSafe,
-                    QuTargetNo = $tnoSafe
-                WHERE QuId = " . intval($this->participant->id) . "
-                  AND QuSession = " . intval($this->order);
+        if ($this->participant->isUnassigned && $cNum > 0) {
+            // Archer sans départ : affecter au départ courant ET à la cible
+            $sql = "UPDATE Qualifications
+                    SET QuSession = " . intval($this->order) . ",
+                        QuTarget = $cNumSql,
+                        QuLetter = $letterSafe,
+                        QuTargetNo = $tnoSafe
+                    WHERE QuId = " . intval($this->participant->id);
+        } else {
+            $sql = "UPDATE Qualifications
+                    SET QuTarget = $cNumSql,
+                        QuLetter = $letterSafe,
+                        QuTargetNo = $tnoSafe
+                    WHERE QuId = " . intval($this->participant->id) . "
+                      AND QuSession = " . intval($this->order);
+        }
         safe_w_sql($sql);
     }
 
@@ -860,7 +873,7 @@ class QP_UpdateParticipant
         $sql = "SELECT E.EnId
                 FROM Entries E
                 INNER JOIN Qualifications Q ON E.EnId = Q.QuId
-                WHERE E.EnTournament = " . intval($this->tour->id) . "
+                WHERE E.EnAthlete = 1 AND E.EnTournament = " . intval($this->tour->id) . "
                   AND Q.QuSession = " . intval($this->order) . "
                   AND Q.QuTarget = " . intval($cNum) . "
                   AND Q.QuLetter = " . StrSafe_DB($letter);
