@@ -668,6 +668,26 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 }
 .pf-tile-two:hover { opacity: 1; color: #00a; }
 
+/* Tuile en conflit d'ordre : bordure rouge vive */
+.pf-tile--conflict {
+    border: 2px solid #d32f2f !important;
+    box-shadow: 0 0 0 1px #d32f2f !important;
+}
+
+/* Bandeau "Conflit" en haut de la tuile */
+.pf-conflict-badge {
+    display: block;
+    background: #d32f2f;
+    color: #fff;
+    font-size: .72em;
+    font-weight: bold;
+    text-align: center;
+    padding: 1px 4px;
+    cursor: help;
+    letter-spacing: .04em;
+}
+@media print { .pf-conflict-badge { display: none !important; } }
+
 /* Zone blason (optionnel) */
 .pf-tile-svg {
     display: none;

@@ -13,6 +13,7 @@ var pfShowBlason        = false;  // afficher les blasons SVG
 var pfDirty             = false;  // modifications non sauvegardées
 var pfUnschedCollapsed  = {};     // {evCode: bool} — groupes réduits dans "Non planifiés"
 var pfZoom              = 100;    // niveau de zoom grille en % (50–150)
+var pfConflictIds       = {};     // {event|phase|teamEvent: message} — conflits d'ordre détectés
 
 /* ============================================================
    Ajustement layout (le CSS flex gère la hauteur automatiquement)
@@ -283,11 +284,82 @@ function pfNormalizeWaveBlocks() {
    Rendu de la grille
    ============================================================ */
 function pfRender() {
+    pfComputeConflicts();
     var html = pfBuildTable();
     $('#pfGrid').html(html);
     pfInitSlotEditors();
     // Re-appliquer le zoom sur les <col> recréés par le rendu
     pfSetZoom(pfZoom);
+}
+
+/* ============================================================
+   Détection des conflits d'ordre (phase enfant avant phase parent)
+   ============================================================ */
+
+/** Retourne le numéro de phase prérequise pour une phase donnée.
+ *  Hiérarchie : 1/16(16) → 1/8(8) → 1/4(4) → 1/2(2) → Or(0) + Bronze(1) */
+function pfGetPrereqPhase(phase) {
+    if (phase === 0 || phase === 1) return 2;   // Or / Bronze ← demi-finale
+    if (phase >= 2) return phase * 2;            // 1/2 ← 1/4, 1/4 ← 1/8, etc.
+    return null;
+}
+
+/** Timestamp (ms) du début d'un créneau. */
+function pfSlotStartMs(slot) {
+    return new Date(slot.date + 'T' + slot.time + ':00').getTime();
+}
+
+/** Timestamp (ms) de la fin d'un créneau (toutes vagues incluses). */
+function pfSlotEndMs(slot) {
+    var waves = parseInt(slot.waves, 10) || 1;
+    var dur   = parseInt(slot.duration, 10) || 0;
+    return pfSlotStartMs(slot) + waves * dur * 60000;
+}
+
+/** Reconstruit pfConflictIds à partir de pfData.
+ *  Clé : "event|phase|teamEvent" → message de conflit.
+ *  Un bloc est en conflit si son créneau commence avant la fin du créneau de sa phase-parente
+ *  pour le même événement. */
+function pfComputeConflicts() {
+    pfConflictIds = {};
+    if (!pfData || !pfData.slots) return;
+
+    // Collecter tous les blocs placés (phase uniquement)
+    var placed = [];
+    pfData.slots.forEach(function (slot) {
+        (slot.blocks || []).forEach(function (blk) {
+            if (blk.type === 'phase') {
+                placed.push({ block: blk, slot: slot });
+            }
+        });
+    });
+
+    placed.forEach(function (item) {
+        var blk  = item.block;
+        var slot = item.slot;
+        var phase = parseInt(blk.phase, 10);
+        var prereqPhase = pfGetPrereqPhase(phase);
+        if (prereqPhase === null || isNaN(prereqPhase)) return;
+
+        var childStart = pfSlotStartMs(slot);
+
+        placed.forEach(function (prereqItem) {
+            var pb = prereqItem.block;
+            var ps = prereqItem.slot;
+            if (pb === blk) return;
+            if (pb.event !== blk.event) return;
+            if (String(pb.teamEvent) !== String(blk.teamEvent)) return;
+            if (parseInt(pb.phase, 10) !== prereqPhase) return;
+
+            var prereqEnd = pfSlotEndMs(ps);
+            if (prereqEnd > childStart) {
+                var key = blk.event + '|' + blk.phase + '|' + blk.teamEvent;
+                pfConflictIds[key] = (pb.phaseName || ('Phase ' + prereqPhase))
+                    + ' doit se terminer avant '
+                    + (blk.phaseName || ('Phase ' + phase));
+            }
+        });
+    });
 }
 
 function pfUniCellWidth() {
@@ -301,7 +373,6 @@ function pfUniCellWidth() {
 	let max = 0;
 	$cells.each(function () {
 		var w = $(this).outerWidth();
-		console.log("size: " + w);
 		if(w > max) max = w;
 	});
 	
@@ -497,14 +568,28 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
     var waveLabels = ['AB', 'CD', 'EF', 'GH'];
     var isWaveBlk  = block.baseBlockId !== undefined && block.baseBlockId !== '';
 
-    var h = '<div class="pf-tile" id="' + tileId + '"'
+    // Pré-calcul du conflit d'ordre pour injecter la classe sur le div racine
+    var conflictMsg = '';
+    if (block.type === 'phase') {
+        var ck = block.event + '|' + block.phase + '|' + block.teamEvent;
+        conflictMsg = pfConflictIds[ck] || '';
+    }
+    var conflictClass = conflictMsg ? ' pf-tile--conflict' : '';
+
+    var h = '<div class="pf-tile' + conflictClass + '" id="' + tileId + '"'
           + ' data-block-id="'  + pfEsc(block.id) + '"'
           + ' data-slot-idx="'  + slotIdx + '"'
           + ' data-seg-idx="'   + (segIdx || 0) + '"'
           + ' data-team-event="' + block.teamEvent + '"'
           + ' data-pf-event="'  + pfEsc(block.event) + '"'
-          + ' style="background:' + color + '; color:' + textClr + ';">'
-          + '<div class="pf-tile-hdr">';
+          + ' style="background:' + color + '; color:' + textClr + ';">';
+
+    // Bandeau de conflit en haut de la tuile (avant le header)
+    if (conflictMsg) {
+        h += '<div class="pf-conflict-badge" title="' + pfEscHtml(conflictMsg) + '">⚠ Conflit</div>';
+    }
+
+    h += '<div class="pf-tile-hdr">';
 
     // Boutons dans l'en-tête
     h += '<span class="pf-tile-rm" onclick="pfRemoveTile(\'' + pfEsc(tileId) + '\',event)" title="Retirer cette phase">✕</span>';
@@ -543,7 +628,7 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
     h += '</div>';
 
     // Zone blason
-    h += '<div class="pf-tile-svg"><img src="' + PF_SVG + 'Empty.svg" alt="" style="max-height:22px;"></div>';
+    h += '<div class="pf-tile-svg"><img src="' + PF_SVG + '0.svg" alt="" style="max-height:22px;"></div>';
 
     // Boutons étendre/réduire pour les blocs entraînement
     if (block.type === 'training') {
@@ -1274,7 +1359,6 @@ function pfApplyConfigDuration() {
     if (!pfData || !pfData.slots) return;
     var cfg       = pfGetConfig();
     var autoShift = $('#chkAutoShift').is(':checked');
-    console.log('[pfApplyConfigDuration] cfg=', JSON.stringify(cfg), 'autoShift=', autoShift);
 
     // Ordre chronologique des slots
     var order = pfData.slots.map(function (s, i) { return i; });
@@ -1282,25 +1366,21 @@ function pfApplyConfigDuration() {
         var sa = pfData.slots[a], sb = pfData.slots[b];
         return pfTimeDiffMinutes(sb.date + ' ' + sb.time, sa.date + ' ' + sa.time);
     });
-    console.log('[pfApplyConfigDuration] order=', order, 'slots=', pfData.slots.map(function(s){ return s.date+' '+s.time+' dur='+s.duration; }));
-
+    
     order.forEach(function (si, pos) {
         var slot      = pfData.slots[si];
         var targetDur = pfGetSlotTargetDuration(slot, cfg);
         var oldDur    = parseInt(slot.duration, 10) || 0;   // toujours number
-        console.log('[pfApplyConfigDuration] pos='+pos+' si='+si+' time='+slot.time+' oldDur='+oldDur+' targetDur='+targetDur+' blocks='+slot.blocks.length);
         if (targetDur === null || targetDur === oldDur) return;
 
         var waves = pfSlotWaveCount(slot);
         var delta = (targetDur - oldDur) * waves;
         slot.duration = targetDur;
-        console.log('[pfApplyConfigDuration] -> delta='+delta+' waves='+waves+', cascade '+( order.length - pos - 1)+' slots');
-
+        
         if (autoShift && delta !== 0) {
             for (var j = pos + 1; j < order.length; j++) {
                 var prev = pfData.slots[order[j]].time;
                 pfShiftSlot(pfData.slots[order[j]], delta);
-                console.log('[pfApplyConfigDuration]   shift slot '+order[j]+' from '+prev+' to '+pfData.slots[order[j]].time);
             }
         }
     });
@@ -1790,7 +1870,7 @@ function pfApplyBlasons(eventFaces) {
             .replace(/^phase_/, '')
             .replace(/(_w\d+|_seg\d+)*$/, '')
             .replace(/_\d+$/, '');
-        var svg = eventFaces[evCode] || 'Empty.svg';
+        var svg = eventFaces[evCode] || '0.svg';
         $(this).find('.pf-tile-svg img').attr('src', PF_SVG + svg);
     });
 }
