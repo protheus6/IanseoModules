@@ -598,6 +598,8 @@ echo '	<a href="../../../Qualification/PrnShootoff.php" class="Link" target="Pri
 echo '	&nbsp;&nbsp;';
 echo '	<a href="../../../Qualification/PrnIndividualAbs.php" class="Link" target="PrintOut" id="qualIndLink">' . $pdf_img . '&nbsp;Individuel</a>';
 echo '	&nbsp;&nbsp;';
+echo '	<a href="../../../Qualification/PrnIndividual.php" class="Link" target="PrintOut" id="qualDivClsLink">' . $pdf_img . '&nbsp;Tous (avec tirs multiples)</a>';
+echo '	&nbsp;&nbsp;';
 echo '	<a href="../../../Qualification/PrnTeamAbs.php" class="Link" target="PrintOut" id="qualTeamLink">' . $pdf_img . '&nbsp;Équipe</a>';
 echo '	<br style="margin:6px 0 2px">';
 
@@ -622,7 +624,8 @@ echo '<script>
         var cr = (document.getElementById("qualCutRank")   || {}).value   || "";
         var lnkI = document.getElementById("qualIndLink");
         var lnkT = document.getElementById("qualTeamLink");
-        if (!lnkI || !lnkT) return;
+		var lnkC = document.getElementById("qualDivClsLink");
+        if (!lnkI || !lnkT || !lnkC) return;
         if (cf.trim() || rr || cr.trim()) {
             var qs = [];
             if (cf.trim())  qs.push("CoFilter=" + encodeURIComponent(cf.trim()));
@@ -631,9 +634,11 @@ echo '<script>
             var qstr = qs.join("&");
             lnkI.href = "PrnQualIndRegion.php?"  + qstr;
             lnkT.href = "PrnQualTeamRegion.php?" + qstr;
+			lnkC.href = "PrnQualDivClasseRegion.php?" + qstr;
         } else {
             lnkI.href = "../../../Qualification/PrnIndividualAbs.php";
             lnkT.href = "../../../Qualification/PrnTeamAbs.php";
+			lnkC.href = "../../../Qualification/PrnIndividual.php";
         }
     }
     ["qualCoFilter","qualCutRank"].forEach(function(id){
