@@ -772,6 +772,22 @@ class QP_Cible
         return [$vAC, $vBD];
     }
 
+    /**
+     * Retourne true si la cible utilise le layout spécial 3 archers ABC (H1V2) :
+     * B en haut-centre, A en bas-gauche, C en bas-droite.
+     * S'active quand ath=3 et qu'aucun blason présent n'est d'un type autre que H1V2.
+     */
+    public function is3ArcherH1V2Layout(): bool
+    {
+        if ($this->ath !== 3) return false;
+        foreach ($this->vagues as $v) {
+            if (isset($v->blason) && !$v->overlay) {
+                if ($v->blason->imgH !== 1 || $v->blason->imgV !== 2) return false;
+            }
+        }
+        return true;
+    }
+
     public function clear()
     {
         foreach ($this->participants as $p) {
