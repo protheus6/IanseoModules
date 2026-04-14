@@ -14,8 +14,10 @@ $sortBy = isset($_GET['sort'])   ? intval($_GET['sort'])   : 0;
 
 $session = new QP_Session($_SESSION['TourId'], $sessId);
 
+
+
 // Si session introuvable, prendre la première disponible
-if (empty($session->name) && !empty($session->tour->sessions)) {
+if (($session->targets + $session->ath )==0 && !empty($session->tour->sessions)) {
     $firstSess = reset($session->tour->sessions);
     $sessId    = $firstSess->id;
     $session   = new QP_Session($_SESSION['TourId'], $sessId);

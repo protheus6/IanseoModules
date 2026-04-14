@@ -365,6 +365,18 @@
     transition: opacity .12s, filter .12s;
 }
 
+/* Surbrillance blason correspondant à l'archer survolé */
+.pq-blason-hl {
+    outline: 3px solid var(--text-success, #2a7a2a) !important;
+    border-radius: 4px;
+    opacity: 1 !important;
+    transition: outline .1s, opacity .1s;
+}
+.pq-blason-dim {
+    opacity: .20 !important;
+    transition: opacity .1s;
+}
+
 
 /* ----------------------------------------------------------
    Section "Sans départ"
