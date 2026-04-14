@@ -418,7 +418,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
               // La colonne entièrement vide (sans aucun blason) n'affiche rien
               foreach ($vaguesOrder as $vague) {
                   if (isset($vague->blason)) {
-                      $colBlasons[$colIdx][] = ['blason' => $vague->blason, 'overlay' => $vague->overlay];
+                      $colBlasons[$colIdx][] = ['blason' => $vague->blason, 'overlay' => $vague->overlay, 'orders' => (string)$vague->order];
                   }
               }
           } else {
@@ -430,7 +430,8 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
                       foreach ($vaguesOrder as $v2) {
                           if (isset($v2->blason) && !$v2->overlay) { $hasReal = true; break; }
                       }
-                      $colBlasons[$colIdx][] = ['blason' => $vague->blason, 'overlay' => !$hasReal];
+                      $colOrders = implode(',', array_map(fn($v) => $v->order, $vaguesOrder));
+                      $colBlasons[$colIdx][] = ['blason' => $vague->blason, 'overlay' => !$hasReal, 'orders' => $colOrders];
                       break;
                   }
               }
@@ -467,9 +468,9 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
           $anyBl    = null;
           foreach ($cible->vagues as $_v) { if (isset($_v->blason)) { $anyBl = $_v->blason; break; } }
           $slots3bl = [
-              ['vague' => $vagueB, 'col' => '2/4', 'row' => '1'],
-              ['vague' => $vagueA, 'col' => '1/3', 'row' => '2'],
-              ['vague' => $vagueC, 'col' => '3/5', 'row' => '2'],
+              ['vague' => $vagueB, 'col' => '2/4', 'row' => '1', 'order' => 2],
+              ['vague' => $vagueA, 'col' => '1/3', 'row' => '2', 'order' => 1],
+              ['vague' => $vagueC, 'col' => '3/5', 'row' => '2', 'order' => 3],
           ];
           ?>
           <div style="display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(2,1fr); width:100%; height:100%;">
@@ -481,6 +482,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
             ?>
             <div class="pq-halo-blason"
                  data-pq-blason="<?= $sbl->id ?>"
+                 data-vague-orders="<?= $s3['order'] ?>"
                  style="grid-column:<?= $s3['col'] ?>; grid-row:<?= $s3['row'] ?>; display:flex; flex-direction:column; justify-content:center; align-items:center; <?= $sOvl ? 'opacity:.35;' : '' ?>">
               <?php if ($svgBase): ?>
                 <img src="<?= htmlspecialchars($svgBase . $sbl->svgFile) ?>"
@@ -498,6 +500,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
             <?php $hasRealArcher = count(array_filter($cible->vagues, fn($v) => isset($v->blason) && !$v->overlay)) > 0; ?>
             <div class="pq-halo-blason" style="flex:1; display:flex; flex-direction:column; align-items:center; <?= !$hasRealArcher ? 'opacity:.35;' : '' ?>"
 			data-pq-blason="<?= $blasonUnique->id ?>"
+			data-vague-orders="<?= implode(',', array_keys($cible->vagues)) ?>"
 			>
               <?php if ($isU11): ?>
               <div class="qp-cible-subtitle"><?= htmlspecialchars($blasonUnique->label) ?></div>
@@ -531,6 +534,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
                   <?php if ($svgBase): ?>
                     <div class="pq-halo-blason" style="<?= $isOverlay ? 'opacity:.35;' : '' ?>display:flex; flex-direction:column; align-items:center;"
 					data-pq-blason="<?= $blason->id ?>"
+					data-vague-orders="<?= $entry['orders'] ?? '' ?>"
 					>
                       <img src="<?= htmlspecialchars($svgBase . $blason->svgFile) ?>"
                            alt="<?= htmlspecialchars($blason->label) ?>"
@@ -604,7 +608,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
           </div>
         <?php endforeach; ?>
       <?php else: ?>
-        <?php foreach ($cible->getVaguesOrdered() as $vaguesOrder): ?>
+        <?php foreach ([$cible->vagues] as $vaguesOrder):   // foreach ($cible->getVaguesOrdered() as $vaguesOrder):?>
           <?php foreach ($vaguesOrder as $vague): ?>
             <?php
               $bgcol      = isset($vague->participant) ? 'bgstru' . $vague->participant->structId : '';

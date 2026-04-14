@@ -22,6 +22,7 @@ $(function () {
     pqInitHoverStructure();
 	pqInitHoverCategory();
 	pqInitHoverBlason();
+	pqInitHoverArcherOnCible();
     $('#qpSearch').on('input', filterPickingList);
 });
 
@@ -336,6 +337,27 @@ function pqInitHoverBlason() {
     $(document).on('mouseleave', '.pq-halo-blason', function () {
         $('.pq-halo-archer').removeClass('pq-archer-hl pq-archer-dim');
         $('.pq-halo-blason').removeClass('pq-archer-hl pq-archer-dim');
+    });
+}
+
+/* ----------------------------------------------------------
+   Surbrillance du blason physique au survol d'un archer sur la cible
+---------------------------------------------------------- */
+function pqInitHoverArcherOnCible() {
+    $(document).on('mouseenter', '.qp-cible-names .pq-halo-archer', function () {
+        var order = String($(this).closest('.qp-vague-slot').find('.cibleLetter').val());
+        if (!order) return;
+        var $card = $(this).closest('.qp-cible-names').siblings('.qp-cible-card');
+        $card.find('.pq-halo-blason').each(function () {
+            var orders = String($(this).data('vagueOrders') || '');
+            var match  = orders.split(',').indexOf(order) !== -1;
+            $(this).toggleClass('pq-blason-hl',  match);
+            $(this).toggleClass('pq-blason-dim', !match && orders !== '');
+        });
+    });
+    $(document).on('mouseleave', '.qp-cible-names .pq-halo-archer', function () {
+        var $card = $(this).closest('.qp-cible-names').siblings('.qp-cible-card');
+        $card.find('.pq-halo-blason').removeClass('pq-blason-hl pq-blason-dim');
     });
 }
 
