@@ -84,12 +84,13 @@ function loadPickingList(container) {
 
 function loadOnePickingItem(elt) {
     $.get(QP_ROOT + 'ajax.php', {
-        action:       'pickingList',
-        sessId:       $('#departId').val(),
-        tfId:         $(elt).data('blason')       || '',
-        blasonAlias:  $(elt).data('blasonAlias')  || '',
-        cat:          $(elt).data('category')     || '',
-        sort:         QP_SORT
+        action:          'pickingList',
+        sessId:          $('#departId').val(),
+        tfId:            $(elt).data('blason')          || '',
+        blasonAlias:     $(elt).data('blasonAlias')     || '',
+        blasonDistance:  $(elt).data('blasonDistance')  || 0,
+        cat:             $(elt).data('category')        || '',
+        sort:            QP_SORT
     }, function (data) {
         $(elt).find('.blasonContent').html(data);
         var total    = $(elt).find('.blasonContent').children().length;
@@ -318,16 +319,24 @@ function pqInitHoverCategory() {
 
 function pqInitHoverBlason() {
     $(document).on('mouseenter', '.pq-halo-blason', function () {
-        var blasonAlias = $(this).data('pq-blason'); // contient l'alias (type physique)
+        var blasonAlias = $(this).data('pq-blason');
+        var distance    = $(this).data('pq-distance') || 0; // 0 = pas de filtre distance
         $('.pq-halo-archer').each(function () {
-            if ($(this).data('pq-blason-alias') === blasonAlias) {
+            var aliasMatch = $(this).data('pq-blason-alias') === blasonAlias;
+            var distMatch  = !distance || Number($(this).data('pq-distance')) === distance;
+            if (aliasMatch && distMatch) {
                 $(this).addClass('pq-archer-hl').removeClass('pq-archer-dim');
             } else {
                 $(this).addClass('pq-archer-dim').removeClass('pq-archer-hl');
             }
         });
         $('.pq-halo-blason').each(function () {
-            if ($(this).data('pq-blason') === blasonAlias) {
+            // data-pq-blason-alias présent sur les images de cibles (ID numérique dans data-pq-blason)
+            // data-pq-blason seul (alias string) sur les items d'accordéon
+            var alias      = $(this).attr('data-pq-blason-alias') || String($(this).data('pq-blason') || '');
+            var aliasMatch = alias === blasonAlias;
+            var distMatch  = !distance || !$(this).data('pq-distance') || Number($(this).data('pq-distance')) === distance;
+            if (aliasMatch && distMatch) {
                 $(this).addClass('pq-archer-hl').removeClass('pq-archer-dim');
             } else {
                 $(this).addClass('pq-archer-dim').removeClass('pq-archer-hl');
