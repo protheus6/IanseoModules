@@ -174,13 +174,16 @@ include('Common/Templates/head.php');
     <div id="PickingList" class="qp-picking-list">
       <?php if ($sortBy == 1): ?>
         <!-- Groupé par catégorie -->
-        <?php foreach ($session->listByCategory() as $cat): ?>
+        <?php foreach ($session->listByCategory() as $cat):
+          $catDists = $cat->distances; ksort($catDists);
+          $catDistStr = !empty($catDists) ? ' - ' . implode('/', $catDists) . 'm' : '';
+        ?>
           <div class="pq-halo-category qp-accordion-item" id="tcat-<?= htmlspecialchars($cat->name) ?>"
 		  data-pq-category="<?= $cat->name ?>"
 		  >
             <div class="qp-accordion-header"
                  onclick="qpToggle(this)">
-              <span><?= htmlspecialchars($cat->name) ?></span>
+              <span><?= htmlspecialchars($cat->name . $catDistStr) ?></span>
               <span class="qp-counts">
                 (<span class="memberAffectedCount">-</span>/<span class="memberCount">-</span>)
               </span>
@@ -197,14 +200,19 @@ include('Common/Templates/head.php');
           </div>
         <?php endforeach; ?>
       <?php else: ?>
-        <!-- Groupé par blason (type physique) -->
-        <?php $blasonIdx = 0; foreach ($session->blasonCountGrouped() as $alias => $blason): $blasonIdx++; ?>
+        <!-- Groupé par blason (type physique) × distance -->
+        <?php $blasonIdx = 0; foreach ($session->blasonDistanceGroups() as $group): $blasonIdx++;
+          $alias    = $group['alias'];
+          $distance = $group['distance'];
+          $label    = $alias . ($distance > 0 ? ' - ' . $distance . 'm' : '');
+        ?>
           <div class="pq-halo-blason qp-accordion-item" id="tgl-<?= $blasonIdx ?>"
 		  data-pq-blason="<?= htmlspecialchars($alias, ENT_QUOTES) ?>"
+		  data-pq-distance="<?= $distance ?>"
 		  >
             <div class="qp-accordion-header"
                  onclick="qpToggle(this)">
-              <span><?= htmlspecialchars($alias) ?></span>
+              <span><?= htmlspecialchars($label) ?></span>
               <span class="qp-counts">
                 (<span class="memberAffectedCount">-</span>/<span class="memberCount">-</span>)
               </span>
@@ -215,6 +223,7 @@ include('Common/Templates/head.php');
                    id="blsItem-<?= $blasonIdx ?>"
                    data-blason=""
                    data-blason-alias="<?= htmlspecialchars($alias, ENT_QUOTES) ?>"
+                   data-blason-distance="<?= $distance ?>"
                    data-category="">
                 <div class="blasonContent dragula-container"></div>
               </div>
