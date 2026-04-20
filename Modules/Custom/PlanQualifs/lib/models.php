@@ -68,6 +68,7 @@ class QP_Blason
     public $count        = 0; // nb archers
     public $physicalCount = 0; // nb blasons physiques nécessaires
     public $alias        = ''; // nom d'affichage personnalisé (vide = utilise $name)
+    public $distances    = []; // [dist => dist] distances uniques en mètres
 
     // ---------------------------------------------------------------
     // Alias personnalisés par clé targetName-diameter
@@ -177,7 +178,7 @@ class QP_Participant
     public $nom          = '';
     public $prenom       = '';
     public $target       = 0;
-    public $distance     = 0;
+    public $distance     = 0; // distance en mètres (TournamentDistances.TdDist1)
     public $letter       = '';
     public $targetId     = 0;
     public $blason       = null;  // QP_Blason
@@ -232,8 +233,9 @@ class QP_Vague
 // ---------------------------------------------------------------
 class QP_Cat
 {
-    public $name  = '';
-    public $count = 0;
+    public $name      = '';
+    public $count     = 0;
+    public $distances = []; // [dist => dist] distances uniques en mètres
 }
 
 // ---------------------------------------------------------------
@@ -261,13 +263,13 @@ class QP_Session
      * @param int    $cibleNum  Filtrer par numéro de cible (0 = toutes)
      * @param string $cat       Filtrer par catégorie ('' = toutes)
      */
-    public function __construct(int $tId, int $sessOrder = 1, int $tfId = 0, int $cibleNum = 0, string $cat = '', string $blasonAlias = '')
+    public function __construct(int $tId, int $sessOrder = 1, int $tfId = 0, int $cibleNum = 0, string $cat = '', string $blasonAlias = '', int $distFilter = 0)
     {
         $this->tour  = new QP_TourInfo($tId);
         $this->order = $sessOrder;
         $this->loadSession();
         $this->loadBlasons();
-        $this->loadParticipants($tfId, $cibleNum, $cat, $blasonAlias);
+        $this->loadParticipants($tfId, $cibleNum, $cat, $blasonAlias, $distFilter);
         usort($this->participants, fn($a, $b) => strcmp($a->structName, $b->structName));
         usort($this->categories,  fn($a, $b) => strcmp($a->name, $b->name));
     }
@@ -358,14 +360,15 @@ class QP_Session
         }
     }
 
-    private function loadParticipants(int $tfId = 0, int $cibleNum = 0, string $cat = '', string $blasonAlias = '')
+    private function loadParticipants(int $tfId = 0, int $cibleNum = 0, string $cat = '', string $blasonAlias = '', int $distFilter = 0)
     {
         $sql = "SELECT E.EnId, E.EnCode, E.EnDivision, E.EnClass,
                        E.EnCountry, E.EnName, E.EnFirstName,
                        E.EnTargetFace,
                        C.CoName,
                        Q.QuSession, Q.QuTarget, Q.QuLetter,
-                       TF.TfId, TF.TfName
+                       TF.TfId, TF.TfName,
+                       TD.TdDist1
                 FROM Entries E
                 INNER JOIN Countries C
                     ON E.EnCountry = C.CoId AND E.EnTournament = C.CoTournament
@@ -373,6 +376,9 @@ class QP_Session
                     ON E.EnTargetFace = TF.TfId AND E.EnTournament = TF.TfTournament
                 INNER JOIN Qualifications Q
                     ON E.EnId = Q.QuId
+                LEFT JOIN TournamentDistances TD
+                    ON E.EnTournament = TD.TdTournament
+                    AND CONCAT(TRIM(E.EnDivision), TRIM(E.EnClass)) LIKE TD.TdClasses
                 WHERE E.EnAthlete = 1 AND E.EnTournament = " . intval($this->tour->id) . "
                   AND Q.QuSession = " . intval($this->order);
 
@@ -400,6 +406,7 @@ class QP_Session
             $p->classe      = $r->EnClass;
             $p->target      = intval($r->QuTarget);
             $p->letter      = $r->QuLetter;
+            $p->distance    = intval($r->TdDist1);
             $p->blason      = $this->blasons[$p->targetId] ?? null;
 
             // Filtre par catégorie si demandé
@@ -412,6 +419,11 @@ class QP_Session
                 continue;
             }
 
+            // Filtre par distance si demandé
+            if ($distFilter > 0 && $p->distance !== $distFilter) {
+                continue;
+            }
+
             $catKey = $p->getCategory();
             if (!isset($this->categories[$catKey])) {
                 $c        = new QP_Cat();
@@ -419,10 +431,16 @@ class QP_Session
                 $this->categories[$catKey] = $c;
             }
             $this->categories[$catKey]->count++;
+            if ($p->distance > 0) {
+                $this->categories[$catKey]->distances[$p->distance] = $p->distance;
+            }
 
             if (isset($this->blasons[$p->targetId])) {
                 $b = $this->blasons[$p->targetId];
                 $b->count++;
+                if ($p->distance > 0) {
+                    $b->distances[$p->distance] = $p->distance;
+                }
                 // Nb blasons physiques = nb de colonnes distinctes (cible + groupe A/C ou B/D)
                 // qui utilisent ce type de blason.
                 // Pour imgNbArcher=1 (H1V2, H2V1) : 1 blason par archer → count physique = count archers
@@ -470,13 +488,13 @@ class QP_Session
             if ($b->count <= 0) continue;
             $key = $b->displayName();
             if (!isset($grouped[$key])) {
-                // Clone léger : copie des propriétés utiles
-                $g               = clone $b;
+                $g                = clone $b;
                 $g->physicalCount = $b->physicalCount;
-                $grouped[$key]   = $g;
+                $grouped[$key]    = $g;
             } else {
                 $grouped[$key]->physicalCount += $b->physicalCount;
                 $grouped[$key]->count         += $b->count;
+                $grouped[$key]->distances     += $b->distances;
             }
         }
         return $grouped;
@@ -485,6 +503,32 @@ class QP_Session
     public function listByCategory(): array
     {
         return $this->categories;
+    }
+
+    /**
+     * Liste des groupes (alias, distance) distincts pour l'accordéon blason.
+     * Un même type de blason tiré à des distances différentes donne N entrées séparées.
+     * Retourne [ key => ['alias'=>str, 'distance'=>int, 'blason'=>QP_Blason] ]
+     * trié par alias puis par distance croissante.
+     */
+    public function blasonDistanceGroups(): array
+    {
+        $groups = [];
+        foreach ($this->participants as $p) {
+            if (!isset($this->blasons[$p->targetId])) continue;
+            $b     = $this->blasons[$p->targetId];
+            $alias = $b->displayName();
+            $dist  = $p->distance;
+            $key   = $alias . '||' . $dist;
+            if (!isset($groups[$key])) {
+                $groups[$key] = ['alias' => $alias, 'distance' => $dist, 'blason' => $b];
+            }
+        }
+        uasort($groups, function ($a, $b) {
+            $cmp = strcmp($a['alias'], $b['alias']);
+            return $cmp !== 0 ? $cmp : ($a['distance'] - $b['distance']);
+        });
+        return $groups;
     }
 }
 
@@ -770,6 +814,22 @@ class QP_Cible
         $vAC = array_values(array_filter($this->vagues, fn($v) => in_array($v->order, [1, 3])));
         $vBD = array_values(array_filter($this->vagues, fn($v) => in_array($v->order, [2, 4])));
         return [$vAC, $vBD];
+    }
+
+    /**
+     * Retourne true si la cible utilise le layout spécial 3 archers ABC (H1V2) :
+     * B en haut-centre, A en bas-gauche, C en bas-droite.
+     * S'active quand ath=3 et qu'aucun blason présent n'est d'un type autre que H1V2.
+     */
+    public function is3ArcherH1V2Layout(): bool
+    {
+        if ($this->ath !== 3) return false;
+        foreach ($this->vagues as $v) {
+            if (isset($v->blason) && !$v->overlay) {
+                if ($v->blason->imgH !== 1 || $v->blason->imgV !== 2) return false;
+            }
+        }
+        return true;
     }
 
     public function clear()
