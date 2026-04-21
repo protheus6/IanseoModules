@@ -227,6 +227,37 @@
     margin-bottom: 2px;
 }
 
+/* Poignée de déplacement de cible */
+.qp-cible-move-handle {
+    cursor: grab;
+    color: #aaa;
+    font-size: 1em;
+    padding: 0 3px 0 0;
+    user-select: none;
+}
+.qp-cible-move-handle:active { cursor: grabbing; }
+
+/* États drag & drop des cibles */
+.qp-cible-wrap { position: relative; }
+.qp-cible-dragging { opacity: .4; }
+.qp-cible-drop-after::after,
+.qp-cible-drop-before::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: repeating-linear-gradient(
+        to bottom,
+        #444 0px, #444 6px,
+        transparent 6px, transparent 12px
+    );
+    z-index: 10;
+    pointer-events: none;
+}
+.qp-cible-drop-after::after  { right: -5px; }
+.qp-cible-drop-before::before { left: -5px; }
+
 /* Bouton effacement */
 .btRm {
     cursor: pointer;
