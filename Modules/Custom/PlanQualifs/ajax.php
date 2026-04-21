@@ -325,6 +325,20 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
+    // Désaffecter toutes les cibles du départ
+    // ---------------------------------------------------------------
+    case 'clearSession':
+        $sql = "UPDATE Qualifications Q
+                INNER JOIN Entries E ON E.EnId = Q.QuId
+                SET Q.QuTarget = '0', Q.QuLetter = '', Q.QuTargetNo = ''
+                WHERE E.EnTournament = " . intval($tourId) . "
+                  AND Q.QuSession = " . intval($sessId) . "
+                  AND Q.QuTarget > 0";
+        safe_w_sql($sql);
+        http_response_code(200);
+        break;
+
+    // ---------------------------------------------------------------
     // Vider une cible
     // ---------------------------------------------------------------
     case 'clearCible':
@@ -358,7 +372,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 
       <div class="qp-cible-header">
         <span>Cible <?= $cible->num ?> (<?= $cible->distance->distance ?>m)</span>
-        <span class="btRm" onclick="removeCible(this)" title="Vider">✕</span>
+        <span class="btRm" onclick="removeCibleConfirm(this)" title="Désaffecter tout">✕</span>
       </div>
 
       <!-- Étiquettes vagues -->
