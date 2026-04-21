@@ -197,6 +197,31 @@ function removeCible(item) {
 }
 
 /* ----------------------------------------------------------
+   Désaffecter toutes les cibles du départ
+---------------------------------------------------------- */
+function clearAllCibles() {
+    if (!confirm('Désaffecter tous les archers de toutes les cibles de ce départ ?')) return;
+    $.get(QP_ROOT + 'ajax.php', {
+        action: 'clearSession',
+        sessId: $('#departId').val()
+    }, function () {
+        $('[id^=Cible-]').each(function () { getCible(this); });
+        loadPickingList($('#PickingList'));
+        loadUnassignedSection();
+        blasonRecap();
+    });
+}
+
+/* ----------------------------------------------------------
+   Vider une cible avec confirmation
+---------------------------------------------------------- */
+function removeCibleConfirm(btn) {
+    var cNum = ($(btn).closest('[id^=Cible-]').attr('id') || '').replace('Cible-', '');
+    if (!confirm('Désaffecter tous les archers de la cible ' + cNum + ' ?')) return;
+    removeCible(btn);
+}
+
+/* ----------------------------------------------------------
    Toggles affichage archers / affectés
 ---------------------------------------------------------- */
 function hideSwitch() {

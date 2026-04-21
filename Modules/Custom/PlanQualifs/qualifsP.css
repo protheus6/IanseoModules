@@ -227,17 +227,16 @@
     margin-bottom: 2px;
 }
 
-/* Bouton effacement — masqué par défaut */
+/* Bouton effacement */
 .btRm {
-    display: none;
     cursor: pointer;
-    color: var(--dark-red);
+    color: #c00;
     font-weight: bold;
-    font-size: .9em;
-    padding: 0 2px;
+    font-size: 1em;
+    padding: 0 3px;
+    border-radius: 3px;
 }
-.cibleNum:hover .btRm { display: inline; }
-.btRm:hover { font-size: 1em; }
+.btRm:hover { background: #c00; color: #fff; }
 
 /* Étiquettes A/B C/D */
 .qp-vagues-labels {
