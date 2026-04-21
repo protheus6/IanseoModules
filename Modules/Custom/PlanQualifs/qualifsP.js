@@ -197,6 +197,65 @@ function removeCible(item) {
 }
 
 /* ----------------------------------------------------------
+   Drag & drop des cibles (échange de contenu)
+---------------------------------------------------------- */
+var _draggedCibleNum = null;
+var _insertDst       = null;
+
+$(document).on('dragstart', '.qp-cible-move-handle', function (e) {
+    var wrap = $(this).closest('[id^=Cible-]');
+    _draggedCibleNum = (wrap.attr('id') || '').replace('Cible-', '');
+    _insertDst = null;
+    e.originalEvent.dataTransfer.effectAllowed = 'move';
+    e.originalEvent.dataTransfer.setData('text/plain', _draggedCibleNum);
+    wrap.addClass('qp-cible-dragging');
+});
+
+$(document).on('dragend', '.qp-cible-move-handle', function () {
+    $('.qp-cible-wrap').removeClass('qp-cible-dragging qp-cible-drop-after qp-cible-drop-before');
+    _draggedCibleNum = null;
+    _insertDst = null;
+});
+
+$(document).on('dragover', '.qp-cible-wrap', function (e) {
+    if (!_draggedCibleNum) return;
+    e.preventDefault();
+    e.originalEvent.dataTransfer.dropEffect = 'move';
+    var cNum    = parseInt(($(this).attr('id') || '').replace('Cible-', ''));
+    var srcNum  = parseInt(_draggedCibleNum);
+    $('.qp-cible-wrap').removeClass('qp-cible-drop-after qp-cible-drop-before');
+    if (cNum !== srcNum) {
+        // Ligne à droite si on descend, à gauche si on remonte
+        $(this).addClass(cNum > srcNum ? 'qp-cible-drop-after' : 'qp-cible-drop-before');
+        _insertDst = String(cNum);
+    } else {
+        _insertDst = null;
+    }
+});
+
+$(document).on('drop', '.qp-cible-wrap', function (e) {
+    e.preventDefault();
+    $('.qp-cible-wrap').removeClass('qp-cible-drop-after qp-cible-drop-before');
+    var src = _draggedCibleNum;
+    var dst = _insertDst;
+    if (!src || !dst || src === dst) return;
+    var minC = Math.min(parseInt(src), parseInt(dst));
+    var maxC = Math.max(parseInt(src), parseInt(dst));
+    $.get(QP_ROOT + 'ajax.php', {
+        action: 'moveCible',
+        sessId: $('#departId').val(),
+        src:    src,
+        dst:    dst
+    }, function () {
+        for (var c = minC; c <= maxC; c++) {
+            getCible($('#Cible-' + c)[0]);
+        }
+        loadPickingList($('#PickingList'));
+        blasonRecap();
+    });
+});
+
+/* ----------------------------------------------------------
    Désaffecter toutes les cibles du départ
 ---------------------------------------------------------- */
 function clearAllCibles() {
