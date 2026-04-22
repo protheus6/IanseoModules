@@ -391,8 +391,8 @@ switch ($action) {
 // ---------------------------------------------------------------
 function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 {
-    $warnColors = [0 => 'primary', 1 => 'success', 2 => 'warning', 3 => 'danger', 4 => 'danger', 5 => 'danger'];
-    $warnLabels = [0 => 'libre', 1 => 'Complet', 2 => 'Struct majoritaire', 3 => 'Structure unique', 4 => 'Dist. mixtes', 5 => 'Blason incompatible'];
+    $warnColors = [0 => 'primary', 1 => 'success', 2 => 'warning', 3 => 'danger', 4 => 'danger', 5 => 'danger', 6 => 'danger'];
+    $warnLabels = [0 => 'libre', 1 => 'Complet', 2 => 'Struct majoritaire', 3 => 'Structure unique', 4 => 'Dist. mixtes', 5 => 'Blason incompatible', 6 => 'Position en double'];
     $wc = $warnColors[$cible->warnLevel] ?? 'primary';
     $wl = $warnLabels[$cible->warnLevel] ?? '';
     ?>
