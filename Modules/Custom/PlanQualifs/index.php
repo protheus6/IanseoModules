@@ -142,9 +142,10 @@ include('Common/Templates/head.php');
 <div class="qp-bandeau">
   <span class="qp-label">Blasons&nbsp;:</span>
   <span id="recapBlason" class="qp-recap">Chargement...</span>
-  <input type="button" class="Button" value="Imprimer les cibles" onclick="printTargets()">
-  <input type="button" class="Button" value="Récap global"        onclick="openGlobalRecap()">
-  <input type="button" class="Button" value="Commande blasons"    onclick="openOrder()">
+  <input type="button" class="Button" value="Imprimer les cibles"   onclick="printTargets()">
+  <input type="button" class="Button" value="Récap global"          onclick="openGlobalRecap()">
+  <input type="button" class="Button" value="Commande blasons"      onclick="openOrder()">
+  <input type="button" class="Button" value="Vider toutes les cibles" onclick="clearAllCibles()" style="color:#c00; font-weight:bold;">
 </div>
 
 <!-- En-tête impression -->
@@ -261,7 +262,7 @@ include('Common/Templates/head.php');
           <div class="qp-cible-card qp-border-primary">
             <div class="qp-cible-header">
               <span>Cible <?= $c ?></span>
-              <span class="btRm" onclick="removeCible(this)" title="Vider la cible">✕</span>
+              <span class="btRm" onclick="removeCibleConfirm(this)" title="Désaffecter tout">✕</span>
             </div>
             <div class="qp-blasons-row" style="background:cornsilk; min-height:40px; display:flex; align-items:center; justify-content:center;">
               <img src="<?= htmlspecialchars($svgBase . '0.svg') ?>"
