@@ -325,6 +325,52 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
+    // Déplacer une cible (décalage circulaire sur la plage src..dst)
+    // ---------------------------------------------------------------
+    case 'moveCible':
+        $src  = isset($_GET['src']) ? intval($_GET['src']) : 0;
+        $dst  = isset($_GET['dst']) ? intval($_GET['dst']) : 0;
+        $sess = intval($sessId);
+        if ($src <= 0 || $dst <= 0 || $src === $dst) { http_response_code(400); break; }
+        $tmp = 99999;
+        // Garer les archers de la cible source
+        safe_w_sql("UPDATE Qualifications SET QuTarget = $tmp WHERE QuSession = $sess AND QuTarget = $src");
+        if ($src < $dst) {
+            // Déplacement vers la droite : décaler src+1..dst vers la gauche
+            for ($i = $src; $i < $dst; $i++) {
+                safe_w_sql("UPDATE Qualifications SET QuTarget = $i WHERE QuSession = $sess AND QuTarget = " . ($i + 1));
+            }
+        } else {
+            // Déplacement vers la gauche : décaler dst..src-1 vers la droite (ordre inverse)
+            for ($i = $src; $i > $dst; $i--) {
+                safe_w_sql("UPDATE Qualifications SET QuTarget = $i WHERE QuSession = $sess AND QuTarget = " . ($i - 1));
+            }
+        }
+        // Placer la cible source à destination
+        safe_w_sql("UPDATE Qualifications SET QuTarget = $dst WHERE QuSession = $sess AND QuTarget = $tmp");
+        // Recalculer QuTargetNo pour toute la plage affectée
+        $minC = min($src, $dst);
+        $maxC = max($src, $dst);
+        safe_w_sql("UPDATE Qualifications SET QuTargetNo = CONCAT($sess, LPAD(QuTarget, 3, '0'), QuLetter)
+                    WHERE QuSession = $sess AND QuTarget BETWEEN $minC AND $maxC");
+        http_response_code(200);
+        break;
+
+    // ---------------------------------------------------------------
+    // Désaffecter toutes les cibles du départ
+    // ---------------------------------------------------------------
+    case 'clearSession':
+        $sql = "UPDATE Qualifications Q
+                INNER JOIN Entries E ON E.EnId = Q.QuId
+                SET Q.QuTarget = '0', Q.QuLetter = '', Q.QuTargetNo = ''
+                WHERE E.EnTournament = " . intval($tourId) . "
+                  AND Q.QuSession = " . intval($sessId) . "
+                  AND Q.QuTarget > 0";
+        safe_w_sql($sql);
+        http_response_code(200);
+        break;
+
+    // ---------------------------------------------------------------
     // Vider une cible
     // ---------------------------------------------------------------
     case 'clearCible':
@@ -345,8 +391,8 @@ switch ($action) {
 // ---------------------------------------------------------------
 function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 {
-    $warnColors = [0 => 'primary', 1 => 'success', 2 => 'warning', 3 => 'danger', 4 => 'danger', 5 => 'danger'];
-    $warnLabels = [0 => 'libre', 1 => 'Complet', 2 => 'Struct majoritaire', 3 => 'Structure unique', 4 => 'Dist. mixtes', 5 => 'Blason incompatible'];
+    $warnColors = [0 => 'primary', 1 => 'success', 2 => 'warning', 3 => 'danger', 4 => 'danger', 5 => 'danger', 6 => 'danger'];
+    $warnLabels = [0 => 'libre', 1 => 'Complet', 2 => 'Struct majoritaire', 3 => 'Structure unique', 4 => 'Dist. mixtes', 5 => 'Blason incompatible', 6 => 'Position en double'];
     $wc = $warnColors[$cible->warnLevel] ?? 'primary';
     $wl = $warnLabels[$cible->warnLevel] ?? '';
     ?>
@@ -357,8 +403,9 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
       <span class="qp-warn-badge qp-bg-<?= $wc ?>"><?= htmlspecialchars($wl) ?></span>
 
       <div class="qp-cible-header">
+        <span class="qp-cible-move-handle" draggable="true" title="Déplacer la cible">⠿</span>
         <span>Cible <?= $cible->num ?> (<?= $cible->distance->distance ?>m)</span>
-        <span class="btRm" onclick="removeCible(this)" title="Vider">✕</span>
+        <span class="btRm" onclick="removeCibleConfirm(this)" title="Désaffecter tout">✕</span>
       </div>
 
       <!-- Étiquettes vagues -->

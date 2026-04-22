@@ -731,6 +731,12 @@ class QP_Cible
         if ($this->checkBlasonIncompatibility()) {
             $this->warnLevel = 5;
         }
+
+        // Position en double : deux archers sur la même lettre 
+        $letters = array_filter(array_map(fn($p) => $p->letter, $this->participants), fn($l) => $l !== '');
+        if (count($letters) !== count(array_unique($letters))) {
+            $this->warnLevel = 6;
+        }
     }
 
     /**
