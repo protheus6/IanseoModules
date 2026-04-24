@@ -721,7 +721,8 @@ $(function () {
         _peCibleNum = +cibleNum || 0;
         var url = QP_POPEDIT_URL
                 + '?id=' + _peArcherId
-                + '&ses=' + QP_SESS_ID;
+                + '&ses=' + QP_SESS_ID
+                + '&tar=';
         document.getElementById('qpPeIframe').src = url;
         document.getElementById('qpPeModal').style.display = 'flex';
     };
