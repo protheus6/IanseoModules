@@ -178,7 +178,7 @@ class QP_Participant
     public $nom          = '';
     public $prenom       = '';
     public $target       = 0;
-    public $distance     = 0; // distance en mètres (TournamentDistances.TdDist1)
+    public $distance     = 0; // distance en mètres (TournamentDistances.TdDist1 ou Td1)
     public $letter       = '';
     public $targetId     = 0;
     public $blason       = null;  // QP_Blason
@@ -368,7 +368,8 @@ class QP_Session
                        C.CoName,
                        Q.QuSession, Q.QuTarget, Q.QuLetter,
                        TF.TfId, TF.TfName,
-                       TD.TdDist1
+                       TD.TdDist1,
+					   TD.Td1
                 FROM Entries E
                 INNER JOIN Countries C
                     ON E.EnCountry = C.CoId AND E.EnTournament = C.CoTournament
@@ -393,7 +394,10 @@ class QP_Session
             if ($tfId > 0 && intval($r->TfId) !== $tfId) {
                 continue;
             }
-
+			$rDistance = intval($r->TdDist1);
+			if($rDistance === 0) {
+				$rDistance = intval($r->Td1);
+			}
             $p              = new QP_Participant();
             $p->id          = intval($r->EnId);
             $p->structId    = intval($r->EnCountry);
@@ -406,7 +410,7 @@ class QP_Session
             $p->classe      = $r->EnClass;
             $p->target      = intval($r->QuTarget);
             $p->letter      = $r->QuLetter;
-            $p->distance    = intval($r->TdDist1);
+            $p->distance    = $rDistance;
             $p->blason      = $this->blasons[$p->targetId] ?? null;
 
             // Filtre par catégorie si demandé
@@ -642,7 +646,8 @@ class QP_Cible
                        C.CoName,
                        Q.QuSession, Q.QuTarget, Q.QuLetter,
                        TF.TfId,
-                       TD.TdDist1
+                       TD.TdDist1,
+                       TD.Td1
                 FROM Entries E
                 INNER JOIN Countries C
                     ON E.EnCountry = C.CoId AND E.EnTournament = C.CoTournament
@@ -662,6 +667,10 @@ class QP_Cible
 
         $rs = safe_r_sql($sql);
         while ($r = safe_fetch($rs)) {
+			$rDistance = intval($r->TdDist1);
+			if($rDistance === 0) {
+				$rDistance = intval($r->Td1);
+			}
             $p             = new QP_Participant();
             $p->id         = intval($r->EnId);
             $p->structId   = intval($r->EnCountry);
@@ -673,7 +682,7 @@ class QP_Cible
             $p->arme       = $r->EnDivision;
             $p->classe     = $r->EnClass;
             $p->target     = intval($r->QuTarget);
-            $p->distance   = intval($r->TdDist1);
+            $p->distance   =  $rDistance;
             $p->letter     = $r->QuLetter;
             $p->blason     = $this->blasons[$p->targetId] ?? null;
             $this->participants[$p->id] = $p;
