@@ -320,9 +320,28 @@
 .qp-src-card {
     border: 1px solid var(--input-border);
     border-radius: 2px;
-    padding: 2px 4px;
+    padding: 2px 18px 2px 4px; /* espace à droite pour le bouton ✕ */
     position: relative;
     cursor: grab;
+}
+
+/* Bouton suppression archer */
+.qp-del-archer {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    color: #c00;
+    font-size: .75em;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 2px;
+    border-radius: 2px;
+    line-height: 1.4;
+    user-select: none;
+}
+.qp-del-archer:hover {
+    background: #c00;
+    color: #fff;
 }
 /* Archer non placé : mise en valeur avec bordure colorée et fond légèrement teinté */
 .qp-picker-item:not(.affected) .qp-src-card {
