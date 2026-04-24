@@ -706,3 +706,93 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+/* ----------------------------------------------------------
+   PopEdit — édition archer en modal iframe
+   opener = null dans un iframe → PopEdit ne recharge pas
+   la page principale. window.close() est intercepté.
+---------------------------------------------------------- */
+$(function () {
+    var _peArcherId = 0;
+    var _peCibleNum = 0;
+
+    window.openPopEdit = function (archerId, cibleNum) {
+        _peArcherId = +archerId;
+        _peCibleNum = +cibleNum || 0;
+        var url = QP_POPEDIT_URL
+                + '?id=' + _peArcherId
+                + '&ses=' + QP_SESS_ID;
+        document.getElementById('qpPeIframe').src = url;
+        document.getElementById('qpPeModal').style.display = 'flex';
+    };
+
+    window.closePopEditModal = function () {
+        document.getElementById('qpPeModal').style.display = 'none';
+        document.getElementById('qpPeIframe').src = 'about:blank';
+        $('[id^=Cible-]').each(function () { getCible(this); });
+        loadPickingList($('#PickingList'));
+        loadUnassignedSection();
+        blasonRecap();
+    };
+
+    /* Intercepter window.close() dans l'iframe après chaque chargement */
+    document.getElementById('qpPeIframe').addEventListener('load', function () {
+        try {
+            var iw = this.contentWindow;
+            iw.opener = null;  // empêche PopEdit de recharger la page parente
+            iw.close  = function () { window.closePopEditModal(); };
+        } catch (e) {}
+    });
+
+    /* Fermer sur ESC */
+    $(document).on('keydown.qpPeModal', function (e) {
+        if (e.key === 'Escape'
+                && document.getElementById('qpPeModal').style.display !== 'none') {
+            window.closePopEditModal();
+        }
+    });
+
+    /* Fermer en cliquant sur le fond */
+    document.getElementById('qpPeModal').addEventListener('click', function (e) {
+        if (e.target === this) window.closePopEditModal();
+    });
+
+    /* Double-clic sur un archer dans la picking list */
+    $(document).on('dblclick', '.qp-src-card', function (e) {
+        e.stopPropagation();
+        var item     = $(this).closest('.qp-picker-item');
+        var athId    = item.find('input.archerId').val();
+        var cibleNum = parseInt(item.find('input.cibleNum').val()) || 0;
+        if (athId) window.openPopEdit(athId, cibleNum);
+    });
+
+    /* Double-clic sur un archer dans une cible */
+    $(document).on('dblclick', '#targetsArea .disptrg', function (e) {
+        e.stopPropagation();
+        var item     = $(this).closest('.qp-picker-item');
+        var athId    = item.find('input.archerId').val();
+        var cibleNum = parseInt(item.find('input.cibleNum').val()) || 0;
+        if (athId) window.openPopEdit(athId, cibleNum);
+    });
+
+    /* Supprimer un archer — empêcher le drag sur mousedown */
+    $(document).on('mousedown', '.qp-del-archer', function (e) {
+        e.stopPropagation();
+    });
+
+    $(document).on('click', '.qp-del-archer', function (e) {
+        e.stopPropagation();
+        var item  = $(this).closest('.qp-picker-item');
+        var athId = item.find('input.archerId').val();
+        var name  = item.data('pq-name') || ('archer #' + athId);
+        if (!athId) return;
+        if (!confirm('Supprimer définitivement « ' + name + ' » ?\nCette action est irréversible.')) return;
+        $.get(QP_ROOT + 'ajax.php', { action: 'deleteArcher', athId: athId, sessId: QP_SESS_ID })
+            .always(function () {
+                $('[id^=Cible-]').each(function () { getCible(this); });
+                loadPickingList($('#PickingList'));
+                loadUnassignedSection();
+                blasonRecap();
+            });
+    });
+});

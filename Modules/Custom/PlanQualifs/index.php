@@ -60,7 +60,7 @@ $JS_SCRIPT = [
     '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/qualifsP.css">',
     '<script src="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/lib/dragula.min.js"></script>',
     '<script>var QP_ROOT = ' . json_encode($CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/') . ';</script>',
-    '<script>var QP_SESS_ID = ' . $sessId . '; var QP_SORT = ' . $sortBy . ';</script>',
+    '<script>var QP_SESS_ID = ' . $sessId . '; var QP_SORT = ' . $sortBy . '; var QP_POPEDIT_URL = ' . json_encode($CFG->ROOT_DIR . 'Partecipants/PopEdit.php') . '; var QP_DELROW_URL = ' . json_encode($CFG->ROOT_DIR . 'Partecipants/DeleteRow.php') . ';</script>',
     '<script src="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/qualifsP.js"></script>',
 ];
 
@@ -145,6 +145,7 @@ include('Common/Templates/head.php');
   <input type="button" class="Button" value="Imprimer les cibles"   onclick="printTargets()">
   <input type="button" class="Button" value="Récap global"          onclick="openGlobalRecap()">
   <input type="button" class="Button" value="Commande blasons"      onclick="openOrder()">
+  <input type="button" class="Button" value="+ Nouvel archer"       onclick="openPopEdit(0, 0)" style="font-weight:bold;">
   <input type="button" class="Button" value="Vider toutes les cibles" onclick="clearAllCibles()" style="color:#c00; font-weight:bold;">
 </div>
 
@@ -330,5 +331,22 @@ include('Common/Templates/head.php');
   </div>
 </div>
 
+
+<!-- ============================================================
+     Modale PopEdit (iframe — opener=null → pas de rechargement page)
+     ============================================================ -->
+<div id="qpPeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+     align-items:center; justify-content:center; z-index:3000;">
+  <div style="background:#fff; width:min(960px,96vw); height:92vh; border-radius:4px;
+       box-shadow:0 8px 32px rgba(0,0,0,.4); display:flex; flex-direction:column;
+       overflow:hidden; position:relative;">
+    <button onclick="closePopEditModal()"
+            title="Fermer sans rafraîchir"
+            style="position:absolute;top:.35rem;right:.5rem;border:none;background:transparent;
+                   font-size:1.3rem;cursor:pointer;z-index:1;line-height:1;">✕</button>
+    <iframe id="qpPeIframe" src="about:blank"
+            style="flex:1; border:none; width:100%; height:100%;"></iframe>
+  </div>
+</div>
 
 <?php include('Common/Templates/tail.php'); ?>
