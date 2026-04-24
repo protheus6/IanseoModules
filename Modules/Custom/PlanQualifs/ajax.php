@@ -197,6 +197,7 @@ switch ($action) {
               <!-- Ligne visible dans picking list (dispsrc) -->
               <div class="dispsrc <?= $bgcol ?> qp-src-card"
                    data-struct="<?= $item->structId ?>">
+                <span class="qp-del-archer" title="Supprimer cet archer">✕</span>
                 <?php if ($affected): ?>
                   <span class="qp-check">✔</span>
                 <?php endif; ?>
@@ -292,6 +293,7 @@ switch ($action) {
               </div>
               <!-- Ligne visible dans picking list (dispsrc) -->
               <div class="dispsrc bgstru<?= $structId ?> qp-src-card" data-struct="<?= $structId ?>">
+                <span class="qp-del-archer" title="Supprimer cet archer">✕</span>
                 <span class="archers"><?= htmlspecialchars($cat . ' — ' . $nomCourt) ?></span><br>
                 <span class="archers" style="color:#555;"><?= htmlspecialchars($r->CoName) ?></span>
               </div>
@@ -368,6 +370,33 @@ switch ($action) {
                   AND Q.QuTarget > 0";
         safe_w_sql($sql);
         http_response_code(200);
+        break;
+
+    // ---------------------------------------------------------------
+    // Supprimer un archer du tournoi
+    // ---------------------------------------------------------------
+    case 'deleteArcher':
+        $athId = intval($_GET['athId'] ?? 0);
+        if ($athId > 0) {
+            require_once('Partecipants/Fun_Partecipants.local.inc.php');
+            require_once('Qualification/Fun_Qualification.local.inc.php');
+            $recalc = Params4Recalc($athId);
+            deleteArcher($athId, true, true);
+            if ($recalc !== false) {
+                list($indFEvent, $teamFEvent, $country, $div, $cl, $subCl, $zero) = $recalc;
+                RecalculateShootoffAndTeams($indFEvent, $teamFEvent, $country, $div, $cl, $subCl, $zero);
+                $q  = "SELECT ToNumDist FROM Tournament WHERE ToId=" . intval($tourId);
+                $rr = safe_r_sql($q);
+                if ($tmp = safe_fetch($rr)) {
+                    for ($i = 0; $i < intval($tmp->ToNumDist); $i++) {
+                        CalcQualRank($i, $div . $cl);
+                    }
+                }
+                MakeIndAbs();
+            }
+        }
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => $athId > 0]);
         break;
 
     // ---------------------------------------------------------------
