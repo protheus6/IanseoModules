@@ -940,6 +940,7 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
                 var movMatches = (blkInSlot.matches || []).filter(function (m) { return oldSegSet[m.target]; });
                 for (var mi2 = 0; mi2 < movMatches.length; mi2++) {
                     movMatches[mi2].target = newSegTgts[mi2 % newSegTgts.length];
+                    movMatches[mi2].mirrorTarget = 0;  // réinitialiser : convention canonical+1 après déplacement
                 }
 
                 if (newSlotIdx === oldSlotIdx) {
@@ -1070,6 +1071,9 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
                 var tgtIdx = (blk.twoPerTarget === false && !isTeamBlk) ? (mi * 2) : (mi % newTargets.length);
                 segMatches[mi].target = newTargets[tgtIdx % newTargets.length] || newTargets[0];
             }
+            // Réinitialiser mirrorTarget : après un déplacement, la convention standard
+            // (miroir = canonical+1) s'applique — l'ancienne valeur serait stale.
+            segMatches[mi].mirrorTarget = 0;
         }
 
         // Nombre de vagues nécessaires
