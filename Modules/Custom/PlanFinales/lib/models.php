@@ -53,11 +53,12 @@ class PF_TourInfo
 // ---------------------------------------------------------------
 class PF_Match
 {
-    public $matchNo = 0;
-    public $pos1    = 0;   // GrPosition (seed 1)
-    public $pos2    = 0;   // GrPosition2 (seed 2)
-    public $target  = 0;   // FSTarget (numéro de cible)
-    public $letter  = '';  // FsLetter (A/B)
+    public $matchNo      = 0;
+    public $pos1         = 0;   // GrPosition (seed 1)
+    public $pos2         = 0;   // GrPosition2 (seed 2)
+    public $target       = 0;   // FSTarget (numéro de cible, côté canonique)
+    public $letter       = '';  // FsLetter (A/B)
+    public $mirrorTarget = 0;   // FSTarget du miroir réel (0 = inconnu → utiliser target+1)
 }
 
 // ---------------------------------------------------------------
@@ -399,6 +400,46 @@ class PF_Plan
             }
         }
 
+        // Récupérer la cible réelle des miroirs "bloqués" (mirrorNo = canonical d'une autre phase).
+        // Ces miroirs sont exclus de la détection de split, mais leur FSTarget est nécessaire pour
+        // calculer correctement le targetList (cas où cible miroir ≠ cible canonique + 1).
+        $blockedMirrorNos  = [];  // [evCode => [mirrorNo, ...]]
+        $blockedMirrorTgts = [];  // [evCode][mirrorNo] = target
+        foreach ($evPhases as $evCode => $phases) {
+            foreach ($phases as $phase => $pd) {
+                if ($pd['twoPerTarget'] || $pd['teamEvent'] !== 0) continue;
+                foreach ($pd['matchMap'] as $matchNo => $m) {
+                    if ($m->target > 0) {
+                        $mirrorNo = intval($matchNo) + 1;
+                        if (isset($allPhaseCanonicalsPerEv[$evCode][$mirrorNo])) {
+                            $blockedMirrorNos[$evCode][] = $mirrorNo;
+                        }
+                    }
+                }
+            }
+        }
+        foreach ($blockedMirrorNos as $evCode => $nos) {
+            $inList = implode(',', array_unique($nos));
+            $evCodeSafe = StrSafe_DB($evCode);
+            $rsm = safe_r_sql("SELECT FSMatchNo, FSTarget FROM FinSchedule
+                               WHERE FSTournament=" . intval($this->tour->id) . "
+                               AND FSEvent=$evCodeSafe AND FSMatchNo IN ($inList)");
+            while ($rm = safe_fetch($rsm)) {
+                $blockedMirrorTgts[$evCode][intval($rm->FSMatchNo)] = intval($rm->FSTarget);
+            }
+        }
+        // Stocker la cible miroir réelle sur chaque PF_Match concerné
+        foreach ($evPhases as $evCode => $phases) {
+            foreach ($phases as $phase => $pd) {
+                foreach ($pd['matchMap'] as $matchNo => $m) {
+                    $mirrorNo = intval($matchNo) + 1;
+                    if (isset($blockedMirrorTgts[$evCode][$mirrorNo])) {
+                        $m->mirrorTarget = $blockedMirrorTgts[$evCode][$mirrorNo];
+                    }
+                }
+            }
+        }
+
         foreach ($evPhases as $evCode => $phases) {
             $phaseCount = count($phases);  // nb de phases distinctes pour cet événement
 
@@ -546,7 +587,9 @@ class PF_Plan
                     if ($m->target > 0) {
                         $targets[] = $m->target;
                         if (!$pd['twoPerTarget'] && $pd['teamEvent'] === 0) {
-                            $targets[] = $m->target + 1;  // cible du matchNo miroir (ind. seulement)
+                            // Utiliser la cible miroir réelle si connue, sinon canonical+1
+                            $mirTgt = ($m->mirrorTarget > 0) ? $m->mirrorTarget : $m->target + 1;
+                            $targets[] = $mirTgt;
                         }
                     }
                 }
@@ -779,8 +822,9 @@ class PF_Plan
             $arr['matches']   = array_map(fn($m) => [
                 'matchNo' => $m->matchNo,
                 'pos1'    => $m->pos1,
-                'pos2'    => $m->pos2,
-                'target'  => $m->target,
+                'pos2'        => $m->pos2,
+                'target'      => $m->target,
+                'mirrorTarget'=> $m->mirrorTarget ?: null,
             ], $block->matches);
         } else {
             $arr['fwKey'] = $block->fwKey;

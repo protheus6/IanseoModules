@@ -284,12 +284,23 @@ function pfNormalizeWaveBlocks() {
    Rendu de la grille
    ============================================================ */
 function pfRender() {
+    // Sauvegarder la position de scroll avant le remplacement du DOM
+    var container  = document.querySelector('.pf-grid-wrap');
+    var scrollLeft = container ? container.scrollLeft : 0;
+    var scrollTop  = container ? container.scrollTop  : 0;
+
     pfComputeConflicts();
     var html = pfBuildTable();
     $('#pfGrid').html(html);
     pfInitSlotEditors();
     // Re-appliquer le zoom sur les <col> recréés par le rendu
     pfSetZoom(pfZoom);
+
+    // Restaurer la position de scroll
+    if (container) {
+        container.scrollLeft = scrollLeft;
+        container.scrollTop  = scrollTop;
+    }
 }
 
 /* ============================================================
@@ -678,22 +689,36 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
             // Tuile normale → pos1 dans la col du match.target, pos2 dans la col suivante.
             matchesToShow.forEach(function (m) {
                 if (block._mirrorOnly) {
-                    colSlots[0].push({ pos1: m.pos2, _solo: true });
+                    // Miroir = archer pair (position B = cible haute dans la convention normale,
+                    // ou cible basse dans le cas forcé/inversé)
+                    var mirrorArcher = ((m.pos1 % 2) !== 0) ? m.pos2 : m.pos1;
+                    colSlots[0].push({ pos1: mirrorArcher, _solo: true });
                     anyPlaced = true;
                 } else if (block._canonOnly) {
-                    colSlots[0].push({ pos1: m.pos1, _solo: true });
+                    // Canonique = archer impair (position A)
+                    var canonArcher = ((m.pos1 % 2) !== 0) ? m.pos1 : m.pos2;
+                    colSlots[0].push({ pos1: canonArcher, _solo: true });
                     anyPlaced = true;
                 } else {
-                    var colIdx = pfData.targets.indexOf(m.target);
-                    var rel    = colIdx - startCol;
+                    // Affectation faite.
+                    // Convention iAnseo : l'archer impair est toujours à la cible canonique (m.target).
+                    // L'archer pair est à la cible miroir (m.mirrorTarget si connue, sinon m.target+1).
+                    // La cible la plus basse est affichée à gauche.
+                    var colIdx      = pfData.targets.indexOf(m.target);
+                    var rel         = colIdx - startCol;
+                    var oddArcher   = ((m.pos1 % 2) !== 0) ? m.pos1 : m.pos2;
+                    var evenArcher  = ((m.pos1 % 2) !== 0) ? m.pos2 : m.pos1;
+                    var mirTgt      = m.mirrorTarget || 0;
+                    var mirColIdx   = mirTgt > 0 ? pfData.targets.indexOf(mirTgt) : colIdx + 1;
+                    var relMirror   = mirColIdx - startCol;
+                    // Placer l'archer impair à sa cible canonique
                     if (rel >= 0 && rel < span) {
-                        colSlots[rel].push({ pos1: m.pos1, _solo: true });
+                        colSlots[rel].push({ pos1: oddArcher, _solo: true });
                         anyPlaced = true;
                     }
-                    // Miroir = colonne suivante
-                    var relMirror = rel + 1;
-                    if (relMirror >= 0 && relMirror < span) {
-                        colSlots[relMirror].push({ pos1: m.pos2, _solo: true });
+                    // Placer l'archer pair à sa cible miroir
+                    if (relMirror >= 0 && relMirror < span && relMirror !== rel) {
+                        colSlots[relMirror].push({ pos1: evenArcher, _solo: true });
                         anyPlaced = true;
                     }
                 }
@@ -710,12 +735,26 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
         }
 
         // Si aucune cible assignée → répartir équitablement
+        // Pour le mode ×1 individuel : règle impair=gauche, pair=droite (2 colonnes par match)
+        // Pour le mode ×2 et équipe : un match par slot, l'ordre pos1/pos2 sera géré au rendu
         if (!anyPlaced) {
-            var step = Math.max(1, Math.floor(span / matchesToShow.length));
-            matchesToShow.forEach(function (m, mi) {
-                var rel = Math.min(mi * step, span - 1);
-                colSlots[rel].push(m);
-            });
+            if (block.twoPerTarget === false && !isTeam) {
+                // ×1 non affecté : distribuer par paire de colonnes avec impair à gauche
+                matchesToShow.forEach(function (m, mi) {
+                    var leftPos  = ((m.pos1 % 2) !== 0) ? m.pos1 : m.pos2;
+                    var rightPos = ((m.pos1 % 2) !== 0) ? m.pos2 : m.pos1;
+                    var relL = Math.min(mi * 2,     span - 1);
+                    var relR = Math.min(mi * 2 + 1, span - 1);
+                    colSlots[relL].push({ pos1: leftPos,  _solo: true });
+                    if (relR !== relL) colSlots[relR].push({ pos1: rightPos, _solo: true });
+                });
+            } else {
+                var step = Math.max(1, Math.floor(span / matchesToShow.length));
+                matchesToShow.forEach(function (m, mi) {
+                    var rel = Math.min(mi * step, span - 1);
+                    colSlots[rel].push(m);
+                });
+            }
         }
 
         h += '<div class="pf-tile-body">';
@@ -727,10 +766,13 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
                     // Équipe ou "1 archer/cible" : une seule position par colonne
                     h += '<span class="pf-pos pf-pos-solo">' + (m.pos1 || '?') + '</span>';
                 } else {
+                    // ×2 : convention toujours appliquée — place impaire à gauche (A), paire à droite (B)
+                    var leftPos  = ((m.pos1 % 2) !== 0) ? m.pos1 : m.pos2;
+                    var rightPos = ((m.pos1 % 2) !== 0) ? m.pos2 : m.pos1;
                     h += '<span class="pf-match-box">'
-                       + '<span class="pf-pos">' + (m.pos1 || '?') + '</span>'
+                       + '<span class="pf-pos">' + (leftPos  || '?') + '</span>'
                        + '<span class="pf-pos-sep">⚔</span>'
-                       + '<span class="pf-pos">' + (m.pos2 || '?') + '</span>'
+                       + '<span class="pf-pos">' + (rightPos || '?') + '</span>'
                        + '</span>';
                 }
             }
@@ -898,6 +940,7 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
                 var movMatches = (blkInSlot.matches || []).filter(function (m) { return oldSegSet[m.target]; });
                 for (var mi2 = 0; mi2 < movMatches.length; mi2++) {
                     movMatches[mi2].target = newSegTgts[mi2 % newSegTgts.length];
+                    movMatches[mi2].mirrorTarget = 0;  // réinitialiser : convention canonical+1 après déplacement
                 }
 
                 if (newSlotIdx === oldSlotIdx) {
@@ -1028,6 +1071,9 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
                 var tgtIdx = (blk.twoPerTarget === false && !isTeamBlk) ? (mi * 2) : (mi % newTargets.length);
                 segMatches[mi].target = newTargets[tgtIdx % newTargets.length] || newTargets[0];
             }
+            // Réinitialiser mirrorTarget : après un déplacement, la convention standard
+            // (miroir = canonical+1) s'applique — l'ancienne valeur serait stale.
+            segMatches[mi].mirrorTarget = 0;
         }
 
         // Nombre de vagues nécessaires

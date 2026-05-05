@@ -455,16 +455,23 @@ class QP_Session
         }
 
         // Recalcul physicalCount après chargement complet
-        // Pour chaque blason : compter les colonnes distinctes (target+groupe) qui l'utilisent
-        $colUsage = []; // [tfId][target-groupe] = true
+        $colUsage   = []; // [tfId][target-colonne] → blasons 60cm etc. (1 face par colonne AC/BD)
+        $cibleUsage = []; // [tfId][target]         → grands blasons (1 face par cible : 122, 80…)
         foreach ($this->participants as $p) {
             if (!isset($this->blasons[$p->targetId])) continue;
             $b = $this->blasons[$p->targetId];
             if ($b->imgNbArcher <= 1) {
-                // 1 blason par archer : physicalCount = count archers
+                // 1 blason par archer (40cm plein, trispot, CO…)
                 $b->physicalCount = $b->count;
+            } elseif ($b->imgV >= 4) {
+                // Grand blason pleine cible (122cm, 80cm outdoor…) :
+                // tous les archers d'une même cible partagent 1 blason physique.
+                // Archers non placés (target=0) : clé unique par archer pour ne pas sous-compter.
+                $cibleKey = $p->target > 0 ? $p->target : ('u' . $p->id);
+                $cibleUsage[$p->targetId][$cibleKey] = true;
+                $b->physicalCount = count($cibleUsage[$p->targetId]);
             } else {
-                // 1 blason par colonne : compter les paires (target, groupe AC/BD) distinctes
+                // Blason par colonne (60cm…) : 1 face par paire (cible, colonne AC/BD)
                 $groupe = in_array($p->letter, ['A', 'C']) ? 'AC' : 'BD';
                 $key    = $p->target . '-' . $groupe;
                 $colUsage[$p->targetId][$key] = true;
