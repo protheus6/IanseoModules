@@ -1,5 +1,5 @@
 <?php
-require_once(dirname(__FILE__, 3) . '/config.php');
+require_once(dirname(__FILE__, 6) . '/config.php');
 require_once('Common/Fun_FormatText.inc.php');
 require_once('Common/Fun_Sessions.inc.php');
 require_once('Common/Lib/CommonLib.php');
@@ -7,7 +7,7 @@ require_once('Common/Lib/CommonLib.php');
 CheckTourSession(true);
 checkACL(AclQualification, AclReadWrite);
 
-require_once(__DIR__ . '/lib/models.php');
+require_once(__DIR__ . '/models.php');
 
 $sessId = isset($_GET['sessId']) ? intval($_GET['sessId']) : 1;
 $sortBy = isset($_GET['sort'])   ? intval($_GET['sort'])   : 0;
@@ -56,12 +56,12 @@ $IncludeJquery = true;
 $svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
 
 $JS_SCRIPT = [
-    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/lib/dragula.min.css">',
-    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/qualifsP.css">',
-    '<script src="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/lib/dragula.min.js"></script>',
-    '<script>var QP_ROOT = ' . json_encode($CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/') . ';</script>',
+    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/lib/dragula.min.css">',
+    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/Qualifs/qualifsP.css">',
+    '<script src="' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/lib/dragula.min.js"></script>',
+    '<script>var QP_ROOT = ' . json_encode($CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/Qualifs/') . ';</script>',
     '<script>var QP_SESS_ID = ' . $sessId . '; var QP_SORT = ' . $sortBy . '; var QP_POPEDIT_URL = ' . json_encode($CFG->ROOT_DIR . 'Partecipants/PopEdit.php') . '; var QP_DELROW_URL = ' . json_encode($CFG->ROOT_DIR . 'Partecipants/DeleteRow.php') . ';</script>',
-    '<script src="' . $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/qualifsP.js"></script>',
+    '<script src="' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/Qualifs/qualifsP.js"></script>',
 ];
 
 // Nom et heure d'affichage

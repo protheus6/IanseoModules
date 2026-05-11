@@ -1,6 +1,6 @@
 <?php
 
-require_once(dirname(__FILE__, 4) . '/config.php');
+require_once(dirname(__FILE__, 5) . '/config.php');
 require_once('Common/Lib/CommonLib.php');
 require_once('Common/Fun_FormatText.inc.php');
 require_once('Common/Fun_Various.inc.php');
@@ -18,6 +18,7 @@ $IncludeJquery = true;
 		'<script type="text/javascript" src="'.$CFG->ROOT_DIR.'Qualification/Fun_AJAX_index.js"></script>',
 		'<script type="text/javascript" src="'.$CFG->ROOT_DIR.'Qualification/Fun_JS.js"></script>',
 		'<script type="text/javascript" src="'.$CFG->ROOT_DIR.'Qualification/index.js"></script>',
+		'<script type="text/javascript" src="./index.js.php"></script>',
 		'<script type="text/javascript" src="./index.js"></script>',
 		'<link href="'.$CFG->ROOT_DIR.'Qualification/index.css" media="screen" rel="stylesheet" type="text/css" />',
 		phpVars2js(array(
@@ -220,9 +221,9 @@ if (isset($_REQUEST['Command']) AND $_REQUEST['Command']=='OK' AND $_REQUEST['x_
             echo '<tr id="Row_'.$MyRow->EnId.'" class="'.$TarStyle.' '.$RowStyle.' Irm-'.$MyRow->QuIrmType.'" style="'.$styleError.'">';
             echo '<td class="Center" nowrap="nowrap" id="TD_'.$MyRow->EnId.'">';
             if($MyRow->QuIrmType) {
-                echo '<div class="btn" onclick="IrmSet(this)" ref="'.$MyRow->QuIrmType.'">'.get_text('CmdUnset', 'Tournament', $MyRow->IrmType).'</div>';
+                echo '<div ref="'.$MyRow->QuIrmType.'">'.$MyRow->IrmType.'</div>';
             } else {
-                echo '<div class="btn" onclick="IrmSet(this)" ref="'.$MyRow->QuIrmType.'">'.get_text('CmdSet', 'Tournament').'</div>';
+                echo '<div ref="'.$MyRow->QuIrmType.'"></div>';
             }
 
             echo '</td>';
@@ -250,7 +251,7 @@ if (isset($_REQUEST['Command']) AND $_REQUEST['Command']=='OK' AND $_REQUEST['x_
 <td class="Center Bold">
 <div id="idGold_<?php print $MyRow->EnId; ?>"><?php print $MyRow->QuGold; ?></div>
 </td>
-<td class="Center Bold" onDblClick="javascript:window.open('WriteScoreCard.php?Command=OK&x_Session=<?php print $_REQUEST['x_Session']; ?>&x_Dist=<?php print $_REQUEST['x_Dist']; ?>&x_Target=<?php print $MyRow->Target; ?>',<?php print $MyRow->EnId; ?>);">
+<td class="Center Bold" onDblClick="javascript:window.open('<?php echo $CFG->ROOT_DIR.'Qualification/' ?>WriteScoreCard.php?Command=OK&x_Session=<?php print $_REQUEST['x_Session']; ?>&x_Dist=<?php print $_REQUEST['x_Dist']; ?>&x_Target=<?php print $MyRow->Target; ?>',<?php print $MyRow->EnId; ?>);">
 <div id="idScore_<?php print $MyRow->EnId; ?>"><?php print $MyRow->QuScore; ?></div>
 </td>
 </tr>

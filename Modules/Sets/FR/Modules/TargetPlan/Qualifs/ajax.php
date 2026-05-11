@@ -1,12 +1,12 @@
 <?php
-require_once(dirname(__FILE__, 3) . '/config.php');
+require_once(dirname(__FILE__, 6) . '/config.php');
 require_once('Common/Fun_Sessions.inc.php');
 require_once('Common/Lib/CommonLib.php');
 
 CheckTourSession(true);
 checkACL(AclQualification, AclReadWrite);
 
-require_once(__DIR__ . '/lib/models.php');
+require_once(__DIR__ . '/models.php');
 
 $action   = isset($_GET['action'])   ? $_GET['action']          : '';
 $sessId   = isset($_GET['sessId'])   ? intval($_GET['sessId'])   : 1;
@@ -439,7 +439,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 
       <!-- Étiquettes vagues -->
       <div class="qp-vagues-labels">
-        <?php if ($is3H1V2): ?>
+        <?php if (isset($is3H1V2) && $is3H1V2): ?>
           <span class="qp-vague-label">B</span>
           <span class="qp-vague-label">A/C</span>
         <?php elseif (count($cible->vagues) == 4): ?>

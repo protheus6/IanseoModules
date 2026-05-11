@@ -1,12 +1,12 @@
 <?php
-require_once(dirname(__FILE__, 3) . '/config.php');
+require_once(dirname(__FILE__, 6) . '/config.php');
 require_once('Common/Fun_Sessions.inc.php');
 require_once('Common/Lib/CommonLib.php');
 
 CheckTourSession(true);
 checkACL(AclCompetition, AclReadOnly);
 
-require_once(__DIR__ . '/lib/models.php');
+require_once(__DIR__ . '/models.php');
 
 header('Content-Type: application/json; charset=utf-8');
 
