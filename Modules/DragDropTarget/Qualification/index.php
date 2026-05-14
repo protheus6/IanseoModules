@@ -59,8 +59,13 @@ $JS_SCRIPT = [
     '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/lib/dragula.min.css">',
     '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/Qualification/qualification.css">',
     '<script src="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/lib/dragula.min.js"></script>',
-    '<script>var QP_ROOT = ' . json_encode($CFG->ROOT_DIR . 'Modules/DragDropTarget/Qualification/') . ';</script>',
-    '<script>var QP_SESS_ID = ' . $sessId . '; var QP_SORT = ' . $sortBy . '; var QP_POPEDIT_URL = ' . json_encode($CFG->ROOT_DIR . 'Partecipants/PopEdit.php') . '; var QP_DELROW_URL = ' . json_encode($CFG->ROOT_DIR . 'Partecipants/DeleteRow.php') . ';</script>',
+    phpVars2js([
+        'QP_ROOT' => $CFG->ROOT_DIR . 'Modules/DragDropTarget/Qualification/',
+        'QP_SESS_ID' => $sessId,
+        'QP_SORT' => $sortBy,
+        'QP_POPEDIT_URL' => $CFG->ROOT_DIR . 'Partecipants/PopEdit.php',
+        'QP_DELROW_URL' => $CFG->ROOT_DIR . 'Partecipants/DeleteRow.php',
+    ]),
     '<script src="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/Qualification/qualification.js"></script>',
 ];
 

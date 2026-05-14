@@ -44,16 +44,19 @@ $IncludeJquery = true;
 $svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
 $pfRoot  = $CFG->ROOT_DIR . 'Modules/DragDropTarget/Final/';
 
+
 $JS_SCRIPT = [
     '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/lib/dragula.min.css">',
     '<link rel="stylesheet" href="' . $pfRoot . 'final.css">',
     '<script src="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/lib/dragula.min.js"></script>',
-    '<script>var PF_ROOT = ' . json_encode($pfRoot) . ';
-             var PF_SVG  = ' . json_encode($svgBase) . ';
-             var PF_AJAX = ' . json_encode($pfRoot . 'ajax.php') . ';
-    </script>',
+    phpVars2js([
+        'PF_ROOT' => $pfRoot,
+        'PF_SVG' => $svgBase,
+        'PF_AJAX' => $pfRoot . 'ajax.php',
+    ]),
     '<script src="' . $pfRoot . 'final.js"></script>',
 ];
+
 
 include('Common/Templates/head.php');
 ?>
