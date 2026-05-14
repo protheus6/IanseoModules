@@ -1,5 +1,5 @@
 <?php
-require_once(dirname(__FILE__, 6) . '/config.php');
+require_once(dirname(__FILE__, 3) . '/config.php');
 require_once('Common/Fun_Sessions.inc.php');
 require_once('Common/Lib/CommonLib.php');
 

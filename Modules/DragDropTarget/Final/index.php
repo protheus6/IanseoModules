@@ -1,5 +1,5 @@
 <?php
-require_once(dirname(__FILE__, 6) . '/config.php');
+require_once(dirname(__FILE__, 3) . '/config.php');
 require_once('Common/Fun_Sessions.inc.php');
 require_once('Common/Lib/CommonLib.php');
 
@@ -42,17 +42,17 @@ $IncludeJquery = true;
 
 //$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanFinales/svg/';
 $svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
-$pfRoot  = $CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/Finales/';
+$pfRoot  = $CFG->ROOT_DIR . 'Modules/DragDropTarget/Final/';
 
 $JS_SCRIPT = [
-    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/lib/dragula.min.css">',
-    '<link rel="stylesheet" href="' . $pfRoot . 'finalesP.css">',
-    '<script src="' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/lib/dragula.min.js"></script>',
+    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/lib/dragula.min.css">',
+    '<link rel="stylesheet" href="' . $pfRoot . 'final.css">',
+    '<script src="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/lib/dragula.min.js"></script>',
     '<script>var PF_ROOT = ' . json_encode($pfRoot) . ';
              var PF_SVG  = ' . json_encode($svgBase) . ';
              var PF_AJAX = ' . json_encode($pfRoot . 'ajax.php') . ';
     </script>',
-    '<script src="' . $pfRoot . 'finalesP.js"></script>',
+    '<script src="' . $pfRoot . 'final.js"></script>',
 ];
 
 include('Common/Templates/head.php');
