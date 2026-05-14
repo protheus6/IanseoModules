@@ -1,5 +1,5 @@
 <?php
-require_once(dirname(__FILE__, 6) . '/config.php');
+require_once(dirname(__FILE__, 3) . '/config.php');
 require_once('Common/Fun_FormatText.inc.php');
 require_once('Common/Fun_Sessions.inc.php');
 require_once('Common/Lib/CommonLib.php');
@@ -56,16 +56,21 @@ $IncludeJquery = true;
 $svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
 
 $JS_SCRIPT = [
-    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/lib/dragula.min.css">',
-    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/Qualifs/qualifsP.css">',
-    '<script src="' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/lib/dragula.min.js"></script>',
-    '<script>var QP_ROOT = ' . json_encode($CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/Qualifs/') . ';</script>',
-    '<script>var QP_SESS_ID = ' . $sessId . '; var QP_SORT = ' . $sortBy . '; var QP_POPEDIT_URL = ' . json_encode($CFG->ROOT_DIR . 'Partecipants/PopEdit.php') . '; var QP_DELROW_URL = ' . json_encode($CFG->ROOT_DIR . 'Partecipants/DeleteRow.php') . ';</script>',
-    '<script src="' . $CFG->ROOT_DIR . 'Modules/Sets/FR/Modules/TargetPlan/Qualifs/qualifsP.js"></script>',
+    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/lib/dragula.min.css">',
+    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/Qualification/qualification.css">',
+    '<script src="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/lib/dragula.min.js"></script>',
+    phpVars2js([
+        'QP_ROOT' => $CFG->ROOT_DIR . 'Modules/DragDropTarget/Qualification/',
+        'QP_SESS_ID' => $sessId,
+        'QP_SORT' => $sortBy,
+        'QP_POPEDIT_URL' => $CFG->ROOT_DIR . 'Partecipants/PopEdit.php',
+        'QP_DELROW_URL' => $CFG->ROOT_DIR . 'Partecipants/DeleteRow.php',
+    ]),
+    '<script src="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/Qualification/qualification.js"></script>',
 ];
 
 // Nom et heure d'affichage
-$headerName = !empty($session->name) ? $session->name : ('Session ' . $sessId);
+$headerName = !empty($session->name) ? $session->name : sprintf('%s %d', get_text('Session'), $sessId);
 $startTime  = '';
 if (!empty($session->start)) {
     $ts = strtotime($session->start);
@@ -95,23 +100,23 @@ include('Common/Templates/head.php');
       <form method="get">
         <table>
           <tr>
-            <td><label for="sessId">Session&nbsp;:</label></td>
+            <td><label for="sessId"><?= get_text('Session') ?>&nbsp;:</label></td>
             <td>
               <select name="sessId" id="sessId" onchange="this.form.submit()">
                 <?php foreach ($session->tour->sessions as $ses): ?>
                   <option value="<?= $ses->id ?>" <?= ($sessId == $ses->id) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars(!empty($ses->name) ? $ses->name : 'Session ' . $ses->id) ?>
+                    <?= htmlspecialchars(!empty($ses->name) ? $ses->name : sprintf('%s %d', get_text('Session'), $ses->id)) ?>
                   </option>
                 <?php endforeach; ?>
               </select>
             </td>
           </tr>
           <tr>
-            <td><label for="sort">Grouper&nbsp;:</label></td>
+            <td><label for="sort"><?= get_text('GroupBy','Tournament') ?>&nbsp;:</label></td>
             <td>
               <select name="sort" id="sort" onchange="this.form.submit()">
-                <option value="0" <?= ($sortBy == 0) ? 'selected' : '' ?>>Blason</option>
-                <option value="1" <?= ($sortBy == 1) ? 'selected' : '' ?>>Catégorie</option>
+                <option value="0" <?= ($sortBy == 0) ? 'selected' : '' ?>><?= get_text('TargetFace') ?></option>
+                <option value="1" <?= ($sortBy == 1) ? 'selected' : '' ?>><?= get_text('Classes', 'Tournament') ?></option>
               </select>
             </td>
           </tr>
@@ -126,11 +131,11 @@ include('Common/Templates/head.php');
       <!-- Toggles affichage -->
       <label style="font-size:.85em; display:block; margin-bottom:3px;">
         <input type="checkbox" id="toggleArcher" checked onchange="hideSwitch()">
-        Afficher les archers
+        <?= get_text('ShowParticipants', 'Tournament') ?>
       </label>
       <label style="font-size:.85em; display:block;">
         <input type="checkbox" id="toggleAffected" checked onchange="hideAffectedSwitch()">
-        Afficher les affectés
+        <?= get_text('ShowAssignedParticipants', 'Tournament') ?>
       </label>
     </td>
   </tr>
@@ -140,13 +145,13 @@ include('Common/Templates/head.php');
      Récap blasons + actions
      ============================================================ -->
 <div class="qp-bandeau">
-  <span class="qp-label">Blasons&nbsp;:</span>
+  <span class="qp-label"><?= get_text('Target') ?>&nbsp;:</span>
   <span id="recapBlason" class="qp-recap">Chargement...</span>
-  <input type="button" class="Button" value="Imprimer les cibles"   onclick="printTargets()">
-  <input type="button" class="Button" value="Récap global"          onclick="openGlobalRecap()">
-  <input type="button" class="Button" value="Commande blasons"      onclick="openOrder()">
-  <input type="button" class="Button" value="+ Nouvel archer"       onclick="openPopEdit(0, 0)" style="font-weight:bold;">
-  <input type="button" class="Button" value="Vider toutes les cibles" onclick="clearAllCibles()" style="color:#c00; font-weight:bold;">
+  <input type="button" class="Button" value="<?= htmlspecialchars(get_text('PrintTargets', 'Tournament')) ?>" onclick="printTargets()">
+  <input type="button" class="Button" value="<?= htmlspecialchars(get_text('PrintTargetFacesSummary', 'Tournament')) ?>"          onclick="openGlobalRecap()">
+  <input type="button" class="Button" value="<?= htmlspecialchars(get_text('TargetFacesOrder', 'Tournament')) ?>" onclick="openOrder()">
+  <input type="button" class="Button" value="+ <?= htmlspecialchars(get_text('AddParticipant', 'Tournament')) ?>" onclick="openPopEdit(0, 0)" style="font-weight:bold;">
+  <input type="button" class="Button" value="<?= htmlspecialchars(get_text('TargetAssErase', 'Tournament')) ?>" onclick="clearAllCibles()" style="color:#c00; font-weight:bold;">
 </div>
 
 <!-- En-tête impression -->
@@ -158,7 +163,7 @@ include('Common/Templates/head.php');
 
 <!-- Page de garde impression : bilan blasons avec images SVG -->
 <div id="printBlasonRecap">
-  <div class="pbr-title">Bilan des blasons</div>
+  <div class="pbr-title"><?= get_text('PrintTargetFacesSummaryHeader', 'Tournament') ?></div>
   <div id="printBlasonBody"><!-- rempli par AJAX blasonRecapPrint --></div>
 </div>
 
@@ -170,8 +175,8 @@ include('Common/Templates/head.php');
   <!-- Colonne gauche : liste de picking -->
   <div class="qp-picking-col">
     <div class="qp-search-wrap">
-      <input type="text" id="qpSearch" placeholder="Archer / License / Structure…" autocomplete="off">
-      <span id="qpSearchClear" title="Effacer" onclick="clearSearch()">✕</span>
+      <input type="text" id="qpSearch" placeholder="<?= htmlspecialchars(get_text('DragDropSearchPlaceholder', 'Tournament')) ?>…" autocomplete="off">
+      <span id="qpSearchClear" title="<?= htmlspecialchars(get_text('CmdClear')) ?>" onclick="clearSearch()">✕</span>
     </div>
     <div id="PickingList" class="qp-picking-list">
       <?php if ($sortBy == 1): ?>

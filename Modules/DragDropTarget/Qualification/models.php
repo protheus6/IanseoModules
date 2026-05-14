@@ -77,17 +77,17 @@ class QP_Blason
     public static function aliasForKey(string $key): string
     {
         static $aliasMap = [
-            'TrgIndComplete-40'  => 'Blason 40cm',
-            'TrgIndSmall-40'     => 'Trispot 40cm',
-            'TrgCOIndSmall-40'   => 'Trispot CO 40cm',
+            'TrgIndComplete-40'  => get_text('TrgIndComplete'). ' 40cm',
+            'TrgIndSmall-40'     => get_text('TrgIndSmall'). ' 40cm',
+            'TrgCOIndSmall-40'   => get_text('TrgCOIndSmall'). ' 40cm',
             'TrgProAMIndVegasSmall-40'  => 'Vegas 40cm',
-            'TrgIndComplete-60'  => 'Blason 60cm',
-            'TrgIndSmall-60'     => 'Trispot 60cm',
-            'TrgIndComplete-80'  => 'Blason 80cm',
-            'TrgCOOutdoor-80'    => 'Blason CO 80cm',
-            'TrgOutdoor-80'      => 'Blason 80cm',
-            'TrgOutdoor-122'     => 'Blason 122cm',
-            'TrgFrBeursault-45'  => 'Beursault 45cm',
+            'TrgIndComplete-60'  => get_text('TrgIndComplete'). ' 60cm',
+            'TrgIndSmall-60'     => get_text('TrgIndSmall'). ' 60cm',
+            'TrgIndComplete-80'  => get_text('TrgIndComplete'). ' 80cm',
+            'TrgCOOutdoor-80'    => get_text('TrgCOOutdoor'). ' 80cm',
+            'TrgOutdoor-80'      => get_text('TargetFace'). ' 80cm',
+            'TrgOutdoor-122'     => get_text('TargetFace'). ' 122cm',
+            'TrgFrBeursault-45'  => get_text('TrgFrBeursault'). ' 45cm',
         ];
         return $aliasMap[$key] ?? '';
     }

@@ -126,18 +126,4 @@ if(!empty($on) AND $_SESSION["TourLocRule"]=='FR' AND subFeatureAcl($acl,AclComp
 			array_splice($ret['QUAL']['SCOR'], 1, 0, 'Tableau spécial Beursault' .'|'.$CFG->ROOT_DIR.'Modules/Sets/FR/Modules/Bslt/index.php');
 		}
 	}
-
-	if (subFeatureAcl($acl, AclQualification, '') > AclReadOnly ) {
-		if (isset($ret['PART']['TARG'])) {
-			array_splice($ret['PART']['TARG'], 3, 0, 'Plan visuel' .'|'.$CFG->ROOT_DIR.'Modules/Sets/FR/Modules/TargetPlan/Qualifs/index.php');
-		}
-	}
-	if ((subFeatureAcl($acl, AclCompetition, 'cSchedule') >= AclReadOnly) && ($_SESSION['MenuFinIDo'] || $_SESSION['MenuFinTDo'])) {
-		if (isset($ret['COMP']['FINI'])) {
-			array_splice($ret['COMP']['FINI'], 5, 0, 'Plan visuel' .'|'.$CFG->ROOT_DIR.'Modules/Sets/FR/Modules/TargetPlan/Finales/index.php');
-		}
-		if (isset($ret['COMP']['FINT'])) {
-			array_splice($ret['COMP']['FINT'], 4, 0, 'Plan visuel' .'|'.$CFG->ROOT_DIR.'Modules/Sets/FR/Modules/TargetPlan/Finales/index.php');
-		}
-	}
 }

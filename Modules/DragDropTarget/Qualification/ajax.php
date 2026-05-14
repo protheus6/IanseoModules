@@ -1,5 +1,5 @@
 <?php
-require_once(dirname(__FILE__, 6) . '/config.php');
+require_once(dirname(__FILE__, 3) . '/config.php');
 require_once('Common/Fun_Sessions.inc.php');
 require_once('Common/Lib/CommonLib.php');
 
@@ -197,7 +197,7 @@ switch ($action) {
               <!-- Ligne visible dans picking list (dispsrc) -->
               <div class="dispsrc <?= $bgcol ?> qp-src-card"
                    data-struct="<?= $item->structId ?>">
-                <span class="qp-del-archer" title="Supprimer cet archer">✕</span>
+                <span class="qp-del-archer" title="<?= htmlspecialchars(get_text('CmdDelete')) ?>">✕</span>
                 <?php if ($affected): ?>
                   <span class="qp-check">✔</span>
                 <?php endif; ?>
