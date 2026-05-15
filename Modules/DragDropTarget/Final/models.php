@@ -723,8 +723,8 @@ class PF_Plan
     private function formatPhaseName(int $phase): string
     {
         switch ($phase) {
-            case 0:  return 'Or';
-            case 1:  return 'Bronze';
+            case 0:  return get_text('MedalGold');
+            case 1:  return get_text('MedalBronze');
             case 2:  return '1/2';
             case 4:  return '1/4';
             case 8:  return '1/8';

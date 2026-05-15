@@ -54,7 +54,7 @@ $JS_SCRIPT = [
         'PF_SVG' => $svgBase,
         'PF_AJAX' => $pfRoot . 'ajax.php',
     ]),
-    '<script src="' . $pfRoot . 'final.js"></script>',
+    '<script src="' . $pfRoot . 'final.js.php"></script>',
 ];
 
 
@@ -67,7 +67,7 @@ include('Common/Templates/head.php');
 <table class="Tabella" style="width:100%;">
   <tr>
     <th class="Title" colspan="3">
-      Plan de cible — Finales — <?= $tourCode ?> / <?= $tourName ?>
+      <?= get_text('PrintFOP', 'Tournament') ?> — <?= get_text('OrisFinals', 'Tournament') ?> — <?= $tourCode ?> / <?= $tourName ?>
     </th>
   </tr>
   <tr>
@@ -82,13 +82,13 @@ include('Common/Templates/head.php');
   <input type="button" class="Button" id="btnSave" value="Enregistrer" onclick="pfSave()">
   <label class="pf-toolbar-lbl">
     <input type="checkbox" id="chkAutoShift" checked>
-    Mettre à jour les horaires suivants
+    <?= get_text('UpdateNextTimelines', 'DragDropTarget') ?>
   </label>
   <label class="pf-toolbar-lbl">
     <input type="checkbox" id="chkBlason" onchange="pfToggleBlasons(this.checked)">
-    Afficher les blasons
+    <?= get_text('ShowFaces', 'DragDropTarget') ?>
   </label>
-  <input type="button" class="Button" value="🖨 Imprimer" onclick="pfPrint()" title="Imprimer le plan de cible">
+  <input type="button" class="Button" value="🖨 <?= get_text('Print', 'Tournament') ?>" onclick="pfPrint()" title="<?= get_text('PrintPlan', 'DragDropTarget') ?>">
   <span id="pfStatus" class="pf-status"></span>
 </div>
 
@@ -103,28 +103,28 @@ include('Common/Templates/head.php');
       <div class="pf-config-title">Configuration</div>
 
       <div class="pf-config-section">
-        <strong>Équipe</strong>
+        <strong><?= get_text('Team') ?></strong>
         <div class="pf-config-row">
-          <label>Échauffement</label>
+          <label><?= get_text('WarmUp', 'Tournament') ?></label>
           <input type="number" id="cfgEquipeEchauff" value="<?= $equipeEchauffement ?>" min="1" max="120" style="width:4em;" oninput="pfApplyConfigDuration()">
           <span>min</span>
         </div>
         <div class="pf-config-row">
-          <label>Match</label>
+          <label><?= get_text('Match', 'Tournament') ?></label>
           <input type="number" id="cfgEquipeMatch" value="<?= $equipeMatch ?>" min="1" max="120" style="width:4em;" oninput="pfApplyConfigDuration()">
           <span>min</span>
         </div>
       </div>
 
       <div class="pf-config-section">
-        <strong>Individuel</strong>
+        <strong><?= get_text('Individual') ?></strong>
         <div class="pf-config-row">
-          <label>Échauffement</label>
+          <label><?= get_text('WarmUp', 'Tournament') ?></label>
           <input type="number" id="cfgIndivEchauff" value="<?= $indivEchauffement ?>" min="1" max="120" style="width:4em;" oninput="pfApplyConfigDuration()">
           <span>min</span>
         </div>
         <div class="pf-config-row">
-          <label>Match</label>
+          <label><?= get_text('Match', 'Tournament') ?></label>
           <input type="number" id="cfgIndivMatch" value="<?= $indivMatch ?>" min="1" max="120" style="width:4em;" oninput="pfApplyConfigDuration()">
           <span>min</span>
         </div>
@@ -133,24 +133,24 @@ include('Common/Templates/head.php');
       <!-- Phases non planifiées -->
       <div class="pf-config-section" id="unscheduledPanel">
         <div class="pf-unsched-header">
-          <strong>Non planifiés</strong>
-          <button class="pf-add-train-btn" onclick="pfOpenTrainModal()" title="Ajouter un bloc d'échauffement">＋ Échauffement</button>
+          <strong><?= get_text('NotScheduled', 'DragDropTarget') ?></strong>
+          <button class="pf-add-train-btn" onclick="pfOpenTrainModal()" title="<?= get_text('AddWarmup', 'DragDropTarget') ?>">＋ <?= get_text('WarmUp', 'Tournament') ?></button>
         </div>
         <div id="unscheduledList" class="pf-unscheduled-list">
-          <em style="color:#999; font-size:.8em;">Chargement...</em>
+          <em style="color:#999; font-size:.8em;"><?= get_text('Loading', 'Tournament') ?></em>
         </div>
       </div>
 
       <!-- Modal : choisir l'épreuve pour un nouvel entraînement -->
       <div id="pfTrainModal" class="pf-train-modal" style="display:none;">
         <div class="pf-train-modal-inner">
-          <div class="pf-train-modal-title">Ajouter un échauffement</div>
-          <label class="pf-train-modal-lbl">Épreuve
+          <div class="pf-train-modal-title"><?= get_text('AddWarmup', 'DragDropTarget') ?></div>
+          <label class="pf-train-modal-lbl"><?= get_text('Event') ?>
             <select id="pfTrainEvSelect" class="pf-train-ev-select"></select>
           </label>
           <div class="pf-train-modal-btns">
-            <button class="Button" onclick="pfAddTrainingConfirm()">Ajouter</button>
-            <button class="Button" onclick="pfCloseTrainModal()">Annuler</button>
+            <button class="Button" onclick="pfAddTrainingConfirm()"><?= get_text('CmdAdd') ?></button>
+            <button class="Button" onclick="pfCloseTrainModal()"><?= get_text('CmdCancel') ?></button>
           </div>
         </div>
       </div>
@@ -161,9 +161,9 @@ include('Common/Templates/head.php');
   <div class="pf-grid-col">
     <!-- Boutons d'action sur la grille -->
     <div class="pf-grid-actions">
-      <input type="button" class="Button" value="+ Créneau" onclick="pfAddSlot()" title="Ajouter un créneau horaire">
-      <input type="button" class="Button" value="+ Cible"   onclick="pfAddTarget()" title="Ajouter une colonne cible">
-      <span class="pf-zoom-control" title="Zoom de la grille">
+      <input type="button" class="Button" value="+ <?= get_text('Slot', 'DragDropTarget') ?>" onclick="pfAddSlot()" title="<?= get_text('AddSlot', 'DragDropTarget') ?>">
+      <input type="button" class="Button" value="+ <?= get_text('Target') ?>"   onclick="pfAddTarget()" title="<?= get_text('AddTarget', 'DragDropTarget') ?>">
+      <span class="pf-zoom-control" title="Zoom">
         🔍
         <input type="range" id="pfZoomSlider" min="50" max="150" step="5" value="100"
                oninput="pfSetZoom(this.value)">
@@ -173,7 +173,7 @@ include('Common/Templates/head.php');
 
     <!-- La grille elle-même -->
     <div id="pfGridWrap" class="pf-grid-wrap">
-      <div id="pfLoading" style="padding:20px; color:#666;">Chargement du plan...</div>
+      <div id="pfLoading" style="padding:20px; color:#666;"><?= get_text('Loading', 'Tournament') ?></div>
       <div id="pfGrid"></div>
     </div>
   </div>
