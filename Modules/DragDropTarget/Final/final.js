@@ -2,12 +2,6 @@
  * PlanFinales — Plan de cible des Finales
  * Dépendances : jQuery, Dragula
  */
-<?php
-require_once(dirname(__FILE__, 3) . '/config.php');
-require_once('Common/Fun_Sessions.inc.php');
-require_once('Common/Lib/CommonLib.php');
-?>
-
 
 /* ============================================================
    État global
@@ -416,11 +410,11 @@ function pfBuildTable() {
     h += '<th class="pf-th-slot">&nbsp;</th>';
     for (var ci = 0; ci < targets.length; ci++) {
         h += '<th class="pf-th-target" data-col="' + ci + '">'
-           + '<?= get_text('Target') ?> ' + targets[ci]
-           + '<span class="pf-rm-col" onclick="pfRemoveTarget(' + ci + ')" title="<?= get_text('RemoveTarget', 'DragDropTarget') ?>">✕</span>'
+           + Lng_Target +' ' + targets[ci]
+           + '<span class="pf-rm-col" onclick="pfRemoveTarget(' + ci + ')" title="'+ Lng_RemoveTarget +'">✕</span>'
            + '</th>';
     }
-    h += '<th class="pf-th-add"><input type="button" class="Button" value="+" onclick="pfAddTarget()" title="<?= get_text('AddTarget', 'DragDropTarget') ?>" style="padding:1px 4px;font-size:.8em;"></th>';
+    h += '<th class="pf-th-add"><input type="button" class="Button" value="+" onclick="pfAddTarget()" title="'+ Lng_AddTarget +'" style="padding:1px 4px;font-size:.8em;"></th>';
     h += '</tr></thead><tbody>';
 
     for (var si = 0; si < slots.length; si++) {
@@ -504,9 +498,9 @@ function pfBuildWaveRow(slot, slotIdx, waveRow, waveIdx, totalWaves, blocks) {
     if (waveIdx === 0) {
         var rowspanAttr = totalWaves > 1 ? ' rowspan="' + totalWaves + '"' : '';
         h += '<td class="pf-slot-header" data-slot-idx="' + slotIdx + '"' + rowspanAttr + '>'
-           + '<span class="pf-slot-rm-btn" onclick="pfRemoveSlot(' + slotIdx + ')" title="<?= get_text('RemoveSlot', 'DragDropTarget') ?>">✕</span>'
-           + '<span class="pf-slot-clear-btn" onclick="pfClearSlotBlocks(' + slotIdx + ')" title="<?= get_text('ClearSlot', 'DragDropTarget') ?>">⬇</span>'
-		   + '<span class="pf-slot-insert-btn" onclick="pfInsertSlot(' + slotIdx + ')" title="<?= get_text('AddSlot', 'DragDropTarget') ?>">✚</span>'
+           + '<span class="pf-slot-rm-btn" onclick="pfRemoveSlot(' + slotIdx + ')" title="'+ Lng_RemoveSlot +'">✕</span>'
+           + '<span class="pf-slot-clear-btn" onclick="pfClearSlotBlocks(' + slotIdx + ')" title="'+ Lng_ClearSlot +'">⬇</span>'
+		   + '<span class="pf-slot-insert-btn" onclick="pfInsertSlot(' + slotIdx + ')" title="'+ Lng_AddSlot +'">✚</span>'
            + '<div class="pf-slot-content">'
            +   '<div class="pf-slot-display">'
            +     '<span class="pf-slot-date">' + slot.date + '</span>'
@@ -515,21 +509,21 @@ function pfBuildWaveRow(slot, slotIdx, waveRow, waveIdx, totalWaves, blocks) {
            +       '<span>–</span>'
            +       '<span>' + endTime + '</span>'
            +     '</span>'
-           +     '<span class="pf-slot-edit-btn" onclick="pfToggleSlotEdit(this, ' + slotIdx + ')"><?= get_text('CmdModify', 'DragDropTarget') ?></span>'
+           +     '<span class="pf-slot-edit-btn" onclick="pfToggleSlotEdit(this, ' + slotIdx + ')">'+ Lng_CmdModify +'</span>'
            +   '</div>'
            +   '<div class="pf-slot-inputs">'
-           +     '<div><label style="font-size:.8em;"><?= get_text('Date', 'Tournament') ?> :</label>'
+           +     '<div><label style="font-size:.8em;">'+ Lng_Date +' :</label>'
            +     '<input type="date" class="pf-in-date" value="' + slot.date + '"></div>'
-           +     '<div><label style="font-size:.8em;"><?= get_text('Hour', 'Tournament') ?> :</label>'
+           +     '<div><label style="font-size:.8em;">'+ Lng_Hour +' :</label>'
            +     '<input type="time" class="pf-in-time" value="' + slot.time + '"></div>'
-           +     '<div><label style="font-size:.8em;"><?= get_text('Length', 'Tournament') ?> :</label>'
+           +     '<div><label style="font-size:.8em;">'+ Lng_Length +' :</label>'
            +     '<input type="number" class="pf-in-dur" value="' + slot.duration + '" min="1" max="300" style="width:40px;"> min</div>'
-           +     '<div><button onclick="pfApplySlotEdit(this, ' + slotIdx + ')"><?= get_text('CmdOk') ?></button>'
+           +     '<div><button onclick="pfApplySlotEdit(this, ' + slotIdx + ')">'+ Lng_CmdOk +'</button>'
            +     ' <button onclick="pfCancelSlotEdit(this)">✕</button></div>'
            +   '</div>'
            + '</div>';
         // Bande verticale de vague (positionnée absolument sur le bord droit de la cellule)
-        var stripTitle = isMultiWave ? '<?= get_text('Switch1Wave', 'DragDropTarget') ?>' : '<?= get_text('Switch2Waves', 'DragDropTarget') ?>';
+        var stripTitle = isMultiWave ? Lng_Switch1Wave : Lng_Switch2Waves;
         h += '<div class="pf-slot-wave-strip" onclick="pfToggleSlotWaves(' + slotIdx + ')" title="' + stripTitle + '">';
         if (isMultiWave) {
             for (var wl = 0; wl < totalWaves; wl++) {
@@ -603,13 +597,13 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
 
     // Bandeau de conflit en haut de la tuile (avant le header)
     if (conflictMsg) {
-        h += '<div class="pf-conflict-badge" title="' + pfEscHtml(conflictMsg) + '">⚠ <?= get_text('Conflict', 'DragDropTarget') ?></div>';
+        h += '<div class="pf-conflict-badge" title="' + pfEscHtml(conflictMsg) + '">⚠ '+ Lng_Conflict +'</div>';
     }
 
     h += '<div class="pf-tile-hdr">';
 
     // Boutons dans l'en-tête
-    h += '<span class="pf-tile-rm" onclick="pfRemoveTile(\'' + pfEsc(tileId) + '\',event)" title="<?= get_text('RemovePhase', 'DragDropTarget') ?>">✕</span>';
+    h += '<span class="pf-tile-rm" onclick="pfRemoveTile(\'' + pfEsc(tileId) + '\',event)" title="'+ Lng_RemovePhase +'">✕</span>';
     // Bouton segmentation (blocs phase non-vague uniquement, si la tuile est segmentable)
     if (block.type === 'phase' && !isWaveBlk) {
         var nM = (block.matches || []).length;
@@ -620,15 +614,15 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
         var canSeg = !block._canonOnly && !block._mirrorOnly &&
                      ((nM > 1) || (nM === 1 && block.twoPerTarget === false && !block.noMirrorMatchNo && (block.targetList || []).length >= 2));
         if (canSeg) {
-            h += '<span class="pf-tile-seg" onclick="pfSegmentTile(\'' + pfEsc(block.id) + '\',' + slotIdx + ',event)" title="<?= get_text('Split', 'DragDropTarget') ?>">⊕</span>';
+            h += '<span class="pf-tile-seg" onclick="pfSegmentTile(\'' + pfEsc(block.id) + '\',' + slotIdx + ',event)" title="'+ Lng_Split +'">⊕</span>';
         }
     }
     // Bouton bascule 1/2-archer-par-cible (tous les blocs phase individuel, vague ou non)
     if (block.type === 'phase' && parseInt(block.teamEvent) !== 1) {
         var twoLbl   = block.twoPerTarget === false ? '×1' : '×2';
         var twoTitle = block.twoPerTarget === false
-            ? '<?= get_text('Switch2Archers', 'DragDropTarget') ?>'
-            : '<?= get_text('Switch1Archer', 'DragDropTarget') ?>';
+            ? Lng_Switch2Archers
+            : Lng_Switch1Archer;
         h += '<span class="pf-tile-two" onclick="pfToggleTwoPerTarget(\'' + pfEsc(block.id) + '\',' + slotIdx + ',event)" title="' + twoTitle + '">' + twoLbl + '</span>';
     }
 
@@ -638,7 +632,7 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
         : '';
     var label = block.type === 'training'
         ? ('<span class="pf-tile-evcode">' + block.event + '</span>'
-         + '<span class="pf-tile-phase"><?= get_text('WarmUp', 'Tournament') ?></span>')
+         + '<span class="pf-tile-phase">'+ Lng_WarmUp +'</span>')
         : ('<span class="pf-tile-evcode">' + block.event + '</span>'
          + '<span class="pf-tile-phase">' + block.phaseName + '</span>');
     h += label + waveTag;
@@ -830,7 +824,7 @@ function pfInitDragula() {
             pfMoveBlock(blockId, oldSlot, segIdx, newSlot, newCol, newWaveRow);
         }
         pfDirty = true;
-        pfStatus('<?= get_text('ChangesNotSaved', 'DragDropTarget') ?>', '');
+        pfStatus(Lng_ChangesNotSaved, '');
     });
 
     pfDrake.on('drag', function (el) {
@@ -1192,7 +1186,7 @@ function pfRemoveSlot(slotIdx) {
 	var Delta = 0 - slot.duration
     if (!slot) return;
     if (slot.blocks.length > 0) {
-        if (!confirm('<?= get_text('ConfirmRemoveSlot', 'DragDropTarget') ?>')) return;
+        if (!confirm(Lng_ConfirmRemoveSlot)) return;
 
         // Grouper les siblings de vague et fusionner avant de renvoyer en non-planifiés
         var baseIdMap = {};
@@ -1279,7 +1273,7 @@ function pfToggleSlotWaves(slotIdx) {
         // Réduire à 1 vague : vérifier que la vague CD est vide
         var hasWave1 = slot.blocks.some(function (b) { return (b.waveRow || 0) > 0; });
         if (hasWave1) {
-            alert('<?= get_text('AlertSwitch1Wave', 'DragDropTarget') ?>');
+            alert(Lng_AlertSwitch1Wave);
             return;
         }
         slot.waves = 1;
@@ -1470,7 +1464,7 @@ function pfRemoveTarget(colIdx) {
         });
     });
     if (used) {
-        if (!confirm('<?= get_text('Target') ?> ' + tgt + ' <?= get_text('ConfirmRemoveTarget', 'DragDropTarget') ?>')) return;
+        if (!confirm(Lng_Target +' ' + tgt + ' '+ Lng_ConfirmRemoveTarget )) return;
     }
     pfData.targets.splice(colIdx, 1);
     pfDirty = true;
@@ -1741,7 +1735,7 @@ function pfToggleTwoPerTarget(blockId, slotIdx, e) {
     });
 
     pfDirty = true;
-    pfStatus('<?= get_text('ChangesNotSaved', 'DragDropTarget') ?>', '');
+    pfStatus(Lng_ChangesNotSaved, '');
     pfRender();
     pfRefreshDragula();
 }
@@ -1931,7 +1925,7 @@ function pfApplyBlasons(eventFaces) {
    Sauvegarde
    ============================================================ */
 function pfSave() {
-    pfStatus('<?= get_text('Saving', 'DragDropTarget') ?>', '');
+    pfStatus(Lng_Saving, '');
     $('#btnSave').prop('disabled', true);
 
     var payload = {
@@ -1950,12 +1944,12 @@ function pfSave() {
             $('#btnSave').prop('disabled', false);
             if (resp.ok) {
                 pfDirty = false;
-                pfStatus('<?= get_text('Saved', 'DragDropTarget') ?> ✔', 'ok');
+                pfStatus(Lng_Saved +' ✔', 'ok');
                 if (resp.errors && resp.errors.length) {
-                    pfStatus('<?= get_text('SavedWithError', 'DragDropTarget') ?> ' + resp.errors.length, 'error');
+                    pfStatus(Lng_SavedWithError +' ' + resp.errors.length, 'error');
                 }
             } else {
-                pfStatus('<?= get_text('Error') ?> : ' + (resp.error || '<?= get_text('Unknown', 'DragDropTarget') ?>'), 'error');
+                pfStatus(Lng_Error +' : ' + (resp.error || Lng_Unknown), 'error');
             }
         },
         error: function () {
@@ -2103,7 +2097,7 @@ function pfPrint() {
     });
     var titleHtml = titleParts.length
         ? titleParts.map(function (t) { return '<div>' + t + '</div>'; }).join('')
-        : '<div><?= get_text('PrintFOP', 'Tournament') ?> — <?= get_text('OrisFinals', 'Tournament') ?></div>';
+        : '<div>'+ Lng_PrintFOP +' — '+ Lng_OrisFinals +'</div>';
 
     // Mesurer la largeur réelle de la table MAINTENANT (dans la fenêtre principale, déjà rendue)
     // puis calculer le zoom pour qu'elle tienne en A4 paysage (281mm utiles ≈ 1062px à 96dpi)
@@ -2169,7 +2163,7 @@ function pfPrint() {
     win.document.write(
         '<!DOCTYPE html><html><head>'
       + '<meta charset="utf-8">'
-      + '<title<?= get_text('PrintFOP', 'Tournament') ?> — <?= get_text('Print', 'Tournament') ?></title>'
+      + '<title>'+ Lng_PrintFOP +' — '+ Lng_Print +'</title>'
       + cssLinks
       + '<style>' + printStyles + '</style>'
       + '</head><body>'
@@ -2185,6 +2179,6 @@ function pfPrint() {
 window.addEventListener('beforeunload', function (e) {
     if (pfDirty) {
         e.preventDefault();
-        e.returnValue = '<?= get_text('LostUnsaved', 'DragDropTarget') ?>';
+        e.returnValue = Lng_LostUnsaved;
     }
 });
