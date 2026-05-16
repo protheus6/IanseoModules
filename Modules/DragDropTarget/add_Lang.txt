@@ -27,3 +27,16 @@
 'SavedWithError', 'DragDropTarget', 'Saved with errors:', 'Enregistré avec erreurs:'
 'Unknown', 'DragDropTarget', 'Unknown', 'inconnue'
 'LostUnsaved', 'DragDropTarget', 'Unsaved changes will be lost.', 'Des modifications non sauvegardées seront perdues.'
+'UnassignAllOfSession', 'DragDropTarget', 'Unassign all archers from all targets of this session ?', 'Désaffecter tous les archers de toutes les cibles de ce départ ?'
+'UnassignAllOfTarget', 'DragDropTarget', 'Unassign all archers from target __TARGET__ ?', 'Désaffecter tous les archers de la cible __TARGET__ ?'
+'GlobalRecap','Global recap of target faces','Récap global blasons'
+'FaceType','Type of face','Type de blason'
+'Quantity','Quantity','Quantité'
+'Coeff','Coeff','Coeff'
+'Total','Total','Total'
+'GrandTotal', 'Grand total','Total général'
+'CopyCart', 'Cart copied to clipboard.', 'Commande copiée dans le presse-papiers.'
+'RemoveArcher', 'Permanently delete « __ARCHER__ » ?\nThis action is irreversible.', 'Supprimer définitivement « __ARCHER__ » ?\nCette action est irréversible.'
+
+
+

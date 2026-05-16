@@ -259,7 +259,7 @@ $(document).on('drop', '.qp-cible-wrap', function (e) {
    Désaffecter toutes les cibles du départ
 ---------------------------------------------------------- */
 function clearAllCibles() {
-    if (!confirm('Désaffecter tous les archers de toutes les cibles de ce départ ?')) return;
+    if (!confirm(Lng_UnassignAll)) return;
     $.get(QP_ROOT + 'ajax.php', {
         action: 'clearSession',
         sessId: $('#departId').val()
@@ -276,7 +276,7 @@ function clearAllCibles() {
 ---------------------------------------------------------- */
 function removeCibleConfirm(btn) {
     var cNum = ($(btn).closest('[id^=Cible-]').attr('id') || '').replace('Cible-', '');
-    if (!confirm('Désaffecter tous les archers de la cible ' + cNum + ' ?')) return;
+    if (!confirm(Lng_UnassignAllOfTarget.replace("__TARGET__", cNum))) return;
     removeCible(btn);
 }
 
@@ -472,7 +472,7 @@ function openGlobalRecap() {
         var win = window.open('', '_blank', 'width=900,height=700');
         win.document.write(
             '<!DOCTYPE html><html><head><meta charset="utf-8">'
-          + '<title>Récap global blasons</title>'
+          + '<title>'+ Lng_GlobalRecap +'</title>'
           + '<style>'
           + 'body { font-family: Arial, sans-serif; font-size: 11pt; margin: 1cm; }'
           + 'h2 { font-size: 1.1em; margin-bottom: .4cm; border-bottom: 2px solid #000; padding-bottom: .2cm; text-align: left; }'
@@ -486,7 +486,7 @@ function openGlobalRecap() {
           + '@media print { @page { margin: 1cm; } }'
           + '</style>'
           + '</head><body>'
-          + '<h2>' + tourName + '<span class="subtitle">Récap global des blasons</span></h2>'
+          + '<h2>' + tourName + '<span class="subtitle">'+ Lng_GlobalRecap +'</span></h2>'
           + data
           + '</body></html>'
         );
@@ -683,9 +683,9 @@ async function copyOrder() {
             tr.children[3].textContent
         ].join('\t');
     });
-    var text = ['Type de blason\tQuantité\tCoeff\tTotal']
+    var text = [Lng_FaceType +'\t'+ Lng_Quantity +'\t'+ Lng_Coeff +'\t'+ Lng_Total]
                .concat(rows)
-               .concat(['Total général\t\t\t' + document.getElementById('orderGrandTotal').textContent])
+               .concat([GrandTotal +'\t\t\t' + document.getElementById('orderGrandTotal').textContent])
                .join('\n');
     try {
         await navigator.clipboard.writeText(text);
@@ -694,7 +694,7 @@ async function copyOrder() {
         ta.value = text; document.body.appendChild(ta); ta.select();
         document.execCommand('copy'); document.body.removeChild(ta);
     }
-    alert('Commande copiée dans le presse-papiers.');
+    alert(Lng_CopyCart);
 }
 
 /* Fermer la modale en cliquant sur le fond */
@@ -787,7 +787,7 @@ $(function () {
         var athId = item.find('input.archerId').val();
         var name  = item.data('pq-name') || ('archer #' + athId);
         if (!athId) return;
-        if (!confirm('Supprimer définitivement « ' + name + ' » ?\nCette action est irréversible.')) return;
+        if (!confirm(Lng_RemoveArcher.replace('__ARCHER__', name))) return;
         $.get(QP_ROOT + 'ajax.php', { action: 'deleteArcher', athId: athId, sessId: QP_SESS_ID })
             .always(function () {
                 $('[id^=Cible-]').each(function () { getCible(this); });

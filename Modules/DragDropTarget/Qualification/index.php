@@ -66,6 +66,18 @@ $JS_SCRIPT = [
         'QP_POPEDIT_URL' => $CFG->ROOT_DIR . 'Partecipants/PopEdit.php',
         'QP_DELROW_URL' => $CFG->ROOT_DIR . 'Partecipants/DeleteRow.php',
     ]),
+	 phpVars2js([
+        'Lng_UnassignAllOfSession' =>  get_text('UnassignAllOfSession','DragDropTarget'),
+        'Lng_UnassignAllOfTarget' =>  get_text('UnassignAllOfTarget','DragDropTarget'),
+        'Lng_GlobalRecap' =>  get_text('GlobalRecap','DragDropTarget'),
+        'Lng_FaceType' =>  get_text('FaceType','DragDropTarget'),
+        'Lng_Quantity' =>  get_text('Quantity','DragDropTarget'),
+        'Lng_Coeffp' =>  get_text('Coeff','DragDropTarget'),
+        'Lng_Total' =>  get_text('Total','DragDropTarget'),
+        'Lng_GrandTotal' =>  get_text('GrandTotal','DragDropTarget'),
+        'Lng_CopyCart' =>  get_text('CopyCart','DragDropTarget'),
+		'Lng_RemoveArcher' =>  get_text('RemoveArcher','DragDropTarget')
+,    ]),
     '<script src="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/Qualification/qualification.js"></script>',
 ];
 
