@@ -37,6 +37,7 @@
 'GrandTotal', 'Grand total','Total général'
 'CopyCart', 'Cart copied to clipboard.', 'Commande copiée dans le presse-papiers.'
 'RemoveArcher', 'Permanently delete « __ARCHER__ » ?\nThis action is irreversible.', 'Supprimer définitivement « __ARCHER__ » ?\nCette action est irréversible.'
-
+'WithoutSession', 'Without session', 'Sans départ'
+'OrderFaces', 'Order Faces', 'Commande de blasons'
 
 

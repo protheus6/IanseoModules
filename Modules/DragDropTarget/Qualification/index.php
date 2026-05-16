@@ -158,7 +158,7 @@ include('Common/Templates/head.php');
      ============================================================ -->
 <div class="qp-bandeau">
   <span class="qp-label"><?= get_text('Target') ?>&nbsp;:</span>
-  <span id="recapBlason" class="qp-recap">Chargement...</span>
+  <span id="recapBlason" class="qp-recap"><?= get_text('Loading', 'Tournament') ?></span>
   <input type="button" class="Button" value="<?= htmlspecialchars(get_text('PrintTargets', 'Tournament')) ?>" onclick="printTargets()">
   <input type="button" class="Button" value="<?= htmlspecialchars(get_text('PrintTargetFacesSummary', 'Tournament')) ?>"          onclick="openGlobalRecap()">
   <input type="button" class="Button" value="<?= htmlspecialchars(get_text('TargetFacesOrder', 'Tournament')) ?>" onclick="openOrder()">
@@ -254,7 +254,7 @@ include('Common/Templates/head.php');
       <!-- Section archers sans départ (toujours affichée, chargée séparément) -->
       <div class="qp-accordion-item qp-unassigned-section" id="tgl-unassigned">
         <div class="qp-accordion-header qp-unassigned-header" onclick="qpToggle(this)">
-          <span>Sans départ</span>
+          <span><?= get_text('WithoutSession', 'DragDropTarget') ?></span>
           <span class="qp-counts">
             (<span class="memberAffectedCount">0</span>/<span class="memberCount">?</span>)
           </span>
@@ -279,7 +279,7 @@ include('Common/Templates/head.php');
           <!-- Carte cible (placeholder, remplacé par AJAX) -->
           <div class="qp-cible-card qp-border-primary">
             <div class="qp-cible-header">
-              <span>Cible <?= $c ?></span>
+              <span><?= get_text('Target') ?> <?= $c ?></span>
               <span class="btRm" onclick="removeCibleConfirm(this)" title="Désaffecter tout">✕</span>
             </div>
             <div class="qp-blasons-row" style="background:cornsilk; min-height:40px; display:flex; align-items:center; justify-content:center;">
@@ -287,11 +287,11 @@ include('Common/Templates/head.php');
                    alt="" style="max-height:40px; max-width:40px; width:auto; height:auto; opacity:.2;">
             </div>
             <div style="text-align:center; padding:2px;">
-              <em style="color:#aaa; font-size:.75em;">Chargement...</em>
+              <em style="color:#aaa; font-size:.75em;"><?= get_text('Loading', 'Tournament') ?></em>
             </div>
           </div>
           <div id="cb<?= $c ?>" class="qp-cible-names nameArcher qp-border-primary">
-            <em style="color:#aaa; font-size:.75em;">Chargement...</em>
+            <em style="color:#aaa; font-size:.75em;"><?= get_text('Loading', 'Tournament') ?></em>
           </div>
         </div>
       <?php endfor; ?>
@@ -310,7 +310,7 @@ include('Common/Templates/head.php');
     <button type="button"
             style="position:absolute;top:.5rem;right:.5rem;border:none;background:transparent;font-size:1.2rem;cursor:pointer;"
             onclick="closeOrder()">✕</button>
-    <h3 style="text-align:center; margin:0 0 .5rem 0; font-size:1.1em;">Commande de blasons</h3>
+    <h3 style="text-align:center; margin:0 0 .5rem 0; font-size:1.1em;"><?= get_text('OrderFaces', 'DragDropTarget') ?></h3>
 
     <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-bottom:.5rem;">
       <label style="font-size:.85em;">Coeff global</label>
@@ -326,16 +326,16 @@ include('Common/Templates/head.php');
     <table class="Tabella" id="orderTable">
       <thead>
         <tr class="Main">
-          <th>Type de blason</th>
-          <th>Quantité</th>
-          <th>Coeff</th>
-          <th>Total</th>
+          <th><?= get_text('FaceType', 'DragDropTarget') ?></th>
+          <th><?= get_text('Quantity', 'DragDropTarget') ?></th>
+          <th><?= get_text('Coeff', 'DragDropTarget') ?></th>
+          <th><?= get_text('Total', 'DragDropTarget') ?></th>
         </tr>
       </thead>
       <tbody></tbody>
       <tfoot>
         <tr>
-          <td colspan="3" class="Bold Right">Total général</td>
+          <td colspan="3" class="Bold Right"><?= get_text('GrandTotal', 'DragDropTarget') ?></td>
           <td class="Bold" id="orderGrandTotal">0</td>
         </tr>
       </tfoot>
