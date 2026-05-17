@@ -72,8 +72,8 @@ $JS_SCRIPT = [
         'Lng_GlobalRecap' =>  get_text('GlobalRecap','DragDropTarget'),
         'Lng_FaceType' =>  get_text('FaceType','DragDropTarget'),
         'Lng_Quantity' =>  get_text('Quantity','DragDropTarget'),
-        'Lng_Coeffp' =>  get_text('Coeff','DragDropTarget'),
-        'Lng_Total' =>  get_text('Total','DragDropTarget'),
+        'Lng_Coeff' =>  get_text('Coeff','DragDropTarget'),
+        'Lng_Total' =>  get_text('Total'),
         'Lng_GrandTotal' =>  get_text('GrandTotal','DragDropTarget'),
         'Lng_CopyCart' =>  get_text('CopyCart','DragDropTarget'),
 		'Lng_RemoveArcher' =>  get_text('RemoveArcher','DragDropTarget')
@@ -329,7 +329,7 @@ include('Common/Templates/head.php');
           <th><?= get_text('FaceType', 'DragDropTarget') ?></th>
           <th><?= get_text('Quantity', 'DragDropTarget') ?></th>
           <th><?= get_text('Coeff', 'DragDropTarget') ?></th>
-          <th><?= get_text('Total', 'DragDropTarget') ?></th>
+          <th><?= get_text('Total') ?></th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -342,8 +342,8 @@ include('Common/Templates/head.php');
     </table>
 
     <div style="text-align:right; margin-top:.5rem;">
-      <input type="button" class="Button" value="Copier" onclick="copyOrder()">
-      <input type="button" class="Button" value="Fermer" onclick="closeOrder()">
+      <input type="button" class="Button" value="<?= htmlspecialchars(get_text('Coeff', 'DragDropTarget')) ?>" onclick="copyOrder()">
+      <input type="button" class="Button" value="<?= htmlspecialchars(get_text('Close')) ?>" onclick="closeOrder()">
     </div>
   </div>
 </div>

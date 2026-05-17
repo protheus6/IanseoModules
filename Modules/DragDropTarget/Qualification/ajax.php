@@ -118,7 +118,7 @@ switch ($action) {
                    . htmlspecialchars($blason->displayName()) . '&nbsp;: <strong>' . $blason->physicalCount . '</strong>'
                    . '</span> ';
         }
-        echo $html ?: '<em style="color:#999;">Aucun blason</em>';
+        echo $html ?: '<em style="color:#999;">'.get_text('NoTargetFace', 'DragDropTarget').'</em>';
         break;
 
     // ---------------------------------------------------------------
@@ -135,10 +135,10 @@ switch ($action) {
         $cellSize = $maxTaille; // la cellule fait la taille du plus grand imgTaille
         $html    = '<table class="pbr-print-table">';
         $html   .= '<thead><tr>'
-                 . '<th>Blason</th>'
-                 . '<th>Type</th>'
-                 . '<th>Archers/blason</th>'
-                 . '<th>Quantité</th>'
+                 . '<th>'.get_text('TargetFace').'</th>'
+                 . '<th>'.get_text('Type', 'Tournament').'</th>'
+                 . '<th>'.get_text('ParticipantsTargetFace', 'DragDropTarget').'</th>'
+                 . '<th>'.get_text('Quantity', 'DragDropTarget').'</th>'
                  . '</tr></thead><tbody>';
         foreach ($items as $blId => $blason) {
             $svgUrl   = $svgBase . $blason->svgFile;
@@ -156,7 +156,7 @@ switch ($action) {
                      . '</tr>';
         }
         $html .= '</tbody></table>';
-        echo $html ?: '<em style="color:#999;">Aucun blason</em>';
+        echo $html ?: '<em style="color:#999;">'.get_text('NoTargetFace', 'DragDropTarget').'</em>';
         break;
 
     // ---------------------------------------------------------------
@@ -293,7 +293,7 @@ switch ($action) {
               </div>
               <!-- Ligne visible dans picking list (dispsrc) -->
               <div class="dispsrc bgstru<?= $structId ?> qp-src-card" data-struct="<?= $structId ?>">
-                <span class="qp-del-archer" title="Supprimer cet archer">✕</span>
+                <span class="qp-del-archer" title="<?= htmlspecialchars(get_text('CmdDelete')) ?>">✕</span>
                 <span class="archers"><?= htmlspecialchars($cat . ' — ' . $nomCourt) ?></span><br>
                 <span class="archers" style="color:#555;"><?= htmlspecialchars($r->CoName) ?></span>
               </div>
@@ -301,7 +301,7 @@ switch ($action) {
             <?php
         endwhile;
         if (!$found) {
-            echo '<em style="color:#999; font-size:.82em; display:block; padding:4px;">Tous les archers ont un départ.</em>';
+            echo '<em style="color:#999; font-size:.82em; display:block; padding:4px;">'.get_text('AllPartecipantsHaveSession', 'DragDropTarget').'.</em>';
         }
         break;
 
@@ -421,7 +421,7 @@ switch ($action) {
 function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 {
     $warnColors = [0 => 'primary', 1 => 'success', 2 => 'warning', 3 => 'danger', 4 => 'danger', 5 => 'danger', 6 => 'danger'];
-    $warnLabels = [0 => 'libre', 1 => 'Complet', 2 => 'Struct majoritaire', 3 => 'Structure unique', 4 => 'Dist. mixtes', 5 => 'Blason incompatible', 6 => 'Position en double'];
+    $warnLabels = [0 => get_text('TargetFree', 'DragDropTarget'), 1 => get_text('TargetFull', 'DragDropTarget'), 2 => get_text('TargetMajority', 'DragDropTarget'), 3 => get_text('TargetUnique', 'DragDropTarget'), 4 => get_text('TargetMixDistance', 'DragDropTarget'), 5 => get_text('TargetWrongTargetFace', 'DragDropTarget'), 6 => get_text('TargetSameLetter', 'DragDropTarget')];
     $wc = $warnColors[$cible->warnLevel] ?? 'primary';
     $wl = $warnLabels[$cible->warnLevel] ?? '';
     ?>
@@ -432,9 +432,9 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
       <span class="qp-warn-badge qp-bg-<?= $wc ?>"><?= htmlspecialchars($wl) ?></span>
 
       <div class="qp-cible-header">
-        <span class="qp-cible-move-handle" draggable="true" title="Déplacer la cible">⠿</span>
+        <span class="qp-cible-move-handle" draggable="true" title="<?= htmlspecialchars(get_text('MoveTarget', 'DragDropTarget')) ?>">⠿</span>
         <span>Cible <?= $cible->num ?> (<?= $cible->distance->distance ?>m)</span>
-        <span class="btRm" onclick="removeCibleConfirm(this)" title="Désaffecter tout">✕</span>
+        <span class="btRm" onclick="removeCibleConfirm(this)" title="<?= htmlspecialchars(get_text('UnassignTarget', 'DragDropTarget')) ?>">✕</span>
       </div>
 
       <!-- Étiquettes vagues -->
