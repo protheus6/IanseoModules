@@ -316,8 +316,8 @@ include('Common/Templates/head.php');
       <label style="font-size:.85em;">Coeff global</label>
       <input id="globalCoeff" type="number" step="1" min="0" value="1" style="width:5em;"
              oninput="applyGlobalCoeff(this.value)">
-      <input type="button" class="Button" value="Actualiser" onclick="refreshFromRecap()">
-      <input type="button" class="Button" value="+ Ligne"    onclick="addOrderRow()">
+      <input type="button" class="Button" value="<?= htmlspecialchars(get_text('CmdRefresh')) ?>" onclick="refreshFromRecap()">
+      <input type="button" class="Button" value="+ <?= htmlspecialchars(get_text('CmdAdd', 'Tournament')) ?>"    onclick="addOrderRow()">
       <span style="font-size:.75em; color:#666; margin-left:auto;">
         40cm Trispot CO → ×5 &nbsp;|&nbsp; 40cm → ×2 &nbsp;|&nbsp; 60/80cm Unique → ÷4
       </span>

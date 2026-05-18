@@ -45,7 +45,7 @@ switch ($action) {
         }
 
         if (empty($matrix)) {
-            echo '<em style="color:#999;">Aucun blason affecté.</em>';
+            echo '<em style="color:#999;">'.get_text('NoFaceInvolved').'</em>';
             break;
         }
 
@@ -57,11 +57,11 @@ switch ($action) {
 
         $html  = '<table class="Tabella" style="border-collapse:collapse;font-size:.88em;">';
         $html .= '<thead><tr class="Main">';
-        $html .= '<th>Blason</th><th>Type</th>';
+        $html .= '<th>'.get_text('TargetFace').'</th><th>'.get_text('Type', 'Tournament').'</th>';
         foreach ($sessLabels as $sOrder => $label) {
             $html .= '<th style="text-align:center;">' . htmlspecialchars($label) . '</th>';
         }
-        $html .= '<th style="text-align:center;">Total</th>';
+        $html .= '<th style="text-align:center;">'.get_text('Total').'</th>';
         $html .= '</tr></thead><tbody>';
 
         foreach ($matrix as $alias => $row) {
@@ -87,7 +87,7 @@ switch ($action) {
 
         // Ligne totaux par session
         $html .= '<tr style="background:#eee;">';
-        $html .= '<td colspan="2" style="text-align:right;font-weight:bold;">Total</td>';
+        $html .= '<td colspan="2" style="text-align:right;font-weight:bold;">'.get_text('Total').'</td>';
         $grandTotal = 0;
         foreach ($sessLabels as $sOrder => $label) {
             $colTotal = 0;
@@ -197,7 +197,7 @@ switch ($action) {
               <!-- Ligne visible dans picking list (dispsrc) -->
               <div class="dispsrc <?= $bgcol ?> qp-src-card"
                    data-struct="<?= $item->structId ?>">
-                <span class="qp-del-archer" title="<?= htmlspecialchars(get_text('CmdDelete')) ?>">✕</span>
+                <span class="qp-del-archer" title="<?= htmlspecialchars(get_text('CmdDelete', 'Tournament')) ?>">✕</span>
                 <?php if ($affected): ?>
                   <span class="qp-check">✔</span>
                 <?php endif; ?>

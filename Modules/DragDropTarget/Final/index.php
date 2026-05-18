@@ -134,7 +134,7 @@ include('Common/Templates/head.php');
   <!-- ---- Panneau de configuration (gauche) ---- -->
   <div class="pf-config-col">
     <div class="pf-config-panel">
-      <div class="pf-config-title">Configuration</div>
+      <div class="pf-config-title"><?= get_text('Configuration', 'Tournament') ?></div>
 
       <div class="pf-config-section">
         <strong><?= get_text('Team') ?></strong>
