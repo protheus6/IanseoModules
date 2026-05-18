@@ -76,7 +76,7 @@ class QP_Blason
     // ---------------------------------------------------------------
     public static function aliasForKey(string $key): string
     {
-        static $aliasMap = [
+        $aliasMap = [
             'TrgIndComplete-40'  => get_text('TrgIndComplete'). ' 40cm',
             'TrgIndSmall-40'     => get_text('TrgIndSmall'). ' 40cm',
             'TrgCOIndSmall-40'   => get_text('TrgCOIndSmall'). ' 40cm',
