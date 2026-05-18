@@ -15,6 +15,12 @@ $tourId   = $_SESSION['TourId'];
 // Chemin URL vers le dossier svg/
 //$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/svg/';
 $svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
+
+$JSON=[
+    'error' => 1,
+    'msg' => get_text('ErrGenericError', 'Errors'),
+];
+
 switch ($action) {
 
     // ---------------------------------------------------------------
@@ -45,7 +51,7 @@ switch ($action) {
         }
 
         if (empty($matrix)) {
-            echo '<em style="color:#999;">Aucun blason affecté.</em>';
+            echo '<em style="color:#999;">'.get_text('NoFaceInvolved').'</em>';
             break;
         }
 
@@ -57,11 +63,11 @@ switch ($action) {
 
         $html  = '<table class="Tabella" style="border-collapse:collapse;font-size:.88em;">';
         $html .= '<thead><tr class="Main">';
-        $html .= '<th>Blason</th><th>Type</th>';
+        $html .= '<th>'.get_text('TargetFace').'</th><th>'.get_text('Type', 'Tournament').'</th>';
         foreach ($sessLabels as $sOrder => $label) {
             $html .= '<th style="text-align:center;">' . htmlspecialchars($label) . '</th>';
         }
-        $html .= '<th style="text-align:center;">Total</th>';
+        $html .= '<th style="text-align:center;">'.get_text('Total').'</th>';
         $html .= '</tr></thead><tbody>';
 
         foreach ($matrix as $alias => $row) {
@@ -87,7 +93,7 @@ switch ($action) {
 
         // Ligne totaux par session
         $html .= '<tr style="background:#eee;">';
-        $html .= '<td colspan="2" style="text-align:right;font-weight:bold;">Total</td>';
+        $html .= '<td colspan="2" style="text-align:right;font-weight:bold;">'.get_text('Total').'</td>';
         $grandTotal = 0;
         foreach ($sessLabels as $sOrder => $label) {
             $colTotal = 0;
@@ -197,7 +203,7 @@ switch ($action) {
               <!-- Ligne visible dans picking list (dispsrc) -->
               <div class="dispsrc <?= $bgcol ?> qp-src-card"
                    data-struct="<?= $item->structId ?>">
-                <span class="qp-del-archer" title="<?= htmlspecialchars(get_text('CmdDelete')) ?>">✕</span>
+                <span class="qp-del-archer" title="<?= htmlspecialchars(get_text('CmdDelete', 'Tournament')) ?>">✕</span>
                 <?php if ($affected): ?>
                   <span class="qp-check">✔</span>
                 <?php endif; ?>
@@ -395,8 +401,8 @@ switch ($action) {
                 MakeIndAbs();
             }
         }
-        header('Content-Type: application/json');
-        echo json_encode(['ok' => $athId > 0]);
+        $JSON['error'] = 0;
+        JsonOut(array_merge($JSON, ['ok' => $athId > 0]));
         break;
 
     // ---------------------------------------------------------------
@@ -433,7 +439,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 
       <div class="qp-cible-header">
         <span class="qp-cible-move-handle" draggable="true" title="<?= htmlspecialchars(get_text('MoveTarget', 'DragDropTarget')) ?>">⠿</span>
-        <span>Cible <?= $cible->num ?> (<?= $cible->distance->distance ?>m)</span>
+        <span><?= get_text('Target') ?> <?= $cible->num ?> (<?= $cible->distance->distance ?>m)</span>
         <span class="btRm" onclick="removeCibleConfirm(this)" title="<?= htmlspecialchars(get_text('UnassignTarget', 'DragDropTarget')) ?>">✕</span>
       </div>
 

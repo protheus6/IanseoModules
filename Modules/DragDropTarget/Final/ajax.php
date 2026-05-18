@@ -8,10 +8,13 @@ checkACL(AclCompetition, AclReadOnly);
 
 require_once(__DIR__ . '/models.php');
 
-header('Content-Type: application/json; charset=utf-8');
-
 $action = $_GET['action'] ?? '';
 $tourId = intval($_SESSION['TourId']);
+
+$JSON=[
+    'error' => 1,
+    'msg' => get_text('ErrGenericError', 'Errors'),
+];
 
 switch ($action) {
 
@@ -20,7 +23,9 @@ switch ($action) {
     // ------------------------------------------------------------------
     case 'getData':
         $plan = new PF_Plan($tourId);
-        echo json_encode($plan->toJson());
+        $JSON['error'] = 0;
+        $JSON['data'] = $plan->toJson();
+        JsonOut($JSON);
         break;
 
     // ------------------------------------------------------------------
@@ -32,12 +37,14 @@ switch ($action) {
         $data = json_decode($raw, true);
         if (!is_array($data)) {
             http_response_code(400);
-            echo json_encode(['error' => 'Invalid JSON']);
+            $JSON['msg'] = get_text('InvalidJSON', 'DragDropTarget');
+            JsonOut($JSON);
             break;
         }
         $saver  = new PF_Saver($tourId);
         $errors = $saver->save($data);
-        echo json_encode(['ok' => true, 'errors' => $errors]);
+        $JSON['error'] = 0;
+        JsonOut(array_merge($JSON, ['ok' => true, 'errors' => $errors]));
         break;
 
     // ------------------------------------------------------------------
@@ -62,7 +69,8 @@ switch ($action) {
                 'letter' => $r->FsLetter,
             ];
         }
-        echo json_encode(['count' => count($rows), 'rows' => $rows]);
+        $JSON['error'] = 0;
+        JsonOut(array_merge($JSON, ['count' => count($rows), 'rows' => $rows]));
         break;
 
     // ------------------------------------------------------------------
@@ -108,11 +116,12 @@ switch ($action) {
             $tfId = intval($r->EvFinalTargetType);
             $evFaces[$r->EvCode] = isset($faces[$tfId]) ? $faces[$tfId]['svg'] : '0.svg';
         }
-        echo json_encode(['faces' => $faces, 'eventFaces' => $evFaces]);
+        $JSON['error'] = 0;
+        JsonOut(array_merge($JSON, ['faces' => $faces, 'eventFaces' => $evFaces]));
         break;
 
     default:
         http_response_code(400);
-        echo json_encode(['error' => 'Unknown action']);
+        JsonOut($JSON);
         break;
 }

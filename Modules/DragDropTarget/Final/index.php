@@ -86,7 +86,9 @@ $JS_SCRIPT = [
 		'Lng_Switch1Wave' => get_text('Switch1Wave', 'DragDropTarget'),
 		'Lng_Switch2Archers' => get_text('Switch2Archers', 'DragDropTarget'),
 		'Lng_Switch2Waves' => get_text('Switch2Waves', 'DragDropTarget'),
-		'Lng_Unknown' => get_text('Unknown', 'DragDropTarget')
+		'Lng_Unknown' => get_text('Unknown', 'DragDropTarget'),
+		'Lng_ErrorLoadingData' => get_text('ErrorLoadingData', 'DragDropTarget'),
+		'Lng_ErrorSave' => get_text('ErrorSave', 'DragDropTarget'),
     ]),
     '<script src="' . $pfRoot . 'final.js"></script>',
 ];
@@ -134,7 +136,7 @@ include('Common/Templates/head.php');
   <!-- ---- Panneau de configuration (gauche) ---- -->
   <div class="pf-config-col">
     <div class="pf-config-panel">
-      <div class="pf-config-title">Configuration</div>
+      <div class="pf-config-title"><?= get_text('Configuration', 'Tournament') ?></div>
 
       <div class="pf-config-section">
         <strong><?= get_text('Team') ?></strong>

@@ -76,19 +76,23 @@ class QP_Blason
     // ---------------------------------------------------------------
     public static function aliasForKey(string $key): string
     {
-        static $aliasMap = [
-            'TrgIndComplete-40'  => get_text('TrgIndComplete'). ' 40cm',
-            'TrgIndSmall-40'     => get_text('TrgIndSmall'). ' 40cm',
-            'TrgCOIndSmall-40'   => get_text('TrgCOIndSmall'). ' 40cm',
-            'TrgProAMIndVegasSmall-40'  => 'Vegas 40cm',
-            'TrgIndComplete-60'  => get_text('TrgIndComplete'). ' 60cm',
-            'TrgIndSmall-60'     => get_text('TrgIndSmall'). ' 60cm',
-            'TrgIndComplete-80'  => get_text('TrgIndComplete'). ' 80cm',
-            'TrgCOOutdoor-80'    => get_text('TrgCOOutdoor'). ' 80cm',
-            'TrgOutdoor-80'      => get_text('TargetFace'). ' 80cm',
-            'TrgOutdoor-122'     => get_text('TargetFace'). ' 122cm',
-            'TrgFrBeursault-45'  => get_text('TrgFrBeursault'). ' 45cm',
-        ];
+        static $aliasMap = [];
+        if(empty($aliasMap)) {
+            $aliasMap = [
+                'TrgIndComplete-40'  => get_text('TrgIndComplete'). ' 40cm',
+                'TrgIndSmall-40'     => get_text('TrgIndSmall'). ' 40cm',
+                'TrgCOIndSmall-40'   => get_text('TrgCOIndSmall'). ' 40cm',
+                'TrgProAMIndVegasSmall-40'  => 'Vegas 40cm',
+                'TrgIndComplete-60'  => get_text('TrgIndComplete'). ' 60cm',
+                'TrgIndSmall-60'     => get_text('TrgIndSmall'). ' 60cm',
+                'TrgIndComplete-80'  => get_text('TrgIndComplete'). ' 80cm',
+                'TrgCOOutdoor-80'    => get_text('TrgCOOutdoor'). ' 80cm',
+                'TrgOutdoor-80'      => get_text('TargetFace'). ' 80cm',
+                'TrgOutdoor-122'     => get_text('TargetFace'). ' 122cm',
+                'TrgFrBeursault-45'  => get_text('TrgFrBeursault'). ' 45cm',
+            ];
+        }
+
         return $aliasMap[$key] ?? '';
     }
 
@@ -196,7 +200,7 @@ class QP_Participant
 
     public function getCategory(): string
     {
-        return $this->classe . $this->arme;
+        return $this->arme . $this->classe;
     }
 }
 
