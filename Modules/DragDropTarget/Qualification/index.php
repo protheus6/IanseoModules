@@ -342,7 +342,7 @@ include('Common/Templates/head.php');
     </table>
 
     <div style="text-align:right; margin-top:.5rem;">
-      <input type="button" class="Button" value="<?= htmlspecialchars(get_text('Coeff', 'DragDropTarget')) ?>" onclick="copyOrder()">
+      <input type="button" class="Button" value="<?= htmlspecialchars(get_text('Copy', 'DragDropTarget')) ?>" onclick="copyOrder()">
       <input type="button" class="Button" value="<?= htmlspecialchars(get_text('Close')) ?>" onclick="closeOrder()">
     </div>
   </div>
