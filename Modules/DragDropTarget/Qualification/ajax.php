@@ -15,6 +15,12 @@ $tourId   = $_SESSION['TourId'];
 // Chemin URL vers le dossier svg/
 //$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/svg/';
 $svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
+
+$JSON=[
+    'error' => 1,
+    'msg' => get_text('ErrGenericError', 'Errors'),
+];
+
 switch ($action) {
 
     // ---------------------------------------------------------------
@@ -395,8 +401,8 @@ switch ($action) {
                 MakeIndAbs();
             }
         }
-        header('Content-Type: application/json');
-        echo json_encode(['ok' => $athId > 0]);
+        $JSON['error'] = 0;
+        JsonOut(array_merge($JSON, ['ok' => $athId > 0]));
         break;
 
     // ---------------------------------------------------------------
@@ -433,7 +439,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 
       <div class="qp-cible-header">
         <span class="qp-cible-move-handle" draggable="true" title="<?= htmlspecialchars(get_text('MoveTarget', 'DragDropTarget')) ?>">⠿</span>
-        <span>Cible <?= $cible->num ?> (<?= $cible->distance->distance ?>m)</span>
+        <span><?= get_text('Target') ?> <?= $cible->num ?> (<?= $cible->distance->distance ?>m)</span>
         <span class="btRm" onclick="removeCibleConfirm(this)" title="<?= htmlspecialchars(get_text('UnassignTarget', 'DragDropTarget')) ?>">✕</span>
       </div>
 

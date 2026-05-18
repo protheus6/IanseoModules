@@ -209,7 +209,7 @@ function pfInitHover() {
 
 function pfLoad() {
     $.getJSON(PF_AJAX + '?action=getData', function (data) {
-        pfData = data;
+        pfData = data.data;
         pfDeletedTrainings = [];   // réinitialiser la liste des suppressions après chargement
         pfNormalizeWaveBlocks();   // auto-séparer blocs multi-vague depuis la BDD
         $('#pfLoading').hide();
@@ -217,7 +217,7 @@ function pfLoad() {
         pfInitDragula();
         pfLoadUnscheduled();
     }).fail(function () {
-        $('#pfLoading').text('Erreur lors du chargement des données.');
+        $('#pfLoading').text(Lng_ErrorLoadingData);
     });
 }
 
@@ -1954,7 +1954,7 @@ function pfSave() {
         },
         error: function () {
             $('#btnSave').prop('disabled', false);
-            pfStatus('Erreur réseau', 'error');
+            pfStatus(Lng_ErrorSave, 'error');
         }
     });
 }
