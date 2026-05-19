@@ -406,7 +406,7 @@ function pqInitHoverBlason() {
         var blasonAlias = $(this).data('pq-blason');
         var distance    = $(this).data('pq-distance') || 0; // 0 = pas de filtre distance
         $('.pq-halo-archer').each(function () {
-            var aliasMatch = $(this).data('pq-blason-alias') === blasonAlias;
+            var aliasMatch = $(this).data('pq-blason') === blasonAlias;
             var distMatch  = !distance || Number($(this).data('pq-distance')) === distance;
             if (aliasMatch && distMatch) {
                 $(this).addClass('pq-archer-hl').removeClass('pq-archer-dim');
@@ -417,9 +417,8 @@ function pqInitHoverBlason() {
         $('.pq-halo-blason').each(function () {
             // data-pq-blason-alias présent sur les images de cibles (ID numérique dans data-pq-blason)
             // data-pq-blason seul (alias string) sur les items d'accordéon
-            var alias      = $(this).attr('data-pq-blason-alias') || String($(this).data('pq-blason') || '');
-            var aliasMatch = alias === blasonAlias;
-            var distMatch  = !distance || !$(this).data('pq-distance') || Number($(this).data('pq-distance')) === distance;
+            var aliasMatch = $(this).data('pq-blason') === blasonAlias;
+            var distMatch  = !distance || Number($(this).data('pq-distance')) === distance;
             if (aliasMatch && distMatch) {
                 $(this).addClass('pq-archer-hl').removeClass('pq-archer-dim');
             } else {
@@ -432,6 +431,7 @@ function pqInitHoverBlason() {
         $('.pq-halo-blason').removeClass('pq-archer-hl pq-archer-dim');
     });
 }
+
 
 /* ----------------------------------------------------------
    Surbrillance du blason physique au survol d'un archer sur la cible
