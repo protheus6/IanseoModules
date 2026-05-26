@@ -342,25 +342,25 @@ switch ($action) {
         if ($src <= 0 || $dst <= 0 || $src === $dst) { http_response_code(400); break; }
         $tmp = 99999;
         // Garer les archers de la cible source
-        safe_w_sql("UPDATE Qualifications SET QuTarget = $tmp WHERE QuSession = $sess AND QuTarget = $src");
+        safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $tmp WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = $src");
         if ($src < $dst) {
             // Déplacement vers la droite : décaler src+1..dst vers la gauche
             for ($i = $src; $i < $dst; $i++) {
-                safe_w_sql("UPDATE Qualifications SET QuTarget = $i WHERE QuSession = $sess AND QuTarget = " . ($i + 1));
+                safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $i WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = " . ($i + 1));
             }
         } else {
             // Déplacement vers la gauche : décaler dst..src-1 vers la droite (ordre inverse)
             for ($i = $src; $i > $dst; $i--) {
-                safe_w_sql("UPDATE Qualifications SET QuTarget = $i WHERE QuSession = $sess AND QuTarget = " . ($i - 1));
+                safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $i WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = " . ($i - 1));
             }
         }
         // Placer la cible source à destination
-        safe_w_sql("UPDATE Qualifications SET QuTarget = $dst WHERE QuSession = $sess AND QuTarget = $tmp");
+        safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $dst WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = $tmp");
         // Recalculer QuTargetNo pour toute la plage affectée
         $minC = min($src, $dst);
         $maxC = max($src, $dst);
-        safe_w_sql("UPDATE Qualifications SET QuTargetNo = CONCAT($sess, LPAD(QuTarget, 3, '0'), QuLetter)
-                    WHERE QuSession = $sess AND QuTarget BETWEEN $minC AND $maxC");
+        safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTargetNo = CONCAT($sess, LPAD(Q.QuTarget, 3, '0'), Q.QuLetter)
+                    WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget BETWEEN $minC AND $maxC");
         http_response_code(200);
         break;
 
