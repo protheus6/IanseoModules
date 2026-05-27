@@ -87,8 +87,8 @@ $JS_SCRIPT = [
 		'Lng_Switch2Archers' => get_text('Switch2Archers', 'DragDropTarget'),
 		'Lng_Switch2Waves' => get_text('Switch2Waves', 'DragDropTarget'),
 		'Lng_Unknown' => get_text('Unknown', 'DragDropTarget'),
-		'Lng_ErrorLoadingData' => get_text('ErrorLoadingData', 'DragDropTarget'),
-		'Lng_ErrorSave' => get_text('ErrorSave', 'DragDropTarget'),
+		'Lng_ErrorLoadingData' => get_text('ErrorLoadingData', 'Errors'),
+		'Lng_ErrorSave' => get_text('ErrorSave', 'Errors'),
     ]),
     '<script src="' . $pfRoot . 'final.js"></script>',
 ];

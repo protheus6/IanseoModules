@@ -37,7 +37,7 @@ switch ($action) {
         $data = json_decode($raw, true);
         if (!is_array($data)) {
             http_response_code(400);
-            $JSON['msg'] = get_text('InvalidJSON', 'DragDropTarget');
+            $JSON['msg'] = get_text('InvalidJSON', 'Errors');
             JsonOut($JSON);
             break;
         }
