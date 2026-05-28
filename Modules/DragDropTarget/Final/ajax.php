@@ -19,7 +19,7 @@ $JSON=[
 switch ($action) {
 
     // ------------------------------------------------------------------
-    // getData : retourne le plan complet (créneaux + blocs + cibles)
+    // getData : returns the full plan (slots + blocks + targets)
     // ------------------------------------------------------------------
     case 'getData':
         $plan = new PF_Plan($tourId);
@@ -29,7 +29,7 @@ switch ($action) {
         break;
 
     // ------------------------------------------------------------------
-    // save : sauvegarde le plan (POST JSON)
+    // save : saves the plan (POST JSON)
     // ------------------------------------------------------------------
     case 'save':
         checkACL(AclCompetition, AclReadWrite);
@@ -48,8 +48,8 @@ switch ($action) {
         break;
 
     // ------------------------------------------------------------------
-    // debugFS : retourne les enregistrements FinSchedule du tournoi
-    // (debug uniquement – à supprimer en production)
+    // debugFS : returns the FinSchedule records for the tournament
+    // (debug only – remove in production)
     // ------------------------------------------------------------------
     case 'debugFS':
         $rs   = safe_r_sql("SELECT FSEvent, FSMatchNo, FSTeamEvent,
@@ -74,10 +74,10 @@ switch ($action) {
         break;
 
     // ------------------------------------------------------------------
-    // getBlasonSvg : retourne le SVG d'un blason (pour affichage dans les tuiles)
+    // getBlasonSvg : returns the SVG of a target face (for display in tiles)
     // ------------------------------------------------------------------
     case 'getTargetFaces':
-        // Retourne la liste des TargetFaces
+        // Returns the list of TargetFaces
         $rs = safe_r_sql("SELECT T.TarId, T.TarDescr,E.EvTargetSize
                           FROM Events E
                           LEFT JOIN Targets T ON E.EvFinalTargetType = T.TarId 
@@ -106,7 +106,7 @@ switch ($action) {
                 'classes' => 'None',
             ];
         }
-        // Associer chaque événement à son TargetFace
+        // Associate each event with its TargetFace
         $evFaces = [];
         $rs2 = safe_r_sql("SELECT EvCode, EvTeamEvent,EvFinalTargetType
                            FROM Events 

@@ -1,18 +1,18 @@
 /* ============================================================
-   PlanFinales — Plan de cible des Finales
+   PlanFinales — Finals target plan
    ============================================================ */
 
-/* Variables : tailles des colonnes et des lignes */
+/* Variables: column and row sizes */
 :root {
-    --pf-col-slot:    140px;   /* largeur colonne horaire */
-    --pf-col-target:   75px;   /* largeur d'une colonne cible */
-    --pf-col-add:      28px;   /* colonne bouton + */
-    --pf-row-h:        90px;   /* hauteur fixe des lignes normales */
-    --pf-wave-row-h:   68px;   /* hauteur des sous-lignes de vague */
-    --pf-font-scale:  .88em;   /* police de la table (mis à jour par le zoom) */
+    --pf-col-slot:    140px;   /* time-slot column width */
+    --pf-col-target:   75px;   /* width of a target column */
+    --pf-col-add:      28px;   /* + button column */
+    --pf-row-h:        90px;   /* fixed height for normal rows */
+    --pf-wave-row-h:   68px;   /* height of wave sub-rows */
+    --pf-font-scale:  .88em;   /* table font (updated by zoom) */
 }
 
-/* --- Barre d'outils --- */
+/* --- Toolbar --- */
 .pf-toolbar {
     display: flex;
     align-items: center;
@@ -40,8 +40,8 @@
 .pf-status.error { color: #c00;    font-weight: bold; }
 
 /* ============================================================
-   Chaîne flexbox pour remplir exactement le viewport restant
-   sans calcul JS (s'adapte à tout bandeau haut/bas du template)
+   Flexbox chain to fill exactly the remaining viewport
+   with no JS calculation (adapts to any top/bottom template banner)
    ============================================================ */
 body {
     display: flex !important;
@@ -57,14 +57,14 @@ body {
     flex: 1 !important;
     min-height: 0 !important;
     overflow: hidden !important;
-    padding: 0 5px !important;   /* garde padding latéral, retire haut/bas */
+    padding: 0 5px !important;   /* keep side padding, remove top/bottom */
     display: flex !important;
     flex-direction: column !important;
 }
-/* Tous les enfants directs de #Content ne s'étirent pas, sauf le layout */
+/* All direct children of #Content do not stretch, except the layout */
 #Content > * { flex-shrink: 0; }
 
-/* --- Layout principal : remplit tout l'espace restant --- */
+/* --- Main layout: fills all remaining space --- */
 .pf-layout {
     display: flex;
     gap: 6px;
@@ -76,7 +76,7 @@ body {
     overflow: hidden;
 }
 
-/* --- Panneau config (gauche) — flex colonne pour remplir la hauteur --- */
+/* --- Config panel (left) — flex column to fill height --- */
 .pf-config-col {
     width: 170px;
     min-width: 140px;
@@ -120,16 +120,16 @@ body {
 }
 .pf-config-row label { flex: 1; white-space: nowrap; }
 
-/* --- Section "Non planifiés" : occupe tout l'espace restant --- */
+/* --- "Unscheduled" section: occupies all remaining space --- */
 #unscheduledPanel {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    position: relative;  /* ancre le modal absolu */
+    position: relative;  /* anchors the absolute modal */
 }
-/* --- En-tête du panneau non-planifiés (titre + bouton + échauffement) --- */
+/* --- Unscheduled panel header (title + button + warm-up) --- */
 .pf-unsched-header {
     display: flex;
     align-items: center;
@@ -152,7 +152,7 @@ body {
 }
 .pf-add-train-btn:hover { background: #c8e8c8; border-color: #4a8a4a; }
 
-/* --- Bouton suppression sur tuile entraînement non-planifiée --- */
+/* --- Delete button on unscheduled training tile --- */
 .pf-ut-rm {
     flex-shrink: 0;
     cursor: pointer;
@@ -164,7 +164,7 @@ body {
 }
 .pf-ut-rm:hover { opacity: 1; color: #c00; background: rgba(200,0,0,.10); }
 
-/* --- Modal sélection épreuve entraînement --- */
+/* --- Training event selection modal --- */
 .pf-train-modal {
     position: absolute;
     z-index: 200;
@@ -210,14 +210,14 @@ body {
     justify-content: flex-end;
 }
 
-/* --- Liste non planifiés : scrollable, remplit la section --- */
+/* --- Unscheduled list: scrollable, fills the section --- */
 .pf-unscheduled-list {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     margin-top: 4px;
 }
-/* --- Groupes repliables dans "Non planifiés" --- */
+/* --- Collapsible groups in "Unscheduled" --- */
 .pf-unsched-grp {
     margin-bottom: 3px;
 }
@@ -245,14 +245,14 @@ body {
     color: #666;
     margin-left: auto;
 }
-/* Zone de drop de chaque groupe (corps repliable) */
+/* Drop zone for each group (collapsible body) */
 .pf-unsched-grp > .pf-drop-zone {
     padding: 2px 2px 2px 6px;
     min-height: 8px;
     border-left: 2px solid #b0bedc;
 }
 
-/* --- Tuiles non planifiées --- */
+/* --- Unscheduled tiles --- */
 .pf-unsched-tile {
     display: flex;
     align-items: center;
@@ -281,14 +281,14 @@ body {
     letter-spacing: .03em;
 }
 
-/* --- Zone grille (droite) --- */
+/* --- Grid area (right) --- */
 .pf-grid-col {
     flex: 1;
     overflow: hidden;
     display: flex;
     flex-direction: column;
 }
-/* Contrôle de zoom grille */
+/* Grid zoom control */
 .pf-zoom-control {
     display: inline-flex;
     align-items: center;
@@ -321,11 +321,11 @@ body {
 }
 
 /* ============================================================
-   Tableau de la grille — largeurs et hauteurs fixes
+   Grid table — fixed widths and heights
    ============================================================ */
 #pfGrid table.pf-table {
     border-collapse: collapse;
-    table-layout: fixed;   /* OBLIGATOIRE pour que les <col> aient effet */
+    table-layout: fixed;   /* REQUIRED for <col> widths to take effect */
     font-size: var(--pf-font-scale);
 }
 #pfGrid table.pf-table th,
@@ -335,37 +335,37 @@ body {
     overflow: hidden;
 }
 
-/* Largeurs via <col> */
+/* Widths via <col> */
 col.pf-col-slot   { width: var(--pf-col-slot);   }
 col.pf-col-target { width: var(--pf-col-target);  }
 col.pf-col-add    { width: var(--pf-col-add);     }
 
 /* ============================================================
-   En-têtes fixes (sticky)
+   Fixed headers (sticky)
    ============================================================ */
 
-/* Ligne de header : sticky en haut lors du scroll vertical */
+/* Header row: sticky at the top when scrolling vertically */
 #pfGrid table.pf-table thead th {
     position: sticky;
     top: 0;
     z-index: 6;
 }
 
-/* Cellule coin supérieur gauche : sticky haut ET gauche */
+/* Top-left corner cell: sticky to the top AND left */
 #pfGrid table.pf-table thead th.pf-th-slot {
     left: 0;
     z-index: 7;
 }
 
-/* Colonne horaire (1ère colonne du corps) : sticky à gauche lors du scroll horizontal */
+/* Time column (1st body column): sticky to the left when scrolling horizontally */
 #pfGrid table.pf-table tbody td.pf-slot-header {
     position: sticky;
     left: 0;
     z-index: 5;
-    background: #e8eef6;   /* fond solide indispensable pour masquer le contenu derrière */
+    background: #e8eef6;   /* solid background needed to hide content behind it */
 }
 
-/* Hauteur fixe identique pour toutes les lignes de données */
+/* Fixed identical height for all data rows */
 #pfGrid table.pf-table tbody tr {
     height: var(--pf-row-h);
 }
@@ -374,7 +374,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     vertical-align: top;
 }
 
-/* --- Lignes de sous-vague (plus petites) --- */
+/* --- Wave sub-rows (smaller) --- */
 #pfGrid table.pf-table tbody tr.pf-wave-row {
     height: var(--pf-wave-row-h);
 }
@@ -382,18 +382,18 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     height: var(--pf-wave-row-h);
 }
 
-/* Séparateur visuel entre deux lignes de vague consécutives */
+/* Visual separator between two consecutive wave rows */
 #pfGrid table.pf-table tbody tr.pf-wave-row + tr.pf-wave-row > td {
     border-top: 2px dashed #8aaabb !important;
 }
 
-/* La cellule d'en-tête horaire avec rowspan ne doit pas forcer la hauteur */
+/* The time-slot header cell with rowspan must not force the height */
 .pf-slot-header[rowspan] {
     height: auto !important;
     vertical-align: top;
 }
 
-/* En-tête colonne cible */
+/* Target column header */
 .pf-th-target {
     background: #2a507a;
     color: #fff;
@@ -415,7 +415,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 }
 .pf-th-target .pf-rm-col:hover { opacity: 1; }
 
-/* En-tête colonne horaire */
+/* Time-slot column header */
 .pf-th-slot {
     background: #1e3a5a;
     color: #fff;
@@ -426,16 +426,16 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     font-size: .9em;
 }
 
-/* Bouton ajout colonne */
+/* Add column button */
 .pf-th-add {
     background: #e8eef6;
     text-align: center;
 }
 
-/* --- Cellule horaire (1ère colonne de chaque ligne) --- */
+/* --- Time-slot cell (1st column of each row) --- */
 .pf-slot-header {
     background: #e8eef6;
-    padding: 4px 26px 4px 8px;   /* right réservé à la bande de vague */
+    padding: 4px 26px 4px 8px;   /* right reserved for the wave strip */
     vertical-align: middle;
     position: relative;
     height: var(--pf-row-h);
@@ -527,7 +527,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 
 
 
-/* Inputs inline édition horaire */
+/* Inline time-slot editing inputs */
 .pf-slot-inputs input[type=date],
 .pf-slot-inputs input[type=time] {
     width: 92px;
@@ -545,7 +545,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     cursor: pointer;
 }
 
-/* --- Cellule de données --- */
+/* --- Data cell --- */
 .pf-cell {
     min-width: var(--pf-col-target);
     padding: 2px;
@@ -557,7 +557,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     outline: 2px dashed #5b9bd5;
 }
 
-/* Zone de dépôt : occupe toute la cellule */
+/* Drop zone: fills the entire cell */
 .pf-drop-zone {
     padding: 3px;
     width: 100%;
@@ -569,7 +569,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 }
 
 /* ============================================================
-   Tuiles de phase / entraînement
+   Phase / training tiles
    ============================================================ */
 .pf-tile {
     border-radius: 3px;
@@ -580,13 +580,13 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     position: relative;
     display: flex;
     flex-direction: column;
-    flex: 1;           /* remplit la hauteur de la drop-zone */
+    flex: 1;           /* fills the drop-zone height */
     min-height: 0;
     box-sizing: border-box;
 }
 .pf-tile:active { cursor: grabbing; }
 
-/* Mise en évidence au survol : même catégorie */
+/* Highlight on hover: same category */
 .pf-tile-hl {
     box-shadow: 0 0 0 2px rgba(0,0,0,.55), 0 2px 7px rgba(0,0,0,.22);
     position: relative;
@@ -598,19 +598,19 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     transition: opacity .12s, filter .12s;
 }
 
-/* En-tête de la tuile */
+/* Tile header */
 .pf-tile-hdr {
     font-weight: bold;
     text-align: center;
     padding: 3px 18px 2px;
-    font-size: .93em;       /* texte agrandi */
+    font-size: .93em;       /* enlarged text */
     line-height: 1.25;
     position: relative;
     flex-shrink: 0;
-    /* empêcher le débordement du texte */
+    /* prevent text overflow */
     overflow: hidden;
 }
-/* Code catégorie : premier, un peu plus gros, gras */
+/* Category code: first, slightly larger, bold */
 .pf-tile-evcode {
     display: block;
     font-size: 1.05em;
@@ -620,7 +620,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     overflow: hidden;
     text-overflow: ellipsis;
 }
-/* Nom de phase : dessous, même graisse, légèrement plus petit */
+/* Phase name: below, same weight, slightly smaller */
 .pf-tile-phase {
     display: block;
     font-size: .9em;
@@ -628,7 +628,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     line-height: 1.2;
 }
 
-/* Boutons dans l'en-tête */
+/* Buttons in the header */
 .pf-tile-rm {
     position: absolute;
     top: 2px; right: 3px;
@@ -654,7 +654,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 }
 .pf-tile-seg:hover { opacity: 1; color: #00a; }
 
-/* Bouton bascule 1/2 archers par cible */
+/* Toggle button 1/2 archers per target */
 .pf-tile-two {
     position: absolute;
     bottom: 2px; left: 3px;
@@ -668,13 +668,13 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 }
 .pf-tile-two:hover { opacity: 1; color: #00a; }
 
-/* Tuile en conflit d'ordre : bordure rouge vive */
+/* Tile with order conflict: vivid red border */
 .pf-tile--conflict {
     border: 2px solid #d32f2f !important;
     box-shadow: 0 0 0 1px #d32f2f !important;
 }
 
-/* Bandeau "Conflit" en haut de la tuile */
+/* "Conflict" banner at the top of the tile */
 .pf-conflict-badge {
     display: block;
     background: #d32f2f;
@@ -688,7 +688,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 }
 @media print { .pf-conflict-badge { display: none !important; } }
 
-/* Zone blason (optionnel) */
+/* Target face area (optional) */
 .pf-tile-svg {
     display: none;
     justify-content: center;
@@ -699,7 +699,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 .pf-show-blason .pf-tile-svg { display: flex; }
 
 /* ============================================================
-   Boutons étendre/réduire des tuiles entraînement
+   Expand/shrink buttons for training tiles
    ============================================================ */
 .pf-training-resize {
     display: flex;
@@ -721,32 +721,32 @@ col.pf-col-add    { width: var(--pf-col-add);     }
 .pf-tr-disabled   { opacity: .25; cursor: default; background: transparent; }
 
 /* ============================================================
-   Corps de la tuile : slots alignés sur les cibles
+   Tile body: slots aligned to targets
    ============================================================ */
 .pf-tile-body {
     display: flex;
     flex: 1;
     min-height: 0;
-    align-items: center;   /* centrer verticalement */
+    align-items: center;   /* centre vertically */
     padding: 0;
 }
 
-/* Un slot = une colonne cible dans l'empan de la tuile */
+/* One slot = one target column within the tile span */
 .pf-tile-slot {
     flex: 1;
     min-width: 0;
     display: flex;
     align-items: center;
-    justify-content: center;   /* centrage horizontal */
+    justify-content: center;   /* horizontal centering */
     padding: 1px 0;
 }
 
-/* Boîte de match (positions [A] ⚔ [B]) */
+/* Match box (positions [A] ⚔ [B]) */
 .pf-match-box {
     display: inline-flex;
     align-items: center;
     gap: 1px;
-    font-size: .88em;     /* texte agrandi */
+    font-size: .88em;     /* enlarged text */
     line-height: 1;
 }
 .pf-pos {
@@ -767,7 +767,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     font-size: 2.5em;
     margin: 0 1px;
 }
-/* Badge équipe (1 équipe / cible) — plus grand, seul élément dans le slot */
+/* Team badge (1 team / target) — larger, sole element in the slot */
 .pf-pos-solo {
     display: inline-flex;
     align-items: center;
@@ -782,15 +782,15 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     color: #fff;
 }
 
-/* Fantôme Dragula */
+/* Dragula ghost */
 .gu-mirror .pf-tile { opacity: .88; }
 .gu-transit          { opacity: .35; }
 
 /* ============================================================
-   Gestion des vagues (multi-rows par créneau)
+   Wave management (multiple rows per slot)
    ============================================================ */
 
-/* Bande verticale de vague dans la cellule horaire (AB / AB+CD) */
+/* Vertical wave strip in the time-slot cell (AB / AB+CD) */
 .pf-slot-wave-strip {
     position: absolute;
     top: 0;
@@ -823,7 +823,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     border-top: 1px dashed rgba(30, 58, 90, 0.35);
 }
 
-/* Colonne latérale de vague (remplace la colonne "+" dans les multi-vagues) */
+/* Wave side column (replaces the "+" column in multi-wave slots) */
 .pf-wave-side-lbl {
     text-align: center;
     vertical-align: middle !important;
@@ -840,7 +840,7 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     letter-spacing: .1em;
 }
 
-/* Badge de vague sur la tuile (AB / CD) */
+/* Wave badge on the tile (AB / CD) */
 .pf-wave-tag {
     display: inline-block;
     font-size: .66em;
@@ -854,13 +854,13 @@ col.pf-col-add    { width: var(--pf-col-add);     }
     line-height: 1.4;
 }
 
-/* Réduire la min-height des drop-zones dans les lignes de vague */
+/* Reduce the min-height of drop-zones in wave rows */
 tr.pf-wave-row .pf-drop-zone {
     min-height: calc(var(--pf-wave-row-h) - 4px);
 }
 
 /* ============================================================
-   Modale segmentation
+   Segmentation modal
    ============================================================ */
 #pfSegModal {
     display: none;
@@ -887,13 +887,13 @@ tr.pf-wave-row .pf-drop-zone {
 #pfSegCard .pf-seg-row label { min-width: 100px; }
 
 /* ============================================================
-   Impression
+   Print
    ============================================================ */
 @media print {
     * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
     @page { size: A4 landscape; margin: 8mm; }
 
-    /* Masquer tout ce qui n'est pas la grille */
+    /* Hide everything that is not the grid */
     .pf-toolbar, .pf-config-col, .pf-grid-actions,
     .pf-tile-rm, .pf-tile-seg, .pf-tile-two, .pf-training-resize,
     .pf-slot-wave-strip, .pf-slot-inputs, .pf-slot-edit-btn,
@@ -902,14 +902,14 @@ tr.pf-wave-row .pf-drop-zone {
     .pf-tile-dim { opacity: 1 !important;       filter: none !important; }
     .pf-add-train-btn, .pf-ut-rm, .pf-train-modal { display: none !important; }
 
-    /* Mise en page pleine largeur */
+    /* Full-width layout */
     .pf-layout  { display: block !important; height: auto; }
     .pf-grid-col { width: 100%; overflow: visible; }
     .pf-grid-wrap { overflow: visible !important; max-height: none !important; height: auto !important; }
 
-    /* Désactiver le positionnement sticky */
+    /* Disable sticky positioning */
     td.pf-slot-header { position: static !important; }
 
-    /* Éviter les coupures dans les tuiles */
+    /* Avoid breaks inside tiles */
     .pf-tile { break-inside: avoid; page-break-inside: avoid; }
 }

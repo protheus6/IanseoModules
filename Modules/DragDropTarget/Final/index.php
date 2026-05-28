@@ -6,14 +6,14 @@ require_once('Common/Lib/CommonLib.php');
 CheckTourSession(true);
 checkACL(AclCompetition, AclReadOnly);
 
-// Infos tournoi
+// Tournament info
 $tourId = intval($_SESSION['TourId']);
 $rsTour = safe_r_sql("SELECT ToName, ToCode FROM Tournament WHERE ToId=" . $tourId);
 $tour   = safe_fetch($rsTour);
 $tourName = $tour ? htmlspecialchars($tour->ToName) : '';
 $tourCode = $tour ? htmlspecialchars($tour->ToCode) : '';
 
-// Plage de dates (depuis DistanceInformation ou FinSchedule)
+// Date range (from DistanceInformation or FinSchedule)
 $dateRange = '';
 $rsDates = safe_r_sql("SELECT MIN(DiDay) minD, MAX(DiDay) maxD
                         FROM DistanceInformation
@@ -31,7 +31,7 @@ if (!$dateRange) {
     }
 }
 
-// Paramètres de durée par défaut pour la configuration
+// Default duration parameters for the configuration
 $equipeEchauffement = 15;
 $equipeMatch        = 30;
 $indivEchauffement  = 5;
@@ -98,7 +98,7 @@ include('Common/Templates/head.php');
 ?>
 
 <!-- =====================================================================
-     En-tête
+     Header
      ===================================================================== -->
 <table class="Tabella" style="width:100%;">
   <tr>
@@ -112,7 +112,7 @@ include('Common/Templates/head.php');
 </table>
 
 <!-- =====================================================================
-     Barre d'outils
+     Toolbar
      ===================================================================== -->
 <div class="pf-toolbar">
   <input type="button" class="Button" id="btnSave" value="Enregistrer" onclick="pfSave()">
@@ -129,11 +129,11 @@ include('Common/Templates/head.php');
 </div>
 
 <!-- =====================================================================
-     Mise en page : configuration | grille
+     Layout: configuration | grid
      ===================================================================== -->
 <div class="pf-layout">
 
-  <!-- ---- Panneau de configuration (gauche) ---- -->
+  <!-- ---- Configuration panel (left) ---- -->
   <div class="pf-config-col">
     <div class="pf-config-panel">
       <div class="pf-config-title"><?= get_text('Configuration', 'Tournament') ?></div>
@@ -166,7 +166,7 @@ include('Common/Templates/head.php');
         </div>
       </div>
 
-      <!-- Phases non planifiées -->
+      <!-- Unscheduled phases -->
       <div class="pf-config-section" id="unscheduledPanel">
         <div class="pf-unsched-header">
           <strong><?= get_text('NotScheduled', 'DragDropTarget') ?></strong>
@@ -177,7 +177,7 @@ include('Common/Templates/head.php');
         </div>
       </div>
 
-      <!-- Modal : choisir l'épreuve pour un nouvel entraînement -->
+      <!-- Modal: choose the event for a new warm-up -->
       <div id="pfTrainModal" class="pf-train-modal" style="display:none;">
         <div class="pf-train-modal-inner">
           <div class="pf-train-modal-title"><?= get_text('AddWarmup', 'DragDropTarget') ?></div>
@@ -193,9 +193,9 @@ include('Common/Templates/head.php');
     </div>
   </div>
 
-  <!-- ---- Zone de grille (droite) ---- -->
+  <!-- ---- Grid area (right) ---- -->
   <div class="pf-grid-col">
-    <!-- Boutons d'action sur la grille -->
+    <!-- Grid action buttons -->
     <div class="pf-grid-actions">
       <input type="button" class="Button" value="+ <?= get_text('Slot', 'DragDropTarget') ?>" onclick="pfAddSlot()" title="<?= get_text('AddSlot', 'DragDropTarget') ?>">
       <input type="button" class="Button" value="+ <?= get_text('Target') ?>"   onclick="pfAddTarget()" title="<?= get_text('AddTarget', 'DragDropTarget') ?>">
@@ -207,7 +207,7 @@ include('Common/Templates/head.php');
       </span>
     </div>
 
-    <!-- La grille elle-même -->
+    <!-- The grid itself -->
     <div id="pfGridWrap" class="pf-grid-wrap">
       <div id="pfLoading" style="padding:20px; color:#666;"><?= get_text('Loading', 'Tournament') ?></div>
       <div id="pfGrid"></div>

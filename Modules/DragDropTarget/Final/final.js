@@ -1,33 +1,33 @@
 /**
- * PlanFinales — Plan de cible des Finales
- * Dépendances : jQuery, Dragula
+ * PlanFinales — Finals target plan
+ * Dependencies: jQuery, Dragula
  */
 
 /* ============================================================
-   État global
+   Global state
    ============================================================ */
 var pfData              = null;   // {targets, slots, unscheduled, events}
-var pfDeletedTrainings  = [];     // fwKeys des entraînements supprimés (envoyés au save)
-var pfDrake             = null;   // instance Dragula
-var pfShowBlason        = false;  // afficher les blasons SVG
-var pfDirty             = false;  // modifications non sauvegardées
-var pfUnschedCollapsed  = {};     // {evCode: bool} — groupes réduits dans "Non planifiés"
-var pfZoom              = 100;    // niveau de zoom grille en % (50–150)
-var pfConflictIds       = {};     // {event|phase|teamEvent: message} — conflits d'ordre détectés
+var pfDeletedTrainings  = [];     // fwKeys of deleted trainings (sent on save)
+var pfDrake             = null;   // Dragula instance
+var pfShowBlason        = false;  // display SVG target faces
+var pfDirty             = false;  // unsaved changes
+var pfUnschedCollapsed  = {};     // {evCode: bool} — collapsed groups in the unscheduled panel
+var pfZoom              = 100;    // grid zoom level in % (50–150)
+var pfConflictIds       = {};     // {event|phase|teamEvent: message} — detected order conflicts
 
 /* ============================================================
-   Ajustement layout (le CSS flex gère la hauteur automatiquement)
-   On nettoie seulement les styles inline que le template pourrait imposer.
+   Layout adjustment (CSS flex handles height automatically)
+   Only clears inline styles that the template might impose.
    ============================================================ */
 function pfAdjustLayout() {
-    // Effacer toute hauteur inline résiduelle sur le layout
+    // Clear any residual inline height on the layout
     var layout = document.querySelector('.pf-layout');
     if (layout) layout.style.height = '';
 }
 
 /* ============================================================
-   Zoom de la grille (slider)
-   Met à l'échelle les variables CSS de dimension + la police.
+   Grid zoom (slider)
+   Scales the CSS dimension variables + font.
    ============================================================ */
 function pfSetZoom(val) {
     pfZoom = parseInt(val, 10);
@@ -40,7 +40,7 @@ function pfSetZoom(val) {
     var hWave   = Math.round(68  * f) + 'px';
     var font    = (0.88 * f).toFixed(3) + 'em';
 
-    // 1. Mettre à jour les variables CSS (utilisées par tous les éléments non-table)
+    // 1. Update CSS variables (used by all non-table elements)
     var r = document.documentElement;
     r.style.setProperty('--pf-col-slot',    wSlot);
     r.style.setProperty('--pf-col-target',  wTarget);
@@ -49,8 +49,8 @@ function pfSetZoom(val) {
     r.style.setProperty('--pf-wave-row-h',  hWave);
     r.style.setProperty('--pf-font-scale',  font);
 
-    // 2. Forcer la largeur directement sur les <col> (table-layout:fixed
-    //    ne réagit pas toujours au changement des variables CSS)
+    // 2. Force width directly on <col> elements (table-layout:fixed
+    //    does not always react to CSS variable changes)
     document.querySelectorAll('col.pf-col-slot').forEach(function (c) {
         c.style.width = wSlot;
     });
@@ -61,13 +61,13 @@ function pfSetZoom(val) {
         c.style.width = wAdd;
     });
 
-    // 3. Mettre à jour le label et le slider
+    // 3. Update the label and slider
     var lbl    = document.getElementById('pfZoomLbl');
     var slider = document.getElementById('pfZoomSlider');
     if (lbl)    lbl.textContent = pfZoom + '%';
     if (slider) slider.value   = pfZoom;
 
-    // 4. Persister dans localStorage
+    // 4. Persist in localStorage
     try { localStorage.setItem('pfZoom', pfZoom); } catch (e) {}
 	pfUniCellWidth();
 }
@@ -78,7 +78,7 @@ function pfSetZoom(val) {
 $(function () {
     pfAdjustLayout();
     $(window).on('resize', pfAdjustLayout);
-    // Restaurer le zoom depuis localStorage
+    // Restore zoom from localStorage
     try {
         var savedZoom = parseInt(localStorage.getItem('pfZoom'), 10);
         if (savedZoom >= 50 && savedZoom <= 150) pfZoom = savedZoom;
@@ -89,11 +89,11 @@ $(function () {
 });
 
 /* ============================================================
-   Ajout / suppression d'entraînements
+   Add / delete trainings
    ============================================================ */
 
-/** Calcule la couleur rgba d'un bloc entraînement pour un evCode donné.
- *  Cherche d'abord une tuile existante du même event, sinon génère via hash. */
+/** Computes the rgba color of a training block for a given evCode.
+ *  First looks for an existing tile of the same event, otherwise generates via hash. */
 function pfGetTrainingColor(evCode) {
     var allBlocks = [];
     (pfData.slots || []).forEach(function (s) {
@@ -106,9 +106,9 @@ function pfGetTrainingColor(evCode) {
         if (allBlocks[i].event === evCode) { existing = allBlocks[i]; break; }
     }
     if (existing) {
-        // Bloc entraînement (rgba) → réutiliser directement
+        // Training block (rgba) → reuse directly
         if (existing.type === 'training') return existing.color;
-        // Bloc phase (hex) → dériver la version rgba
+        // Phase block (hex) → derive the rgba version
         var hex = (existing.color + '').replace('#', '');
         if (hex.length === 6) {
             var r = parseInt(hex.slice(0,2), 16);
@@ -117,7 +117,7 @@ function pfGetTrainingColor(evCode) {
             return 'rgba(' + r + ',' + g + ',' + b + ',0.45)';
         }
     }
-    // Fallback : hash déterministe sur l'evCode (miroir de PHP generatePastelColor)
+    // Fallback: deterministic hash on evCode (mirrors PHP generatePastelColor)
     var h = 0;
     for (var j = 0; j < evCode.length; j++) {
         h = (((h << 5) - h) + evCode.charCodeAt(j)) | 0;
@@ -126,7 +126,7 @@ function pfGetTrainingColor(evCode) {
     return 'rgba(' + (127 + (h % 128)) + ',' + (127 + ((h >>> 8) % 128)) + ',' + (127 + ((h >>> 16) % 128)) + ',0.45)';
 }
 
-/** Ouvre le modal de sélection d'épreuve pour ajouter un entraînement. */
+/** Opens the event selection modal to add a training. */
 function pfOpenTrainModal() {
     var sel = document.getElementById('pfTrainEvSelect');
     sel.innerHTML = '';
@@ -144,14 +144,14 @@ function pfCloseTrainModal() {
     document.getElementById('pfTrainModal').style.display = 'none';
 }
 
-/** Crée le bloc entraînement et l'ajoute aux non-planifiés. */
+/** Creates the training block and adds it to the unscheduled list. */
 function pfAddTrainingConfirm() {
     var sel       = document.getElementById('pfTrainEvSelect');
     var evCode    = sel.value;
     var teamEvent = parseInt(sel.options[sel.selectedIndex].dataset.te) || 0;
     if (!evCode) return;
 
-    // ID unique côté client (fwKey vide = nouveau → INSERT au save)
+    // Unique client-side ID (empty fwKey = new → INSERT on save)
     var uid = 'trn_new_' + evCode.replace(/\W/g,'_') + '_' + Date.now();
     var block = {
         id:         uid,
@@ -162,7 +162,7 @@ function pfAddTrainingConfirm() {
         color:      pfGetTrainingColor(evCode),
         targetList: [],
         waveRow:    0,
-        fwKey:      ''   // vide → INSERT côté serveur au prochain save
+        fwKey:      ''   // empty → server-side INSERT on next save
     };
     pfData.unscheduled.push(block);
     pfDirty = true;
@@ -171,13 +171,13 @@ function pfAddTrainingConfirm() {
     pfRefreshDragula();
 }
 
-/** Supprime définitivement un entraînement non-planifié. */
+/** Permanently deletes an unscheduled training. */
 function pfDeleteTraining(blockId, ev) {
     if (ev && ev.stopPropagation) ev.stopPropagation();
     var idx = pfData.unscheduled.findIndex(function (b) { return b.id === blockId; });
     if (idx === -1) return;
     var block = pfData.unscheduled[idx];
-    // Si fwKey non vide : marquer pour suppression en base au prochain save
+    // If fwKey is non-empty: mark for deletion in the database on next save
     if (block.fwKey) {
         pfDeletedTrainings.push(block.fwKey);
     }
@@ -188,10 +188,10 @@ function pfDeleteTraining(blockId, ev) {
 }
 
 /* ============================================================
-   Mise en évidence des tuiles de même catégorie au survol
+   Highlight tiles of the same category on hover
    ============================================================ */
 function pfInitHover() {
-    // Délégation sur document : survit aux pfRender() qui recrée les tuiles
+    // Delegated on document: survives pfRender() calls that recreate tiles
     $(document).on('mouseenter', '.pf-tile', function () {
         var evCode = $(this).data('pfEvent');
         $('.pf-tile').each(function () {
@@ -210,8 +210,8 @@ function pfInitHover() {
 function pfLoad() {
     $.getJSON(PF_AJAX + '?action=getData', function (data) {
         pfData = data.data;
-        pfDeletedTrainings = [];   // réinitialiser la liste des suppressions après chargement
-        pfNormalizeWaveBlocks();   // auto-séparer blocs multi-vague depuis la BDD
+        pfDeletedTrainings = [];   // reset the deletion list after loading
+        pfNormalizeWaveBlocks();   // auto-split multi-wave blocks from the database
         $('#pfLoading').hide();
         pfRender();
         pfInitDragula();
@@ -222,8 +222,8 @@ function pfLoad() {
 }
 
 /* ============================================================
-   Normalisation des blocs multi-vague (chargement depuis BDD)
-   Si un bloc a plus de matchs que de cibles uniques → split en sous-blocs vague
+   Multi-wave block normalisation (loading from DB)
+   If a block has more matches than unique targets → split into wave sub-blocks
    ============================================================ */
 function pfNormalizeWaveBlocks() {
     pfData.slots.forEach(function (slot) {
@@ -233,22 +233,22 @@ function pfNormalizeWaveBlocks() {
                 newBlocks.push(blk);
                 return;
             }
-            // Compter les cibles uniques effectivement assignées
+            // Count actually assigned unique targets
             var targetSet = {};
             blk.matches.forEach(function (m) { if (m.target > 0) targetSet[m.target] = true; });
             var uniqueCount = Object.keys(targetSet).length;
 
             if (uniqueCount <= 1 || blk.matches.length <= uniqueCount) {
-                // Pas de mode vague (besoin d'au moins 2 cibles distinctes pour créer des vagues)
+                // No wave mode (requires at least 2 distinct targets to create waves)
                 newBlocks.push(blk);
                 return;
             }
 
-            // Mode vague détecté.
-            // On groupe les matchs PAR CIBLE (quelque soit leur ordre en BDD),
-            // puis on entrelace : vague 0 = 1er match de chaque cible,
-            //                     vague 1 = 2e match de chaque cible, etc.
-            // Cela garantit 1 match par cible par vague, sans hypothèse sur l'ordre BDD.
+            // Wave mode detected.
+            // Group matches BY TARGET (regardless of their order in the DB),
+            // then interleave: wave 0 = 1st match of each target,
+            //                  wave 1 = 2nd match of each target, etc.
+            // This guarantees 1 match per target per wave, with no assumption about DB order.
             var sortedTargets = Object.keys(targetSet).map(Number).sort(function (a, b) { return a - b; });
             var targetGroups  = {};
             sortedTargets.forEach(function (t) { targetGroups[t] = []; });
@@ -281,10 +281,10 @@ function pfNormalizeWaveBlocks() {
 }
 
 /* ============================================================
-   Rendu de la grille
+   Grid rendering
    ============================================================ */
 function pfRender() {
-    // Sauvegarder la position de scroll avant le remplacement du DOM
+    // Save scroll position before replacing the DOM
     var container  = document.querySelector('.pf-grid-wrap');
     var scrollLeft = container ? container.scrollLeft : 0;
     var scrollTop  = container ? container.scrollTop  : 0;
@@ -293,10 +293,10 @@ function pfRender() {
     var html = pfBuildTable();
     $('#pfGrid').html(html);
     pfInitSlotEditors();
-    // Re-appliquer le zoom sur les <col> recréés par le rendu
+    // Re-apply zoom on the <col> elements recreated by the render
     pfSetZoom(pfZoom);
 
-    // Restaurer la position de scroll
+    // Restore scroll position
     if (container) {
         container.scrollLeft = scrollLeft;
         container.scrollTop  = scrollTop;
@@ -304,38 +304,38 @@ function pfRender() {
 }
 
 /* ============================================================
-   Détection des conflits d'ordre (phase enfant avant phase parent)
+   Order conflict detection (child phase before parent phase)
    ============================================================ */
 
-/** Retourne le numéro de phase prérequise pour une phase donnée.
- *  Hiérarchie : 1/16(16) → 1/8(8) → 1/4(4) → 1/2(2) → Or(0) + Bronze(1) */
+/** Returns the prerequisite phase number for a given phase.
+ *  Hierarchy: 1/16(16) → 1/8(8) → 1/4(4) → 1/2(2) → Gold(0) + Bronze(1) */
 function pfGetPrereqPhase(phase) {
     if (phase === 0 || phase === 1) return 2;   // Or / Bronze ← demi-finale
     if (phase >= 2) return phase * 2;            // 1/2 ← 1/4, 1/4 ← 1/8, etc.
     return null;
 }
 
-/** Timestamp (ms) du début d'un créneau. */
+/** Start timestamp (ms) of a time slot. */
 function pfSlotStartMs(slot) {
     return new Date(slot.date + 'T' + slot.time + ':00').getTime();
 }
 
-/** Timestamp (ms) de la fin d'un créneau (toutes vagues incluses). */
+/** End timestamp (ms) of a time slot (all waves included). */
 function pfSlotEndMs(slot) {
     var waves = parseInt(slot.waves, 10) || 1;
     var dur   = parseInt(slot.duration, 10) || 0;
     return pfSlotStartMs(slot) + waves * dur * 60000;
 }
 
-/** Reconstruit pfConflictIds à partir de pfData.
- *  Clé : "event|phase|teamEvent" → message de conflit.
- *  Un bloc est en conflit si son créneau commence avant la fin du créneau de sa phase-parente
- *  pour le même événement. */
+/** Rebuilds pfConflictIds from pfData.
+ *  Key: "event|phase|teamEvent" → conflict message.
+ *  A block is in conflict if its slot starts before the end of its parent-phase slot
+ *  for the same event. */
 function pfComputeConflicts() {
     pfConflictIds = {};
     if (!pfData || !pfData.slots) return;
 
-    // Collecter tous les blocs placés (phase uniquement)
+    // Collect all placed blocks (phase type only)
     var placed = [];
     pfData.slots.forEach(function (slot) {
         (slot.blocks || []).forEach(function (blk) {
@@ -425,9 +425,9 @@ function pfBuildTable() {
     return h;
 }
 
-/* Émet une ou plusieurs <tr> pour un créneau (une par vague) */
+/* Emits one or more <tr> elements for a time slot (one per wave) */
 function pfBuildSlotRows(slot, slotIdx) {
-    // Grouper les blocs par waveRow
+    // Group blocks by waveRow
     var waveGroups = {};
     slot.blocks.forEach(function (blk) {
         var wr = blk.waveRow || 0;
@@ -436,13 +436,13 @@ function pfBuildSlotRows(slot, slotIdx) {
     });
 
     var waveRowNums = Object.keys(waveGroups).map(Number).sort(function (a, b) { return a - b; });
-    if (!waveRowNums.length) waveRowNums = [0];  // créneau vide : 1 ligne quand même
+    if (!waveRowNums.length) waveRowNums = [0];  // empty slot: still render 1 row
 
-    // Respecter le nombre de vagues forcé manuellement (slot.waves)
+    // Honour the manually forced wave count (slot.waves)
     var forcedWaves = slot.waves || 1;
-    // Remplir les indices manquants 0..forcedWaves-1.
-    // NOTE : on ne peut pas faire push(waveRowNums.length) car si waveRowNums=[1]
-    // (seule la vague CD existe), cela produirait [1,1] au lieu de [0,1].
+    // Fill in missing indices 0..forcedWaves-1.
+    // NOTE: we cannot push(waveRowNums.length) because if waveRowNums=[1]
+    // (only wave CD exists), this would produce [1,1] instead of [0,1].
     for (var wri = 0; wri < forcedWaves; wri++) {
         if (waveRowNums.indexOf(wri) < 0) waveRowNums.push(wri);
     }
@@ -457,14 +457,14 @@ function pfBuildSlotRows(slot, slotIdx) {
     return html;
 }
 
-/* Émet UN <tr> correspondant à une vague (waveIdx = position visuelle, 0-based) */
+/* Emits ONE <tr> for a wave (waveIdx = visual position, 0-based) */
 function pfBuildWaveRow(slot, slotIdx, waveRow, waveIdx, totalWaves, blocks) {
     var targets = pfData.targets;
     var n       = targets.length;
     var isMultiWave = totalWaves > 1;
     var waveLabels  = ['AB', 'CD', 'EF', 'GH'];
 
-    // Calculer quelles cibles sont occupées par quels blocs (dans cette vague)
+    // Compute which targets are occupied by which blocks (in this wave)
     var colMap  = new Array(n).fill(null);
     var skipCol = new Array(n).fill(false);
 
@@ -472,7 +472,7 @@ function pfBuildWaveRow(slot, slotIdx, waveRow, waveIdx, totalWaves, blocks) {
         var blk = blocks[bi];
         var tl  = blk.targetList || [];
         if (!tl.length) {
-            // Échauffement sans cibles assignées → ne pas afficher dans la grille
+            // Training with no assigned targets → do not display in the grid
             continue;
         }
 
@@ -494,7 +494,7 @@ function pfBuildWaveRow(slot, slotIdx, waveRow, waveIdx, totalWaves, blocks) {
     var trClass = isMultiWave ? ' class="pf-wave-row"' : '';
     var h = '<tr' + trClass + ' data-slot-idx="' + slotIdx + '" data-wave-row="' + waveRow + '">';
 
-    // ---- Colonne horaire (seulement pour la 1re ligne de vague, avec rowspan) ----
+    // ---- Time column (first wave row only, with rowspan) ----
     if (waveIdx === 0) {
         var rowspanAttr = totalWaves > 1 ? ' rowspan="' + totalWaves + '"' : '';
         h += '<td class="pf-slot-header" data-slot-idx="' + slotIdx + '"' + rowspanAttr + '>'
@@ -522,7 +522,7 @@ function pfBuildWaveRow(slot, slotIdx, waveRow, waveIdx, totalWaves, blocks) {
            +     ' <button onclick="pfCancelSlotEdit(this)">✕</button></div>'
            +   '</div>'
            + '</div>';
-        // Bande verticale de vague (positionnée absolument sur le bord droit de la cellule)
+        // Vertical wave strip (positioned absolutely on the right edge of the cell)
         var stripTitle = isMultiWave ? Lng_Switch1Wave : Lng_Switch2Waves;
         h += '<div class="pf-slot-wave-strip" onclick="pfToggleSlotWaves(' + slotIdx + ')" title="' + stripTitle + '">';
         if (isMultiWave) {
@@ -536,7 +536,7 @@ function pfBuildWaveRow(slot, slotIdx, waveRow, waveIdx, totalWaves, blocks) {
         h += '</td>';
     }
 
-    // ---- Colonnes cibles ----
+    // ---- Target columns ----
     for (var ci = 0; ci < n; ci++) {
         if (skipCol[ci]) continue;
 
@@ -566,7 +566,7 @@ function pfBuildWaveRow(slot, slotIdx, waveRow, waveIdx, totalWaves, blocks) {
         }
     }
 
-    // Colonne bouton + (vide, pour correspondre au th "Ajouter cible")
+    // + button column (empty, to match the "Add target" th)
     h += '<td class="pf-cell pf-cell-add"></td>';
 
     h += '</tr>';
@@ -579,7 +579,7 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
     var waveLabels = ['AB', 'CD', 'EF', 'GH'];
     var isWaveBlk  = block.baseBlockId !== undefined && block.baseBlockId !== '';
 
-    // Pré-calcul du conflit d'ordre pour injecter la classe sur le div racine
+    // Pre-compute order conflict to inject class on the root div
     var conflictMsg = '';
     if (block.type === 'phase') {
         var ck = block.event + '|' + block.phase + '|' + block.teamEvent;
@@ -595,29 +595,29 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
           + ' data-pf-event="'  + pfEsc(block.event) + '"'
           + ' style="background:' + color + '; color:' + textClr + ';">';
 
-    // Bandeau de conflit en haut de la tuile (avant le header)
+    // Conflict banner at the top of the tile (before the header)
     if (conflictMsg) {
         h += '<div class="pf-conflict-badge" title="' + pfEscHtml(conflictMsg) + '">⚠ '+ Lng_Conflict +'</div>';
     }
 
     h += '<div class="pf-tile-hdr">';
 
-    // Boutons dans l'en-tête
+    // Buttons in the header
     h += '<span class="pf-tile-rm" onclick="pfRemoveTile(\'' + pfEsc(tileId) + '\',event)" title="'+ Lng_RemovePhase +'">✕</span>';
-    // Bouton segmentation (blocs phase non-vague uniquement, si la tuile est segmentable)
+    // Segmentation button (non-wave phase blocks only, if the tile is segmentable)
     if (block.type === 'phase' && !isWaveBlk) {
         var nM = (block.matches || []).length;
-        // Pas de segmentation sur les demi-tuiles _s0/_s1 (déjà segmentées).
-        // Pas de segmentation sur les blocs ×1 sans miroir réel (noMirrorMatchNo=true) :
-        // pour ces blocs, matchNo+1 appartient à une autre phase — créer un _s1 corromprait
-        // les données de cette autre phase lors de la sauvegarde.
+        // No segmentation on _s0/_s1 half-tiles (already segmented).
+        // No segmentation on ×1 blocks with no real mirror (noMirrorMatchNo=true):
+        // for these blocks, matchNo+1 belongs to another phase — creating a _s1 would corrupt
+        // that other phase's data on save.
         var canSeg = !block._canonOnly && !block._mirrorOnly &&
                      ((nM > 1) || (nM === 1 && block.twoPerTarget === false && !block.noMirrorMatchNo && (block.targetList || []).length >= 2));
         if (canSeg) {
             h += '<span class="pf-tile-seg" onclick="pfSegmentTile(\'' + pfEsc(block.id) + '\',' + slotIdx + ',event)" title="'+ Lng_Split +'">⊕</span>';
         }
     }
-    // Bouton bascule 1/2-archer-par-cible (tous les blocs phase individuel, vague ou non)
+    // Toggle 1/2-archer-per-target button (all individual phase blocks, wave or not)
     if (block.type === 'phase' && parseInt(block.teamEvent) !== 1) {
         var twoLbl   = block.twoPerTarget === false ? '×1' : '×2';
         var twoTitle = block.twoPerTarget === false
@@ -626,7 +626,7 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
         h += '<span class="pf-tile-two" onclick="pfToggleTwoPerTarget(\'' + pfEsc(block.id) + '\',' + slotIdx + ',event)" title="' + twoTitle + '">' + twoLbl + '</span>';
     }
 
-    // Titre + badge vague
+    // Title + wave badge
     var waveTag = isWaveBlk
         ? ' <span class="pf-wave-tag">' + (waveLabels[block.waveRow || 0] || '') + '</span>'
         : '';
@@ -638,10 +638,10 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
     h += label + waveTag;
     h += '</div>';
 
-    // Zone blason
+    // Target face area
     h += '<div class="pf-tile-svg"><img src="' + PF_SVG + '0.svg" alt="" style="max-height:22px;"></div>';
 
-    // Boutons étendre/réduire pour les blocs entraînement
+    // Expand/shrink buttons for training blocks
     if (block.type === 'training') {
         var curSpan   = (segInfo && segInfo.span) ? segInfo.span : 1;
         var allTgts   = pfData.targets;
@@ -659,12 +659,12 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
         h += '</div>';
     }
 
-    // Corps : matches alignés sur leurs colonnes cibles
+    // Body: matches aligned to their target columns
     if (block.type === 'phase' && block.matches && block.matches.length) {
         var span     = (segInfo && segInfo.span)          ? segInfo.span     : 1;
         var startCol = (segInfo && segInfo.startCol != null) ? segInfo.startCol : 0;
 
-        // Filtrer les matches de ce segment
+        // Filter matches for this segment
         var segs = block._segments || [];
         var seg  = segs[segIdx || 0] || null;
         var matchesToShow = block.matches;
@@ -675,7 +675,7 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
             if (filtered.length) matchesToShow = filtered;
         }
 
-        // Construire un tableau indexé par colonne relative
+        // Build an array indexed by relative column
         var colSlots = new Array(span);
         for (var si2 = 0; si2 < span; si2++) { colSlots[si2] = []; }
 
@@ -683,27 +683,27 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
         var anyPlaced = false;
 
         if (block.twoPerTarget === false && !isTeam) {
-            // 1 archer par cible.
-            // _mirrorOnly → toujours pos2 en col 0 (target miroir = col de dépôt).
-            // _canonOnly  → toujours pos1 en col 0 (target canonical = col de dépôt).
-            // Tuile normale → pos1 dans la col du match.target, pos2 dans la col suivante.
+            // 1 archer per target.
+            // _mirrorOnly → always pos2 in col 0 (mirror target = drop column).
+            // _canonOnly  → always pos1 in col 0 (canonical target = drop column).
+            // Normal tile → pos1 in the match.target column, pos2 in the next column.
             matchesToShow.forEach(function (m) {
                 if (block._mirrorOnly) {
-                    // Miroir = archer pair (position B = cible haute dans la convention normale,
-                    // ou cible basse dans le cas forcé/inversé)
+                    // Mirror = even archer (position B = top target in normal convention,
+                    // or bottom target in the forced/inverted case)
                     var mirrorArcher = ((m.pos1 % 2) !== 0) ? m.pos2 : m.pos1;
                     colSlots[0].push({ pos1: mirrorArcher, _solo: true });
                     anyPlaced = true;
                 } else if (block._canonOnly) {
-                    // Canonique = archer impair (position A)
+                    // Canonical = odd archer (position A)
                     var canonArcher = ((m.pos1 % 2) !== 0) ? m.pos1 : m.pos2;
                     colSlots[0].push({ pos1: canonArcher, _solo: true });
                     anyPlaced = true;
                 } else {
-                    // Affectation faite.
-                    // Convention iAnseo : l'archer impair est toujours à la cible canonique (m.target).
-                    // L'archer pair est à la cible miroir (m.mirrorTarget si connue, sinon m.target+1).
-                    // La cible la plus basse est affichée à gauche.
+                    // Target assigned.
+                    // iAnseo convention: the odd archer is always at the canonical target (m.target).
+                    // The even archer is at the mirror target (m.mirrorTarget if known, otherwise m.target+1).
+                    // The lowest target is displayed on the left.
                     var colIdx      = pfData.targets.indexOf(m.target);
                     var rel         = colIdx - startCol;
                     var oddArcher   = ((m.pos1 % 2) !== 0) ? m.pos1 : m.pos2;
@@ -711,12 +711,12 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
                     var mirTgt      = m.mirrorTarget || 0;
                     var mirColIdx   = mirTgt > 0 ? pfData.targets.indexOf(mirTgt) : colIdx + 1;
                     var relMirror   = mirColIdx - startCol;
-                    // Placer l'archer impair à sa cible canonique
+                    // Place the odd archer at its canonical target
                     if (rel >= 0 && rel < span) {
                         colSlots[rel].push({ pos1: oddArcher, _solo: true });
                         anyPlaced = true;
                     }
-                    // Placer l'archer pair à sa cible miroir
+                    // Place the even archer at its mirror target
                     if (relMirror >= 0 && relMirror < span && relMirror !== rel) {
                         colSlots[relMirror].push({ pos1: evenArcher, _solo: true });
                         anyPlaced = true;
@@ -734,12 +734,12 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
             });
         }
 
-        // Si aucune cible assignée → répartir équitablement
-        // Pour le mode ×1 individuel : règle impair=gauche, pair=droite (2 colonnes par match)
-        // Pour le mode ×2 et équipe : un match par slot, l'ordre pos1/pos2 sera géré au rendu
+        // No target assigned → distribute evenly
+        // For individual ×1 mode: odd=left, even=right rule (2 columns per match)
+        // For ×2 and team mode: one match per slot, pos1/pos2 order handled at render time
         if (!anyPlaced) {
             if (block.twoPerTarget === false && !isTeam) {
-                // ×1 non affecté : distribuer par paire de colonnes avec impair à gauche
+                // ×1 unassigned: distribute in column pairs with odd on the left
                 matchesToShow.forEach(function (m, mi) {
                     var leftPos  = ((m.pos1 % 2) !== 0) ? m.pos1 : m.pos2;
                     var rightPos = ((m.pos1 % 2) !== 0) ? m.pos2 : m.pos1;
@@ -763,10 +763,10 @@ function pfBuildTile(block, tileId, slotIdx, segIdx, segInfo) {
             for (var mi = 0; mi < colSlots[sc].length; mi++) {
                 var m = colSlots[sc][mi];
                 if (isTeam || m._solo) {
-                    // Équipe ou "1 archer/cible" : une seule position par colonne
+                    // Team or "1 archer/target": a single position per column
                     h += '<span class="pf-pos pf-pos-solo">' + (m.pos1 || '?') + '</span>';
                 } else {
-                    // ×2 : convention toujours appliquée — place impaire à gauche (A), paire à droite (B)
+                    // ×2: convention always applied — odd position on the left (A), even on the right (B)
                     var leftPos  = ((m.pos1 % 2) !== 0) ? m.pos1 : m.pos2;
                     var rightPos = ((m.pos1 % 2) !== 0) ? m.pos2 : m.pos1;
                     h += '<span class="pf-match-box">'
@@ -799,11 +799,11 @@ function pfInitDragula() {
         accepts: function (el, target) {
             if (!target.classList.contains('pf-dz')) return false;
 
-            // Zones non-planifiées : toujours accepter (plusieurs tuiles possibles)
+            // Unscheduled zones: always accept (multiple tiles allowed)
             var targetSlot = parseInt(target.getAttribute('data-slot-idx'), 10);
             if (targetSlot === -1) return true;
 
-            // Cellule de grille : refuser si déjà occupée par une autre tuile
+            // Grid cell: reject if already occupied by another tile
             var others = Array.from(target.querySelectorAll('.pf-tile'))
                              .filter(function (t) { return t !== el; });
             return others.length === 0;
@@ -837,21 +837,21 @@ function pfRefreshDragula() {
 }
 
 /* ============================================================
-   Récupérer un bloc (avec fusion des sous-blocs vague)
-   Retire le(s) bloc(s) de leur emplacement et retourne un bloc fusionné.
+   Fetch a block (merging wave sub-blocks)
+   Removes the block(s) from their location and returns a merged block.
    ============================================================ */
 function pfFetchBlock(blockId, slotIdx) {
     var foundBlk    = null;
     var foundInSlot = null;
 
-    // Chercher dans le slot indiqué
+    // Look in the specified slot
     if (slotIdx >= 0 && pfData.slots[slotIdx]) {
         var slot = pfData.slots[slotIdx];
         var idx  = slot.blocks.findIndex(function (b) { return b.id === blockId; });
         if (idx >= 0) { foundBlk = slot.blocks[idx]; foundInSlot = slot; }
     }
 
-    // Chercher dans unscheduled si non trouvé
+    // Look in unscheduled if not found
     if (!foundBlk) {
         var ui = pfData.unscheduled.findIndex(function (b) { return b.id === blockId; });
         if (ui >= 0) foundBlk = pfData.unscheduled[ui];
@@ -859,9 +859,9 @@ function pfFetchBlock(blockId, slotIdx) {
 
     if (!foundBlk) return null;
 
-    // Détecter si le bloc est un sous-bloc de VAGUE (pattern _wN ou id === baseBlockId).
-    // UNIQUEMENT les blocs de vague doivent être regroupés par baseBlockId.
-    // Tous les autres (segments _sN, blocs originaux) sont récupérés individuellement.
+    // Detect whether the block is a WAVE sub-block (pattern _wN or id === baseBlockId).
+    // ONLY wave blocks should be grouped by baseBlockId.
+    // All others (segments _sN, original blocks) are fetched individually.
     var waveSubRx      = /^.+_w\d+$/;
     var isWaveSubBlock = waveSubRx.test(foundBlk.id);
     var isWaveMain     = !isWaveSubBlock && foundBlk.baseBlockId
@@ -870,13 +870,13 @@ function pfFetchBlock(blockId, slotIdx) {
 
     var baseId = isWaveBlock ? foundBlk.baseBlockId : foundBlk.id;
 
-    // Rassembler les siblings et les retirer de leur emplacement
+    // Gather siblings and remove them from their location
     var siblings = [];
 
     if (foundInSlot) {
-        // Bloc dans un créneau planifié : retirer UNIQUEMENT ce bloc.
-        // Les sous-blocs de vague (AB / CD) sont gérés indépendamment dans la grille ;
-        // on ne les fusionne pas ici pour ne pas déplacer accidentellement les siblings.
+        // Block in a scheduled slot: remove ONLY this block.
+        // Wave sub-blocks (AB / CD) are managed independently in the grid;
+        // they are not merged here to avoid accidentally moving siblings.
         foundInSlot.blocks = foundInSlot.blocks.filter(function (b) { return b.id !== foundBlk.id; });
         return foundBlk;
     } else {
@@ -893,10 +893,10 @@ function pfFetchBlock(blockId, slotIdx) {
 
     if (!siblings.length) return null;
 
-    // Trier par waveRow pour recombiner dans l'ordre
+    // Sort by waveRow to recombine in order
     siblings.sort(function (a, b) { return (a.waveRow || 0) - (b.waveRow || 0); });
 
-    // Fusionner tous les matches
+    // Merge all matches
     var merged = siblings[0];
     var allMatches = [];
     siblings.forEach(function (b) {
@@ -912,14 +912,14 @@ function pfFetchBlock(blockId, slotIdx) {
 }
 
 /* ============================================================
-   Déplacer un bloc
+   Move a block
    ============================================================ */
 function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWaveRow) {
     var dstSlot = pfData.slots[newSlotIdx];
     if (!dstSlot) return;
     if (isNaN(newWaveRow)) newWaveRow = 0;
 
-    // === Cas spécial : bloc multi-segments sur la grille → ne déplacer que le segment cliqué ===
+    // === Special case: multi-segment block on the grid → move only the clicked segment ===
     var srcSlot = (oldSlotIdx >= 0) ? pfData.slots[oldSlotIdx] : null;
     if (srcSlot) {
         var blkInSlot = null;
@@ -936,28 +936,28 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
                 var newSegTgts = pfData.targets.slice(newColIdx, newColIdx + movSeg.span);
                 if (!newSegTgts.length) return;
 
-                // Matches de ce segment uniquement
+                // Matches for this segment only
                 var movMatches = (blkInSlot.matches || []).filter(function (m) { return oldSegSet[m.target]; });
                 for (var mi2 = 0; mi2 < movMatches.length; mi2++) {
                     movMatches[mi2].target = newSegTgts[mi2 % newSegTgts.length];
-                    movMatches[mi2].mirrorTarget = 0;  // réinitialiser : convention canonical+1 après déplacement
+                    movMatches[mi2].mirrorTarget = 0;  // reset: canonical+1 convention applies after move
                 }
 
                 if (newSlotIdx === oldSlotIdx) {
-                    // Même créneau : mise à jour directe de targetList
+                    // Same slot: direct update of targetList
                     blkInSlot.targetList = (blkInSlot.targetList || [])
                         .filter(function (t) { return !oldSegSet[t]; })
                         .concat(newSegTgts);
                     blkInSlot.targetList.sort(function (a, b) { return pfData.targets.indexOf(a) - pfData.targets.indexOf(b); });
                 } else {
-                    // Créneau différent : extraire le segment, l'ajouter dans la destination
+                    // Different slot: extract the segment and add it to the destination
                     var blkTpl = JSON.parse(JSON.stringify(blkInSlot));
                     blkInSlot.matches    = (blkInSlot.matches || []).filter(function (m) { return !oldSegSet[m.target]; });
                     blkInSlot.targetList = (blkInSlot.targetList || []).filter(function (t) { return !oldSegSet[t]; });
                     if (!blkInSlot.matches.length) {
                         srcSlot.blocks.splice(srcSlot.blocks.indexOf(blkInSlot), 1);
                     }
-                    // Ajouter ou fusionner dans le créneau de destination
+                    // Add or merge into the destination slot
                     var dstExisting = null;
                     for (var di2 = 0; di2 < dstSlot.blocks.length; di2++) {
                         if (dstSlot.blocks[di2].id === blockId) { dstExisting = dstSlot.blocks[di2]; break; }
@@ -987,39 +987,39 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
         }
     }
 
-    // === Cas standard : bloc single-segment ou depuis non-planifiés ===
+    // === Standard case: single-segment block or from unscheduled ===
 
-    // Récupérer le bloc fusionné (retire les siblings de leur source)
+    // Fetch the merged block (removes siblings from their source)
     var blk = pfFetchBlock(blockId, oldSlotIdx);
     if (!blk) return;
 
-    // Nouvelle date/heure
+    // New date/time
     blk._newDate = dstSlot.date;
     blk._newTime = dstSlot.time;
 
-    // Pour les équipes, le miroir iAnseo (canonical+1) ne s'applique pas :
-    // chaque équipe a son propre matchNo dans FinSchedule.
+    // For teams, the iAnseo mirror (canonical+1) does not apply:
+    // each team has its own matchNo in FinSchedule.
     var isTeamBlk = parseInt(blk.teamEvent) === 1;
 
-    // Recalculer le span
+    // Recalculate the span
     var segs, seg, span;
     if (blk.type === 'training') {
-        // Conserver le span existant si déjà placé (targetList), sinon 1 par défaut
+        // Keep existing span if already placed (targetList), otherwise default to 1
         span = (blk.targetList && blk.targetList.length) ? blk.targetList.length : 1;
     } else {
         var hasTL = blk.targetList && blk.targetList.length > 0;
         if (hasTL) {
-            // Bloc avec cibles connues : utiliser les segments existants
+            // Block with known targets: use existing segments
             segs = blk._segments || pfGetContiguousSegments(blk.targetList, pfData.targets);
             seg  = segs[segIdx] || null;
             span = seg ? seg.span : 1;
         } else {
-            // Pas de cibles assignées (bloc fusionné / non-planifié) :
-            // ignorer _segments (stale), span = nombre de matches
-            // × 2 si "1 archer par cible" (chaque match occupe 2 colonnes adjacentes)
+            // No targets assigned (merged / unscheduled block):
+            // ignore _segments (stale), span = number of matches
+            // × 2 if "1 archer per target" (each match occupies 2 adjacent columns)
             var matchCount = (blk.matches && blk.matches.length) || 1;
-            // Le miroir (×2) ne s'applique qu'aux individuels ; pour les équipes, 1 cible/match.
-            // Demi-tuile _s0/_s1 : toujours 1 colonne (ne pas doubler).
+            // The mirror (×2) only applies to individuals; for teams, 1 target/match.
+            // Half-tile _s0/_s1: always 1 column (do not double).
             if (blk._canonOnly || blk._mirrorOnly) {
                 span = 1;
             } else {
@@ -1028,12 +1028,12 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
         }
     }
 
-    // Cibles de destination
+    // Destination targets
     var newTargets = pfData.targets.slice(newColIdx, newColIdx + span);
     if (!newTargets.length) newTargets = [pfData.targets[newColIdx] || 1];
 
     if (blk.type === 'phase' && blk.matches) {
-        // Déterminer les matches de ce segment
+        // Determine the matches for this segment
         var segDef = segs ? (segs[segIdx] || null) : null;
         var segMatches = (segDef && segDef.startTarget != null && segDef.endTarget != null)
             ? blk.matches.filter(function (m) {
@@ -1042,16 +1042,16 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
             : blk.matches;
         if (!segMatches.length) segMatches = blk.matches;
 
-        // Assigner les cibles.
-        // Pour "1 archer par cible" (twoPerTarget=false) :
-        //   chaque match canonique → colonne paire (0, 2, 4…), la colonne impaire étant
-        //   réservée au miroir iAnseo (écrit par le serveur lors du save).
-        // Cas spécial : demi-tuile miroir (_s1 après segmentation d'un match ×1) :
-        //   m.target absent de targetList → la colonne de dépôt est la colonne miroir.
-        //   Le target canonique = colonne miroir - 1.
-        // Pour "2 archers par cible" (twoPerTarget=true) : assignement habituel (mi % span).
-        // Flag explicite prioritaire sur la heuristique (target absent de targetList).
-        // _mirrorOnly = demi-tuile miroir (_s1), _canonOnly = demi-tuile canonique (_s0).
+        // Assign targets.
+        // For "1 archer per target" (twoPerTarget=false):
+        //   each canonical match → even column (0, 2, 4…), the odd column being
+        //   reserved for the iAnseo mirror (written by the server on save).
+        // Special case: mirror half-tile (_s1 after splitting a ×1 match):
+        //   m.target absent from targetList → the drop column is the mirror column.
+        //   Canonical target = mirror column - 1.
+        // For "2 archers per target" (twoPerTarget=true): standard assignment (mi % span).
+        // Explicit flag takes priority over the heuristic (target absent from targetList).
+        // _mirrorOnly = mirror half-tile (_s1), _canonOnly = canonical half-tile (_s0).
         var isMirrorHalf;
         if (blk._mirrorOnly) {
             isMirrorHalf = true;
@@ -1060,28 +1060,28 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
         } else {
             isMirrorHalf = (blk.twoPerTarget === false && !isTeamBlk
                             && segMatches.length === 1
-                            && segMatches[0].target > 0   // target=0 = non-planifié → toujours canonical
+                            && segMatches[0].target > 0   // target=0 = unscheduled → always canonical
                             && (blk.targetList || []).indexOf(segMatches[0].target) < 0);
         }
         for (var mi = 0; mi < segMatches.length; mi++) {
             if (isMirrorHalf) {
-                // Colonne de dépôt = miroir → canonical = miroir - 1
+                // Drop column = mirror → canonical = mirror - 1
                 segMatches[mi].target = (newTargets[0] || 2) - 1;
             } else {
                 var tgtIdx = (blk.twoPerTarget === false && !isTeamBlk) ? (mi * 2) : (mi % newTargets.length);
                 segMatches[mi].target = newTargets[tgtIdx % newTargets.length] || newTargets[0];
             }
-            // Réinitialiser mirrorTarget : après un déplacement, la convention standard
-            // (miroir = canonical+1) s'applique — l'ancienne valeur serait stale.
+            // Reset mirrorTarget: after a move, the standard convention
+            // (mirror = canonical+1) applies — the old value would be stale.
             segMatches[mi].mirrorTarget = 0;
         }
 
-        // Nombre de vagues nécessaires
-        // On ne crée des sous-lignes de vague que si span > 1 (plusieurs cibles physiques)
+        // Number of waves needed
+        // Wave sub-rows are created only when span > 1 (multiple physical targets)
         var waveCount = (span > 1) ? Math.ceil(segMatches.length / span) : 1;
 
         if (waveCount > 1) {
-            // Mode vague : créer waveCount sous-blocs
+            // Wave mode: create waveCount sub-blocks
             var baseId = blk.id;
             for (var wv = 0; wv < waveCount; wv++) {
                 var waveMatchSlice = segMatches.slice(wv * span, (wv + 1) * span);
@@ -1098,13 +1098,13 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
                 dstSlot.blocks.push(waveBlk);
             }
         } else {
-            // Pas de vague : bloc unique dans la ligne de vague cible
+            // No wave: single block in the target wave row
             blk.waveRow = newWaveRow;
-            // Pour twoPerTarget=false (1 archer/cible), chaque match canonique occupe 2 colonnes
-            // adjacentes (la sienne + celle du miroir iAnseo). newTargets a déjà été calculé
-            // avec span×2, donc on l'utilise directement comme targetList.
+            // For twoPerTarget=false (1 archer/target), each canonical match occupies 2 adjacent
+            // columns (its own + the iAnseo mirror column). newTargets was already computed
+            // with span×2, so it is used directly as targetList.
             if (blk.twoPerTarget === false && !isTeamBlk) {
-                blk.targetList = newTargets.slice();   // [col, col+1] déjà calculé (ind. seulement)
+                blk.targetList = newTargets.slice();   // [col, col+1] already computed (individuals only)
             } else {
                 blk.targetList = blk.matches.map(function (m) { return m.target; })
                                              .filter(function (t) { return t > 0; });
@@ -1128,7 +1128,7 @@ function pfMoveBlock(blockId, oldSlotIdx, segIdx, newSlotIdx, newColIdx, newWave
 }
 
 /* ============================================================
-   Gestion des créneaux (lignes)
+   Slot management (rows)
    ============================================================ */
 function pfAddSlot() {
     var lastSlot = pfData.slots[pfData.slots.length - 1];
@@ -1188,7 +1188,7 @@ function pfRemoveSlot(slotIdx) {
     if (slot.blocks.length > 0) {
         if (!confirm(Lng_ConfirmRemoveSlot)) return;
 
-        // Grouper les siblings de vague et fusionner avant de renvoyer en non-planifiés
+        // Group wave siblings and merge before sending to unscheduled
         var baseIdMap = {};
         slot.blocks.forEach(function (b) {
             var bid = b.baseBlockId || b.id;
@@ -1223,13 +1223,13 @@ function pfRemoveSlot(slotIdx) {
     pfLoadUnscheduled();
 }
 
-/* Vider tous les blocs d'un créneau et les renvoyer en non-planifiés
-   (le créneau lui-même est conservé, vide) */
+/* Empty all blocks from a slot and send them to unscheduled
+   (the slot itself is kept, empty) */
 function pfClearSlotBlocks(slotIdx) {
     var slot = pfData.slots[slotIdx];
     if (!slot || slot.blocks.length === 0) return;
 
-    // Grouper les siblings de vague par baseBlockId et fusionner avant envoi en non-planifiés
+    // Group wave siblings by baseBlockId and merge before sending to unscheduled
     var baseIdMap = {};
     slot.blocks.forEach(function (b) {
         var bid = b.baseBlockId || b.id;
@@ -1252,7 +1252,7 @@ function pfClearSlotBlocks(slotIdx) {
     });
 
     slot.blocks = [];
-    slot.waves  = 1;   // réinitialiser le mode vague (créneau vide → 1 vague)
+    slot.waves  = 1;   // reset wave mode (empty slot → 1 wave)
     pfDirty = true;
     pfRender();
     pfRefreshDragula();
@@ -1263,14 +1263,14 @@ function pfToggleSlotWaves(slotIdx) {
     var slot = pfData.slots[slotIdx];
     if (!slot) return;
 
-    // Nombre de vagues effectivement actives
+    // Number of currently active waves
     var currentWaves = Math.max(
         slot.waves || 1,
         slot.blocks.some(function (b) { return (b.waveRow || 0) > 0; }) ? 2 : 1
     );
 
     if (currentWaves >= 2) {
-        // Réduire à 1 vague : vérifier que la vague CD est vide
+        // Reduce to 1 wave: check that the CD wave is empty
         var hasWave1 = slot.blocks.some(function (b) { return (b.waveRow || 0) > 0; });
         if (hasWave1) {
             alert(Lng_AlertSwitch1Wave);
@@ -1281,7 +1281,7 @@ function pfToggleSlotWaves(slotIdx) {
         slot.waves = 2;
     }
 
-    // Cascader les slots suivants si demandé (même approche par index que pfApplySlotEdit)
+    // Cascade following slots if requested (same index approach as pfApplySlotEdit)
     var newWaves = slot.waves;
     var delta    = slot.duration * (newWaves - currentWaves);
     if ($('#chkAutoShift').is(':checked') && delta !== 0) {
@@ -1295,7 +1295,7 @@ function pfToggleSlotWaves(slotIdx) {
     pfRefreshDragula();
 }
 
-/** Étend ou réduit d'une cible un bloc entraînement (delta = +1 ou -1) */
+/** Expands or shrinks a training block by one target (delta = +1 or -1) */
 function pfTrainingResize(slotIdx, blockId, delta, evt) {
     if (evt) evt.stopPropagation();
     var slot = pfData.slots[slotIdx];
@@ -1310,13 +1310,13 @@ function pfTrainingResize(slotIdx, blockId, delta, evt) {
     var allTargets = pfData.targets;
 
     if (delta > 0) {
-        // Étendre : ajouter la cible suivante à droite
+        // Expand: add the next target to the right
         var lastTgt = tl.length ? tl[tl.length - 1] : null;
         var lastIdx = lastTgt !== null ? allTargets.indexOf(lastTgt) : -1;
         if (lastIdx < 0 || lastIdx >= allTargets.length - 1) return;
         tl.push(allTargets[lastIdx + 1]);
     } else {
-        // Réduire : supprimer la cible la plus à droite (minimum 1)
+        // Shrink: remove the rightmost target (minimum 1)
         if (tl.length <= 1) return;
         tl.pop();
     }
@@ -1349,7 +1349,7 @@ function pfApplySlotEdit(btn, slotIdx) {
     var oldDur  = slot.duration;
     var waves   = pfSlotWaveCount(slot);
 
-    // Delta = différence entre ancienne fin et nouvelle fin (heure début + durée × vagues)
+    // Delta = difference between old end and new end (start time + duration × waves)
     var deltaStart = pfTimeDiffMinutes(oldDate + ' ' + oldTime, newDate + ' ' + newTime);
     var deltaDur   = (newDur - oldDur) * waves;
     var delta      = deltaStart + deltaDur;
@@ -1369,14 +1369,14 @@ function pfApplySlotEdit(btn, slotIdx) {
     pfRefreshDragula();
 }
 
-/** Retourne le nombre effectif de vagues d'un créneau (forcé ou détecté) */
+/** Returns the effective wave count of a slot (forced or detected) */
 function pfSlotWaveCount(slot) {
     var forced = slot.waves || 1;
     var actual = (slot.blocks || []).some(function (b) { return (b.waveRow || 0) > 0; }) ? 2 : 1;
     return Math.max(forced, actual);
 }
 
-/** Lit les 4 valeurs du panneau de config */
+/** Reads the 4 values from the config panel */
 function pfGetConfig() {
     return {
         equipeEchauff: parseInt($('#cfgEquipeEchauff').val(), 10) || 15,
@@ -1386,7 +1386,7 @@ function pfGetConfig() {
     };
 }
 
-/** Retourne la durée cible (1 vague) d'un slot selon ses blocs, null si indéterminé */
+/** Returns the target duration (1 wave) of a slot based on its blocks, null if undetermined */
 function pfGetSlotTargetDuration(slot, cfg) {
     var blocks = slot.blocks || [];
     if (!blocks.length) return null;
@@ -1400,13 +1400,13 @@ function pfGetSlotTargetDuration(slot, cfg) {
     return null;
 }
 
-/** Appelé quand une valeur de config durée change */
+/** Called when a config duration value changes */
 function pfApplyConfigDuration() {
     if (!pfData || !pfData.slots) return;
     var cfg       = pfGetConfig();
     var autoShift = $('#chkAutoShift').is(':checked');
 
-    // Ordre chronologique des slots
+    // Chronological order of slots
     var order = pfData.slots.map(function (s, i) { return i; });
     order.sort(function (a, b) {
         var sa = pfData.slots[a], sb = pfData.slots[b];
@@ -1416,7 +1416,7 @@ function pfApplyConfigDuration() {
     order.forEach(function (si, pos) {
         var slot      = pfData.slots[si];
         var targetDur = pfGetSlotTargetDuration(slot, cfg);
-        var oldDur    = parseInt(slot.duration, 10) || 0;   // toujours number
+        var oldDur    = parseInt(slot.duration, 10) || 0;   // always a number
         if (targetDur === null || targetDur === oldDur) return;
 
         var waves = pfSlotWaveCount(slot);
@@ -1445,7 +1445,7 @@ function pfShiftSlot(slot, deltaMin) {
 }
 
 /* ============================================================
-   Gestion des cibles (colonnes)
+   Target management (columns)
    ============================================================ */
 function pfAddTarget() {
     var maxT = pfData.targets.length > 0 ? Math.max.apply(null, pfData.targets) : 0;
@@ -1473,7 +1473,7 @@ function pfRemoveTarget(colIdx) {
 }
 
 /* ============================================================
-   Retirer un bloc par son id (depuis drop sur zone non-planifiée)
+   Remove a block by its id (from drop on unscheduled zone)
    ============================================================ */
 function pfRemoveTileById(blockId, slotIdx) {
     var blk = pfFetchBlock(blockId, slotIdx);
@@ -1482,7 +1482,7 @@ function pfRemoveTileById(blockId, slotIdx) {
     blk.targetList = [];
     if (blk.type === 'phase') {
         blk.matches && blk.matches.forEach(function (m) { m.target = 0; });
-        // Demi-tuile _s0/_s1 : fusionner dans le bloc de base (sans suffixe _s0/_s1)
+        // Half-tile _s0/_s1: merge into the base block (without _s0/_s1 suffix)
         var unschId = (blk._canonOnly || blk._mirrorOnly)
             ? blockId.replace(/_s[01]$/, '')
             : blockId;
@@ -1496,11 +1496,11 @@ function pfRemoveTileById(blockId, slotIdx) {
 }
 
 /* ============================================================
-   Helper : ajoute des matches à un bloc non-planifié existant
-   (même blockId) ou crée une nouvelle entrée fusionnée.
+   Helper: adds matches to an existing unscheduled block
+   (same blockId) or creates a new merged entry.
    ============================================================ */
 function pfAddToUnscheduled(blockId, blkTemplate, matches) {
-    // Chercher une entrée existante avec le même id de base
+    // Look for an existing entry with the same base id
     var existing = null;
     for (var ui = 0; ui < pfData.unscheduled.length; ui++) {
         if (pfData.unscheduled[ui].id === blockId) {
@@ -1509,7 +1509,7 @@ function pfAddToUnscheduled(blockId, blkTemplate, matches) {
         }
     }
     if (existing) {
-        // Fusionner les matches dans l'entrée existante (dédupliquer par matchNo)
+        // Merge matches into the existing entry (deduplicate by matchNo)
         matches.forEach(function (m) {
             var isDup = (existing.matches || []).some(function (em) { return em.matchNo === m.matchNo; });
             if (!isDup) {
@@ -1519,17 +1519,17 @@ function pfAddToUnscheduled(blockId, blkTemplate, matches) {
             }
         });
         existing.matches.sort(function (a, b) { return a.matchNo - b.matchNo; });
-        // Nettoyer les flags de demi-tuile (les deux moitiés sont maintenant réunies)
+        // Clear the half-tile flags (both halves are now reunited)
         delete existing._canonOnly;
         delete existing._mirrorOnly;
     } else {
-        // Créer une nouvelle entrée avec l'id d'origine (pas _r0, _r1…)
+        // Create a new entry with the original id (not _r0, _r1…)
         var unBlk = JSON.parse(JSON.stringify(blkTemplate));
         unBlk.id         = blockId;
         unBlk.matches    = matches.map(function (m) {
             return { matchNo: m.matchNo, pos1: m.pos1, pos2: m.pos2, target: 0 };
         });
-        // Dédupliquer par matchNo (cas _s0/_s1 avec même match)
+        // Deduplicate by matchNo (case of _s0/_s1 with same match)
         var seenNos = {};
         unBlk.matches = unBlk.matches.filter(function (m) {
             if (seenNos[m.matchNo]) return false;
@@ -1539,7 +1539,7 @@ function pfAddToUnscheduled(blockId, blkTemplate, matches) {
         unBlk.targetList = [];
         delete unBlk.baseBlockId;
         delete unBlk._segments;
-        // Nettoyer les flags de demi-tuile pour que le bloc soit traité normalement
+        // Clear half-tile flags so the block is treated normally
         delete unBlk._canonOnly;
         delete unBlk._mirrorOnly;
         pfData.unscheduled.push(unBlk);
@@ -1547,7 +1547,7 @@ function pfAddToUnscheduled(blockId, blkTemplate, matches) {
 }
 
 /* ============================================================
-   Retirer une tuile (bouton ✕ sur la tuile)
+   Remove a tile (✕ button on the tile)
    ============================================================ */
 function pfRemoveTile(tileId, e) {
     e && e.stopPropagation();
@@ -1557,7 +1557,7 @@ function pfRemoveTile(tileId, e) {
     var slotIdx = parseInt(el.getAttribute('data-slot-idx'), 10);
     var segIdx  = parseInt(el.getAttribute('data-seg-idx') || '0', 10);
 
-    // Trouver le bloc sans le retirer (pour tester s'il a plusieurs segments)
+    // Find the block without removing it (to test whether it has multiple segments)
     var slot = pfData.slots[slotIdx];
     if (!slot) return;
     var blkRef = null;
@@ -1569,16 +1569,16 @@ function pfRemoveTile(tileId, e) {
     var segs = pfGetContiguousSegments(blkRef.targetList || [], pfData.targets);
 
     if (segs.length > 1 && blkRef.type === 'phase') {
-        // Bloc multi-segments (targetList non-contigu) → ne retirer que le segment cliqué
+        // Multi-segment block (non-contiguous targetList) → remove only the clicked segment
         var seg = segs[segIdx] || segs[0];
 
-        // Cibles appartenant à ce segment visuel
+        // Targets belonging to this visual segment
         var segTgts = {};
         pfData.targets.slice(seg.startCol, seg.startCol + seg.span).forEach(function (t) {
             segTgts[t] = true;
         });
 
-        // Séparer les matches : ceux du segment cliqué → unscheduled, les autres → restent
+        // Split matches: those from the clicked segment → unscheduled, others → stay
         var removedMatches  = [];
         var remainingMatches = [];
         (blkRef.matches || []).forEach(function (m) {
@@ -1586,25 +1586,25 @@ function pfRemoveTile(tileId, e) {
             else remainingMatches.push(m);
         });
 
-        // Mettre à jour le bloc en place
+        // Update the block in place
         blkRef.targetList = (blkRef.targetList || []).filter(function (t) { return !segTgts[t]; });
         blkRef.matches    = remainingMatches;
         if (!blkRef.matches.length) {
             slot.blocks.splice(slot.blocks.indexOf(blkRef), 1);
         }
 
-        // Fusionner le segment retiré dans le bloc non-planifié (ou créer)
+        // Merge the removed segment into the unscheduled block (or create one)
         if (removedMatches.length) {
             pfAddToUnscheduled(blockId, blkRef, removedMatches);
         }
     } else {
-        // Bloc à segment unique → retirer le bloc entier
+        // Single-segment block → remove the entire block
         var blk = pfFetchBlock(blockId, slotIdx);
         if (!blk) return;
         blk.targetList = [];
         if (blk.type === 'phase') {
             (blk.matches || []).forEach(function (m) { m.target = 0; });
-            // Demi-tuile _s0/_s1 : fusionner dans le bloc de base (sans suffixe _s0/_s1)
+            // Half-tile _s0/_s1: merge into the base block (without _s0/_s1 suffix)
             var unschId = (blk._canonOnly || blk._mirrorOnly)
                 ? blockId.replace(/_s[01]$/, '')
                 : blockId;
@@ -1621,7 +1621,7 @@ function pfRemoveTile(tileId, e) {
 }
 
 /* ============================================================
-   Segmentation : 1 bloc par match, sans popup
+   Segmentation: 1 block per match, no popup
    ============================================================ */
 function pfSegmentTile(blockId, slotIdx, e) {
     e && e.stopPropagation();
@@ -1638,8 +1638,8 @@ function pfSegmentTile(blockId, slotIdx, e) {
 
     var newBlocks;
     if (nMatches === 1 && blk.twoPerTarget === false) {
-        // ×1 (1 archer/cible) : 1 match occupe 2 colonnes (canonical + miroir).
-        // Segmenter en 2 sous-tuiles : colonne canonical (pos1) + colonne miroir (pos2).
+        // ×1 (1 archer/target): 1 match occupies 2 columns (canonical + mirror).
+        // Split into 2 sub-tiles: canonical column (pos1) + mirror column (pos2).
         newBlocks = [0, 1].map(function (i) {
             var seg = JSON.parse(JSON.stringify(blk));
             seg.id         = blk.id + '_s' + i;
@@ -1647,21 +1647,21 @@ function pfSegmentTile(blockId, slotIdx, e) {
             delete seg.baseBlockId;
             delete seg._segments;
             seg.targetList = tl.slice(i, i + 1);
-            // Marquer pour la persistance côté PHP
+            // Mark for server-side persistence
             if (i === 0) { seg._canonOnly  = true;  delete seg._mirrorOnly; }
             else          { seg._mirrorOnly = true;  delete seg._canonOnly;  }
             return seg;
         });
     } else if (nMatches >= 2) {
-        // Cas normal : distribuer les cibles entre les segments (répartition équitable)
-        // Segment i reçoit les cibles de l'index [i*T/N … (i+1)*T/N - 1]
+        // Normal case: distribute targets across segments (fair distribution)
+        // Segment i receives targets at index [i*T/N … (i+1)*T/N - 1]
         var N = nMatches;
         newBlocks = blk.matches.map(function (m, i) {
         var seg = JSON.parse(JSON.stringify(blk));
         seg.id      = blk.id + '_s' + i;
         seg.matches = [JSON.parse(JSON.stringify(m))];
-        // Supprimer baseBlockId hérité d'une vague précédente :
-        // sinon pfFetchBlock utiliserait baseBlockId pour grouper TOUS les segments
+        // Remove inherited baseBlockId from a previous wave:
+        // otherwise pfFetchBlock would use baseBlockId to group ALL segments
         delete seg.baseBlockId;
         delete seg._segments;
 
@@ -1672,10 +1672,10 @@ function pfSegmentTile(blockId, slotIdx, e) {
         return seg;
         });
     } else {
-        return;  // nMatches < 2 et twoPerTarget !== false → rien à faire
+        return;  // nMatches < 2 and twoPerTarget !== false → nothing to do
     }
 
-    // Remplacer le bloc original par les segments
+    // Replace the original block with the segments
     slot.blocks.splice(blkIdx, 1);
     newBlocks.forEach(function (seg) { slot.blocks.push(seg); });
 
@@ -1686,7 +1686,7 @@ function pfSegmentTile(blockId, slotIdx, e) {
 }
 
 /* ============================================================
-   Bascule 1 archer / 2 archers par cible
+   Toggle 1 archer / 2 archers per target
    ============================================================ */
 function pfToggleTwoPerTarget(blockId, slotIdx, e) {
     e && e.stopPropagation();
@@ -1698,10 +1698,10 @@ function pfToggleTwoPerTarget(blockId, slotIdx, e) {
     }
     if (!blk || blk.type !== 'phase') return;
 
-    // Basculer : false (×1) → true (×2) et vice-versa
+    // Toggle: false (×1) → true (×2) and vice versa
     var newVal = (blk.twoPerTarget === false);   // false→true, true→false
 
-    // Applique twoPerTarget + reconstruit targetList pour un bloc donné
+    // Apply twoPerTarget + rebuild targetList for a given block
     function applyToggle(b) {
         b.twoPerTarget = newVal;
         if (b.matches && b.matches.length > 0) {
@@ -1710,7 +1710,7 @@ function pfToggleTwoPerTarget(blockId, slotIdx, e) {
                 if (m.target > 0 && !tSet[m.target]) {
                     tSet[m.target] = true;
                     tl.push(m.target);
-                    if (!newVal) {                      // ×1 : ajouter la colonne miroir
+                    if (!newVal) {                      // ×1: add the mirror column
                         var mirror = m.target + 1;
                         if (!tSet[mirror]) { tSet[mirror] = true; tl.push(mirror); }
                     }
@@ -1725,7 +1725,7 @@ function pfToggleTwoPerTarget(blockId, slotIdx, e) {
 
     applyToggle(blk);
 
-    // Propager aux siblings de vague (même baseBlockId) dans le même créneau
+    // Propagate to wave siblings (same baseBlockId) in the same slot
     var baseId = blk.baseBlockId || blk.id;
     pfData.slots[slotIdx].blocks.forEach(function (b) {
         if (b !== blk && b.type === 'phase') {
@@ -1741,12 +1741,12 @@ function pfToggleTwoPerTarget(blockId, slotIdx, e) {
 }
 
 /* ============================================================
-   Fusion automatique des segments tous non-planifiés
+   Automatic merge of all-unscheduled segments
    ============================================================ */
 function pfMergeUnscheduledSegments() {
     var segRx = /^(.+)_s\d+$/;
 
-    // Grouper les segments non-planifiés par base ID
+    // Group unscheduled segments by base ID
     var groups = {};
     pfData.unscheduled.forEach(function (b) {
         var m = segRx.exec(b.id);
@@ -1757,7 +1757,7 @@ function pfMergeUnscheduledSegments() {
     });
 
     Object.keys(groups).forEach(function (baseId) {
-        // Vérifier qu'aucun segment de ce baseId n'est encore sur la grille
+        // Check that no segment for this baseId is still on the grid
         var stillOnGrid = pfData.slots.some(function (slot) {
             return slot.blocks.some(function (b) {
                 var m = segRx.exec(b.id);
@@ -1767,15 +1767,15 @@ function pfMergeUnscheduledSegments() {
         if (stillOnGrid) return;
 
         var segs = groups[baseId];
-        if (segs.length < 2) return;  // un seul segment, rien à fusionner
+        if (segs.length < 2) return;  // single segment, nothing to merge
 
-        // Trier par index de segment (_s0, _s1, …)
+        // Sort by segment index (_s0, _s1, …)
         segs.sort(function (a, b) {
             return parseInt(a.id.replace(/^.+_s/, ''), 10)
                  - parseInt(b.id.replace(/^.+_s/, ''), 10);
         });
 
-        // Fusionner : recombiner tous les matches dans le premier bloc
+        // Merge: recombine all matches into the first block
         var merged = JSON.parse(JSON.stringify(segs[0]));
         merged.id         = baseId;
         merged.targetList = [];
@@ -1785,7 +1785,7 @@ function pfMergeUnscheduledSegments() {
         var seenMatchNos = {};
         segs.forEach(function (s) {
             (s.matches || []).forEach(function (m) {
-                // Dédupliquer par matchNo (cas _s0/_s1 avec même match ×1)
+                // Deduplicate by matchNo (case of _s0/_s1 with same match ×1)
                 if (!seenMatchNos[m.matchNo]) {
                     seenMatchNos[m.matchNo] = true;
                     merged.matches.push({ matchNo: m.matchNo, pos1: m.pos1, pos2: m.pos2, target: 0 });
@@ -1793,7 +1793,7 @@ function pfMergeUnscheduledSegments() {
             });
         });
 
-        // Retirer tous les segments et ajouter le bloc fusionné
+        // Remove all segments and add the merged block
         pfData.unscheduled = pfData.unscheduled.filter(function (b) {
             var m = segRx.exec(b.id);
             return !(m && m[1] === baseId);
@@ -1804,7 +1804,7 @@ function pfMergeUnscheduledSegments() {
 }
 
 /* ============================================================
-   Blocs non planifiés — groupement repliable par catégorie
+   Unscheduled blocks — collapsible grouping by category
    ============================================================ */
 function pfToggleUnschedGroup(evCode) {
     pfUnschedCollapsed[evCode] = !pfUnschedCollapsed[evCode];
@@ -1816,14 +1816,14 @@ function pfToggleUnschedGroup(evCode) {
 }
 
 function pfLoadUnscheduled() {
-    pfMergeUnscheduledSegments();   // regrouper si tous les segments sont non-planifiés
+    pfMergeUnscheduledSegments();   // regroup if all segments are unscheduled
     var list = pfData.unscheduled;
     var html = '';
 
     if (!list.length) {
         html = '<em style="color:#999;font-size:.78em;">Aucun bloc non planifié</em>';
     } else {
-        // Grouper par code événement en conservant l'ordre d'apparition
+        // Group by event code preserving order of appearance
         var groups     = {};
         var groupOrder = [];
         list.forEach(function (b) {
@@ -1858,7 +1858,7 @@ function pfLoadUnscheduled() {
                     ? ('Échauff. ' + b.event)
                     : (b.event + ' ' + (b.phaseName || ''));
 
-                // Ajouter l'identifiant des matches pour les segments (≤ 3 matches)
+                // Add match identifiers for segments (≤ 3 matches)
                 var matchInfo = '';
                 if (b.type === 'phase' && b.matches && b.matches.length && b.matches.length <= 3) {
                     var isTeam = parseInt(b.teamEvent) === 1;
@@ -1894,7 +1894,7 @@ function pfLoadUnscheduled() {
 }
 
 /* ============================================================
-   Affichage des blasons
+   Target face display
    ============================================================ */
 function pfToggleBlasons(show) {
     pfShowBlason = show;
@@ -1911,7 +1911,7 @@ function pfToggleBlasons(show) {
 function pfApplyBlasons(eventFaces) {
     $('.pf-tile').each(function () {
         var blockId = $(this).attr('data-block-id') || '';
-        // Supprimer préfixe, suffixes de vague (_w1…), de segment (_seg2…) et de phase (_32…)
+        // Strip prefix, wave suffixes (_w1…), segment suffixes (_seg2…) and phase suffixes (_32…)
         var evCode = blockId
             .replace(/^phase_/, '')
             .replace(/(_w\d+|_seg\d+)*$/, '')
@@ -1922,7 +1922,7 @@ function pfApplyBlasons(eventFaces) {
 }
 
 /* ============================================================
-   Sauvegarde
+   Save
    ============================================================ */
 function pfSave() {
     pfStatus(Lng_Saving, '');
@@ -1966,7 +1966,7 @@ function pfStatus(msg, cls) {
 }
 
 /* ============================================================
-   Éditeur inline créneaux (initialisation après rendu)
+   Inline slot editor (initialisation after render)
    ============================================================ */
 function pfInitSlotEditors() {
     $('#pfGrid').find('.pf-slot-inputs input').on('keydown', function (e) {
@@ -1979,10 +1979,10 @@ function pfInitSlotEditors() {
 }
 
 /* ============================================================
-   Utilitaires
+   Utilities
    ============================================================ */
 
-/** Calcule les segments contigus dans la liste de cibles par rapport aux colonnes */
+/** Computes the contiguous segments in the target list relative to the columns */
 function pfGetContiguousSegments(targetList, allTargets) {
     if (!targetList || !targetList.length) return [];
 
@@ -2016,23 +2016,23 @@ function pfGetContiguousSegments(targetList, allTargets) {
     return segs.length ? segs : [{ startCol: 0, startTarget: allTargets[0] || 1, endTarget: allTargets[0] || 1, span: 1 }];
 }
 
-/** ID unique pour un tile dans le DOM */
+/** Unique DOM ID for a tile */
 function pfTileId(slotIdx, blockId, segIdx) {
     return 'tile_' + slotIdx + '_' + pfEsc(blockId) + '_' + (segIdx || 0);
 }
 
-/** Échappe pour attribut HTML */
+/** Escapes for an HTML attribute */
 function pfEsc(str) {
     return (str + '').replace(/[^a-zA-Z0-9_\-]/g, '_');
 }
 
-/** Échappe pour texte HTML */
+/** Escapes for HTML text */
 function pfEscHtml(str) {
     return (str + '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-/** Couleur de texte contrastée (noir ou blanc) selon la luminosité du fond.
- *  Accepte '#rrggbb' et 'rgba(r,g,b,a)'. */
+/** Contrasting text colour (black or white) based on background luminosity.
+ *  Accepts '#rrggbb' and 'rgba(r,g,b,a)'. */
 function pfContrastColor(color) {
     var r, g, b;
     var m = (color + '').match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/i);
@@ -2049,7 +2049,7 @@ function pfContrastColor(color) {
     return lum > 0.55 ? '#222' : '#fff';
 }
 
-/** Additionne des minutes à HH:MM */
+/** Adds minutes to HH:MM */
 function pfAddMinutes(time, min) {
     var parts = (time || '00:00').split(':');
     var h = parseInt(parts[0], 10) || 0;
@@ -2075,7 +2075,7 @@ function pfTimeStr(dt) {
     return pfPad2(dt.getHours()) + ':' + pfPad2(dt.getMinutes());
 }
 
-/** Différence en minutes entre deux dateTime "YYYY-MM-DD HH:MM" */
+/** Difference in minutes between two "YYYY-MM-DD HH:MM" dateTime strings */
 function pfTimeDiffMinutes(dt1, dt2) {
     var a = new Date(dt1.replace(' ', 'T') + ':00');
     var b = new Date(dt2.replace(' ', 'T') + ':00');
@@ -2083,13 +2083,13 @@ function pfTimeDiffMinutes(dt1, dt2) {
 }
 
 /* ============================================================
-   Impression
+   Print
    ============================================================ */
 function pfPrint() {
     var gridEl = document.getElementById('pfGrid');
     if (!gridEl) return;
 
-    // Titres depuis la page principale
+    // Titles from the main page
     var titleParts = [];
     document.querySelectorAll('table.Tabella .Title').forEach(function (el) {
         var t = el.textContent.trim();
@@ -2099,30 +2099,30 @@ function pfPrint() {
         ? titleParts.map(function (t) { return '<div>' + t + '</div>'; }).join('')
         : '<div>'+ Lng_PrintFOP +' — '+ Lng_OrisFinals +'</div>';
 
-    // Mesurer la largeur réelle de la table MAINTENANT (dans la fenêtre principale, déjà rendue)
-    // puis calculer le zoom pour qu'elle tienne en A4 paysage (281mm utiles ≈ 1062px à 96dpi)
+    // Measure the actual table width NOW (in the main window, already rendered)
+    // then compute the zoom so it fits on A4 landscape (281mm usable ≈ 1062px at 96dpi)
     var tblMain = gridEl.querySelector('table.pf-table');
     var tableW  = tblMain ? tblMain.scrollWidth : 0;
     var PF_PRINT_WIDTH = 1062; // largeur utile A4 landscape 8mm marges
     var zoom = (tableW > PF_PRINT_WIDTH) ? (PF_PRINT_WIDTH / tableW) : 1;
 
-    // Récupérer tous les liens CSS déjà chargés dans la page
+    // Retrieve all CSS links already loaded on the page
     var cssLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
         .map(function (l) { return '<link rel="stylesheet" href="' + l.href + '">'; })
         .join('\n');
 
     var printStyles = [
         '@page { size: A4 landscape; margin: 8mm; }',
-        /* Forcer les couleurs de fond même si "Graphiques d'arrière-plan" est décoché */
+        /* Force background colours even if "Background graphics" is unchecked */
         '*, *::before, *::after {',
         '  print-color-adjust: exact !important;',
         '  -webkit-print-color-adjust: exact !important;',
         '}',
-        /* Fond blanc — écrase le fond bleu du template */
+        /* White background — overrides the template's blue background */
         'html, body { background: #fff !important; color: #000 !important;'
             + ' margin: 0; padding: 0; font-size: 10px; font-family: sans-serif;'
             + ' zoom: ' + zoom + '; }',
-        /* Titre centré et grand */
+        /* Centred large title */
         '.pf-print-title {'
             + ' text-align: center;'
             + ' margin-bottom: 10px;'
@@ -2143,14 +2143,14 @@ function pfPrint() {
             + ' }',
         '.pf-slot-display { min-height: 0 !important; }',
         '.pf-tile { break-inside: avoid; page-break-inside: avoid; }',
-        /* Grille visible : bordures sur toutes les cellules */
+        /* Visible grid: borders on all cells */
         'table.pf-table { border-collapse: collapse !important; }',
         'table.pf-table td, table.pf-table th { border: 1px solid #aaa !important; }',
-        /* En-têtes de cibles : fond sombre, texte blanc */
+        /* Target headers: dark background, white text */
         'table.pf-table th.pf-th-target { background: #1e3a5a !important; color: #fff !important; }',
-        /* En-têtes de créneau : léger fond gris */
+        /* Slot headers: light grey background */
         'table.pf-table td.pf-slot-header { background: #f0f4f8 !important; }',
-        /* Cellules vides : fond très clair pour contraster avec les tuiles */
+        /* Empty cells: very light background to contrast with tiles */
         'table.pf-table td.pf-cell:not(:has(.pf-tile)) { background: #fafafa !important; }',
     ].join('\n');
 
@@ -2175,7 +2175,7 @@ function pfPrint() {
     win.document.close();
 }
 
-/* Avertir si on quitte avec des modifications non sauvegardées */
+/* Warn when leaving with unsaved changes */
 window.addEventListener('beforeunload', function (e) {
     if (pfDirty) {
         e.preventDefault();
