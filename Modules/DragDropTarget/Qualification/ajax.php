@@ -12,8 +12,7 @@ $action   = isset($_GET['action'])   ? $_GET['action']          : '';
 $sessId   = isset($_GET['sessId'])   ? intval($_GET['sessId'])   : 1;
 $tourId   = $_SESSION['TourId'];
 
-// Chemin URL vers le dossier svg/
-//$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/svg/';
+// URL to SVG files
 $svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
 
 $JSON=[
@@ -24,13 +23,13 @@ $JSON=[
 switch ($action) {
 
     // ---------------------------------------------------------------
-    // Récap global : tableau tous départs × tous types de blasons
+    //  global summarize : Array with all Session and all Faces
     // ---------------------------------------------------------------
     case 'blasonRecapGlobal':
         $tour     = new QP_TourInfo($tourId);
         $sessions = $tour->sessions; // [ sessOrder => stdClass(id, name) ]
 
-        // Charger chaque session et agréger par alias
+        // Load each session grouped by Alias
         // Structure : $matrix[alias] = ['blason'=>QP_Blason, 'sessions'=>[sessOrder=>physicalCount]]
         $matrix   = [];
         $sessLabels = [];
@@ -43,7 +42,7 @@ switch ($action) {
                     $matrix[$alias] = ['blason' => $blason, 'sessions' => []];
                 }
                 $matrix[$alias]['sessions'][$sOrder] = $blason->physicalCount;
-                // Garder le blason avec le plus grand imgTaille pour l'image
+                // Keep the face with the largest imgTaille for the picture
                 if ($blason->imgTaille > $matrix[$alias]['blason']->imgTaille) {
                     $matrix[$alias]['blason'] = $blason;
                 }
@@ -91,7 +90,7 @@ switch ($action) {
             $html .= '</tr>';
         }
 
-        // Ligne totaux par session
+        // sum row per session
         $html .= '<tr style="background:#eee;">';
         $html .= '<td colspan="2" style="text-align:right;font-weight:bold;">'.get_text('Total').'</td>';
         $grandTotal = 0;
@@ -109,7 +108,7 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
-    // Récap blasons : badges texte dans le bandeau
+    // Faces Summarize
     // ---------------------------------------------------------------
     case 'blasonRecap':
         $session = new QP_Session($tourId, $sessId);
@@ -128,17 +127,17 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
-    // Page de garde impression : récap blasons avec images SVG
+    // Printing Header Page  : Faces with SVG Picture
     // ---------------------------------------------------------------
     case 'blasonRecapPrint':
         $session   = new QP_Session($tourId, $sessId);
         $items     = $session->blasonCountGrouped();
-        // Même logique que les cibles : imgTaille comme référence
+
         $maxTaille = 1;
         foreach ($items as $blason) {
             if ($blason->imgTaille > $maxTaille) $maxTaille = $blason->imgTaille;
         }
-        $cellSize = $maxTaille; // la cellule fait la taille du plus grand imgTaille
+        $cellSize = $maxTaille; 
         $html    = '<table class="pbr-print-table">';
         $html   .= '<thead><tr>'
                  . '<th>'.get_text('TargetFace').'</th>'
@@ -148,7 +147,7 @@ switch ($action) {
                  . '</tr></thead><tbody>';
         foreach ($items as $blId => $blason) {
             $svgUrl   = $svgBase . $blason->svgFile;
-            $imgSize  = $blason->imgTaille; // même valeur que dans les cibles
+            $imgSize  = $blason->imgTaille; // same value as in the targets
             $imgStyle = 'width:' . $imgSize . 'px; height:auto; display:block; margin:auto;';
             $html   .= '<tr>'
                      . '<td class="pbr-svg-cell" style="width:' . $cellSize . 'px;height:' . $cellSize . 'px;text-align:center;vertical-align:middle;">'
@@ -166,7 +165,7 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
-    // Picking list : liste des archers (par blason ou par catégorie)
+    // Picking list : Archers (par Faces or per classes)
     // ---------------------------------------------------------------
     case 'pickingList':
         $tfId          = isset($_GET['tfId'])          ? intval($_GET['tfId'])        : 0;
@@ -196,11 +195,11 @@ switch ($action) {
               <input type="hidden" class="archerId"   value="<?= $item->id ?>">
               <input type="hidden" class="cibleNum"   value="<?= $item->target ?>">
               <input type="hidden" class="blasonType" value="<?= $blasonType ?>">
-              <!-- Ligne visible dans zone cible (ddtrg) -->
+              <!-- Row visible in target zone (ddtrg) -->
               <div class="<?= $bgcol ?> disptrg" data-struct="<?= $item->structId ?>">
                 <span class="archers"><?= htmlspecialchars($item->getCategory() . ' - ' . $item->getNomCourt()) ?></span>
               </div>
-              <!-- Ligne visible dans picking list (dispsrc) -->
+              <!-- Row visible in picking list (dispsrc) -->
               <div class="dispsrc <?= $bgcol ?> qp-src-card"
                    data-struct="<?= $item->structId ?>">
                 <span class="qp-del-archer" title="<?= htmlspecialchars(get_text('CmdDelete', 'Tournament')) ?>">✕</span>
@@ -224,10 +223,9 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
-    // Liste archers sans départ affecté (QuSession = 0)
+    // Archers list without session (QuSession = 0)
     // ---------------------------------------------------------------
     case 'unassignedList':
-        // Blason map pour ce tournoi (même logique que QP_Session::loadBlasons)
         static $imgMapU = [
             'TrgIndComplete-40'  => [1, 2, '⌀40'],
             'TrgIndSmall-40'     => [2, 1, 'CL'],
@@ -293,11 +291,11 @@ switch ($action) {
               <input type="hidden" class="archerId"   value="<?= intval($r->EnId) ?>">
               <input type="hidden" class="cibleNum"   value="0">
               <input type="hidden" class="blasonType" value="<?= $blasonType ?>">
-              <!-- Ligne visible dans zone cible (ddtrg) -->
+              <!-- Row for target zone (ddtrg) -->
               <div class="bgstru<?= $structId ?> disptrg" data-struct="<?= $structId ?>">
                 <span class="archers"><?= htmlspecialchars($cat . ' — ' . $nomCourt) ?></span>
               </div>
-              <!-- Ligne visible dans picking list (dispsrc) -->
+              <!-- Row for picking list (dispsrc) -->
               <div class="dispsrc bgstru<?= $structId ?> qp-src-card" data-struct="<?= $structId ?>">
                 <span class="qp-del-archer" title="<?= htmlspecialchars(get_text('CmdDelete')) ?>">✕</span>
                 <span class="archers"><?= htmlspecialchars($cat . ' — ' . $nomCourt) ?></span><br>
@@ -312,7 +310,7 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
-    // Détail d'une cible
+    // Target Detail
     // ---------------------------------------------------------------
     case 'cible':
         $cibleNum = isset($_GET['cibleNum']) ? intval($_GET['cibleNum']) : 0;
@@ -321,7 +319,7 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
-    // Déplacer un archer
+    // Move archer
     // ---------------------------------------------------------------
     case 'moveArcher':
         $archerId = isset($_GET['archerId']) ? intval($_GET['archerId']) : 0;
@@ -333,7 +331,7 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
-    // Déplacer une cible (décalage circulaire sur la plage src..dst)
+    // Move Target (Circular move on src..dst)
     // ---------------------------------------------------------------
     case 'moveCible':
         $src  = isset($_GET['src']) ? intval($_GET['src']) : 0;
@@ -341,22 +339,22 @@ switch ($action) {
         $sess = intval($sessId);
         if ($src <= 0 || $dst <= 0 || $src === $dst) { http_response_code(400); break; }
         $tmp = 99999;
-        // Garer les archers de la cible source
+        // Park archers to Temporary target
         safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $tmp WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = $src");
         if ($src < $dst) {
-            // Déplacement vers la droite : décaler src+1..dst vers la gauche
+            // move to right : shift src+1..dst to left
             for ($i = $src; $i < $dst; $i++) {
                 safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $i WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = " . ($i + 1));
             }
         } else {
-            // Déplacement vers la gauche : décaler dst..src-1 vers la droite (ordre inverse)
+            // move to left : shift dst..src-1 to right (reverse ordrer)
             for ($i = $src; $i > $dst; $i--) {
                 safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $i WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = " . ($i - 1));
             }
         }
-        // Placer la cible source à destination
+        // set the target source to destination
         safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $dst WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = $tmp");
-        // Recalculer QuTargetNo pour toute la plage affectée
+        // Recalculate QuTargetNo for the complet range
         $minC = min($src, $dst);
         $maxC = max($src, $dst);
         safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTargetNo = CONCAT($sess, LPAD(Q.QuTarget, 3, '0'), Q.QuLetter)
@@ -365,7 +363,7 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
-    // Désaffecter toutes les cibles du départ
+    // unaffect all target of session
     // ---------------------------------------------------------------
     case 'clearSession':
         $sql = "UPDATE Qualifications Q
@@ -379,7 +377,7 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
-    // Supprimer un archer du tournoi
+    // delete archer from tournament
     // ---------------------------------------------------------------
     case 'deleteArcher':
         $athId = intval($_GET['athId'] ?? 0);
@@ -406,7 +404,7 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------------------
-    // Vider une cible
+    // Clear a target
     // ---------------------------------------------------------------
     case 'clearCible':
         $cibleNum = isset($_GET['cibleNum']) ? intval($_GET['cibleNum']) : 0;
@@ -422,7 +420,7 @@ switch ($action) {
 }
 
 // ---------------------------------------------------------------
-// Rendu HTML d'une cible
+// Parse HTML for Target
 // ---------------------------------------------------------------
 function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 {
@@ -433,7 +431,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
     ?>
     <input type="hidden" class="cibleNum" value="<?= $cible->num ?>">
 
-    <!-- Carte principale -->
+    <!-- Main Card -->
     <div class="qp-cible-card qp-border-<?= $wc ?>">
       <span class="qp-warn-badge qp-bg-<?= $wc ?>"><?= htmlspecialchars($wl) ?></span>
 
@@ -443,7 +441,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
         <span class="btRm" onclick="removeCibleConfirm(this)" title="<?= htmlspecialchars(get_text('UnassignTarget', 'DragDropTarget')) ?>">✕</span>
       </div>
 
-      <!-- Étiquettes vagues -->
+      <!-- wave labels -->
       <div class="qp-vagues-labels">
         <?php if (isset($is3H1V2) && $is3H1V2): ?>
           <span class="qp-vague-label">B</span>
@@ -458,33 +456,27 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 
       <?php
       /*
-       * Zone blasons — logique identique à TargetPlan/CibleUnique.php :
-       * - Flexbox row, chaque colonne = flex:1
-       * - Image : width:[taille]px, hauteur auto (le viewBox fait le reste)
-       * - Les colonnes correspondent à getVaguesOrdered() (groupes A/C et B/D)
-       * - Un blason avec imgH=2 s'affiche en full-width (une seule colonne fusionnée)
+       * Face Zone :
+       * - Flexbox row, each row = flex:1
+       * - Image : width:[taille]px, height auto
+       * - all Column are getVaguesOrdered() (groups A/C and B/D)
+       * - Target with imgH=2 in full-width 
        */
       $hasBlason     = count(array_filter($cible->vagues, fn($v) => isset($v->blason))) > 0;
       $vaguesOrdered = $cible->getVaguesOrdered();
       $is3H1V2       = $cible->is3ArcherH1V2Layout();
 
       /*
-       * Règles d'affichage selon H/V :
-       *   H2 V1 → 1 archer/blason, 2 blasons côte à côte (row)
-       *   H1 V2 → 1 archer/blason, 2 blasons empilés verticalement (column)
-       *   H2 V2 → 2 archers/blason, 1 blason par colonne
-       *   H2 V4 → 4+ archers/blason, 1 blason pleine largeur
+       * H/V Rules:
+       *   H2 V1 → 1 archer/face, 2 Faces (1 per column)
+       *   H1 V2 → 1 archer/face, 2 Faces  (1 per row)
+       *   H2 V2 → 2 archers/face , 1 face per 2 column
+       *   H2 V4 → 4+ archers/face, 1 blason all over the target
        *
-       * Discriminant : imgH
-       *   imgH=1 → 1 archer/blason, plusieurs images empilées dans la colonne
-       *   imgH=2 + imgV=1 → 1 archer/blason, plusieurs images côte à côte
-       *   imgH=2 + imgV>=2 → N archers/blason, 1 seule image par colonne
-       *   imgH=2 + imgV>=4 → blason unique pleine largeur
        */
       $colBlasons = []; // [colIdx] => [ ['blason'=>..., 'overlay'=>...], ... ]
       foreach ($vaguesOrdered as $colIdx => $vaguesOrder) {
           $colBlasons[$colIdx] = [];
-          // Détecter H et V de la colonne (depuis le premier blason trouvé)
           $colImgH = 2; $colImgV = 2;
           foreach ($vaguesOrder as $vague) {
               if (isset($vague->blason)) {
@@ -494,22 +486,18 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
               }
           }
 
-          // Plusieurs images par colonne : H=1 (empilé) ou H=2+V=1 (côte à côte)
           $multiplePerCol = ($colImgH === 1) || ($colImgH >= 2 && $colImgV === 1);
 
           if ($multiplePerCol) {
-              // 1 archer par blason : 1 image par vague (réelle ou overlay)
-              // La colonne entièrement vide (sans aucun blason) n'affiche rien
               foreach ($vaguesOrder as $vague) {
                   if (isset($vague->blason)) {
                       $colBlasons[$colIdx][] = ['blason' => $vague->blason, 'overlay' => $vague->overlay, 'orders' => (string)$vague->order];
                   }
               }
           } else {
-              // N archers par blason : 1 seule image par colonne
               foreach ($vaguesOrder as $vague) {
                   if (isset($vague->blason)) {
-                      // overlay seulement si aucun archer réel dans cette colonne
+                      // overlay if no archer
                       $hasReal = false;
                       foreach ($vaguesOrder as $v2) {
                           if (isset($v2->blason) && !$v2->overlay) { $hasReal = true; break; }
@@ -522,8 +510,6 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
           }
       }
 
-      // Blason unique pleine largeur : imgV>=4
-      // Col1 peut être vide (archers seulement en A/C) → on prend le premier blason disponible
       $blasonUnique = null;
       $col0first = $colBlasons[0][0]['blason'] ?? null;
       $col1first = $colBlasons[1][0]['blason'] ?? null;
@@ -535,16 +521,16 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
           $blasonUnique = $refBlason;
       }
 
-      // Alignement bas pour U11 (blason placé en bas de la cible physique)
+      // Align to lower for U11
       $isU11 = false;
       foreach ($cible->participants as $p) {
           if (stripos($p->classe, 'U11') !== false) { $isU11 = true; break; }
       }
       ?>
-      <!-- Représentation blasons : hauteur fixe CSS (voir .qp-blasons-row) -->
+      <!-- Target face display: fixed CSS height (see .qp-blasons-row) -->
       <div class="qp-blasons-row" style="<?= $isU11 ? 'align-items:flex-end;' : '' ?>">
         <?php if ($is3H1V2 && $hasBlason): ?>
-          <!-- Blason spécial 3 archers ABC : B haut-centre, A bas-gauche, C bas-droite -->
+          <!-- Special 3-archer face layout ABC: B top-center, A bottom-left, C bottom-right -->
           <?php
           $vagueA   = $cible->vagues[1] ?? null;
           $vagueB   = $cible->vagues[2] ?? null;
@@ -582,7 +568,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
           </div>
         <?php elseif ($hasBlason): ?>
           <?php if ($blasonUnique): ?>
-            <!-- Blason pleine largeur (imgV>=4) -->
+            <!-- Full-width target face (imgV>=4) -->
             <?php
             $hasRealArcher = count(array_filter($cible->vagues, fn($v) => isset($v->blason) && !$v->overlay)) > 0;
             $blasonUniqueDist = 0;
@@ -608,13 +594,13 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
               <?php endif; ?>
             </div>
           <?php else: ?>
-            <!-- Blasons par colonne -->
+            <!-- Target faces per column -->
             <?php foreach ($colBlasons as $colIdx => $entries): ?>
               <?php
               $firstBlason = $entries[0]['blason'] ?? null;
-              // H2 V1 → côte à côte (row)
-              // H1 V2 → empilés (column)
-              // H2 V2+ → 1 seul blason, column par défaut
+              // H2 V1 → side by side (row)
+              // H1 V2 → stacked (column)
+              // H2 V2+ → 1 single face, column by default
               $colDirection = ($firstBlason && $firstBlason->imgH >= 2 && $firstBlason->imgV === 1)
                               ? 'row' : 'column';
               ?>
@@ -651,7 +637,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
             <?php endforeach; ?>
           <?php endif; ?>
         <?php else: ?>
-          <!-- Cible vide -->
+          <!-- Empty target -->
           <?php if ($svgBase): ?>
             <img src="<?= htmlspecialchars($svgBase . '0.svg') ?>"
                  alt="Vide"
@@ -661,7 +647,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
       </div>
     </div>
 
-    <!-- Zone noms archers (drag & drop) -->
+    <!-- Archer names zone (drag & drop) -->
     <?php
     $refBTfor3 = '';
     if ($is3H1V2) {
@@ -673,7 +659,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
     <div id="cb<?= $cible->num ?>" class="qp-cible-names nameArcher qp-border-<?= $wc ?>">
       <?php if ($is3H1V2): ?>
         <?php
-        // Ordre ABC (1, 2, 3) pour la ligne d'archers
+        // ABC order (1, 2, 3) for the archer row
         $slots3dd = [
             $cible->vagues[1] ?? null,
             $cible->vagues[2] ?? null,

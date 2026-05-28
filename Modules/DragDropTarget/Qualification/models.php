@@ -1,11 +1,11 @@
 <?php
 /**
- * Modèles pour le module PlanQualifs
+ * Models for the PlanQualifs module
  *
  */
 
 // ---------------------------------------------------------------
-// QP_TourInfo : infos tournoi + liste des sessions
+// QP_TourInfo : tournament info + session list
 // ---------------------------------------------------------------
 class QP_TourInfo
 {
@@ -49,7 +49,7 @@ class QP_TourInfo
 }
 
 // ---------------------------------------------------------------
-// QP_Blason : informations sur un type de blason
+// QP_Blason : target face type information
 // ---------------------------------------------------------------
 class QP_Blason
 {
@@ -61,18 +61,18 @@ class QP_Blason
     public $diameter     = 0;
     public $imgH         = 1;
     public $imgV         = 2;
-    public $imgTaille    = 40; // largeur d'affichage en px (même logique que ImgTFace::taille)
+    public $imgTaille    = 40; // display width in px (same logic as ImgTFace::taille)
     public $imgNbArcher  = 0;
     public $label        = '';
     public $svgFile      = '0.svg'; //'Empty.svg';
-    public $count        = 0; // nb archers
-    public $physicalCount = 0; // nb blasons physiques nécessaires
-    public $alias        = ''; // nom d'affichage personnalisé (vide = utilise $name)
-    public $distances    = []; // [dist => dist] distances uniques en mètres
+    public $count        = 0; // archer count
+    public $physicalCount = 0; // number of physical target faces needed
+    public $alias        = ''; // custom display name (empty = uses $name)
+    public $distances    = []; // [dist => dist] unique distances in meters
 
     // ---------------------------------------------------------------
-    // Alias personnalisés par clé targetName-diameter
-    // Modifier ici pour renommer un type de blason dans le récap
+    // Custom aliases by targetName-diameter key
+    // Edit here to rename a target face type in the summary
     // ---------------------------------------------------------------
     public static function aliasForKey(string $key): string
     {
@@ -96,16 +96,16 @@ class QP_Blason
         return $aliasMap[$key] ?? '';
     }
 
-    // Retourne le nom à afficher : alias si défini, sinon $name
+    // Returns the display name: alias if set, otherwise $name
     public function displayName(): string
     {
         return ($this->alias !== '') ? $this->alias : $this->name;
     }
 
     /**
-     * Clé de compatibilité physique : deux blasons avec la même clé
-     * peuvent coexister sur la même colonne d'une cible.
-     * CL et CO trispot 40 sont physiquement identiques → même clé.
+     * Physical compatibility key: two target faces with the same key
+     * can coexist on the same column of a target.
+     * CL and CO trispot 40 are physically identical → same key.
      */
     public function physicalCompatKey(): string
     {
@@ -117,7 +117,7 @@ class QP_Blason
         return $compatMap[$key] ?? $key;
     }
 
-    // Retourne fichier SVG + taille px pour une clé targetName-diameter
+    // Returns SVG file + px size for a targetName-diameter key
     public static function svgForKey(string $key): string
     {
         static $svgMap = [
@@ -136,7 +136,7 @@ class QP_Blason
         return $svgMap[$key] ?? '0.svg'; //'Empty.svg';
     }
 
-    // Retourne la largeur d'affichage en px (identique à ImgTFace::taille)
+    // Returns the display width in px (same as ImgTFace::taille)
     public static function tailleForKey(string $key): int
     {
         static $tailleMap = [
@@ -155,7 +155,7 @@ class QP_Blason
         return $tailleMap[$key] ?? 40;
     }
 
-    // Calcule le nb d'archers d'après h+v (logique ImgTFace::getNbArcher)
+    // Calculates archer count from h+v (ImgTFace::getNbArcher logic)
     public function calcNbArcher()
     {
         $sum = $this->imgV + $this->imgH;
@@ -169,7 +169,7 @@ class QP_Blason
 }
 
 // ---------------------------------------------------------------
-// QP_Participant : archer inscrit
+// QP_Participant : registered archer
 // ---------------------------------------------------------------
 class QP_Participant
 {
@@ -182,11 +182,11 @@ class QP_Participant
     public $nom          = '';
     public $prenom       = '';
     public $target       = 0;
-    public $distance     = 0; // distance en mètres (TournamentDistances.TdDist1 ou Td1)
+    public $distance     = 0; // distance in meters (TournamentDistances.TdDist1 or Td1)
     public $letter       = '';
     public $targetId     = 0;
     public $blason       = null;  // QP_Blason
-    public $isUnassigned = false; // vrai si QuSession = 0 (aucun départ affecté)
+    public $isUnassigned = false; // true if QuSession = 0 (no session assigned)
 
     public function getCible(): string
     {
@@ -220,7 +220,7 @@ class QP_Distance
 }
 
 // ---------------------------------------------------------------
-// QP_Vague : une position sur une cible (A/B/C/D)
+// QP_Vague : a position on a target (A/B/C/D)
 // ---------------------------------------------------------------
 class QP_Vague
 {
@@ -233,17 +233,17 @@ class QP_Vague
 }
 
 // ---------------------------------------------------------------
-// QP_Cat : catégorie pour la picking list
+// QP_Cat : category for the picking list
 // ---------------------------------------------------------------
 class QP_Cat
 {
     public $name      = '';
     public $count     = 0;
-    public $distances = []; // [dist => dist] distances uniques en mètres
+    public $distances = []; // [dist => dist] unique distances in meters
 }
 
 // ---------------------------------------------------------------
-// QP_Session : données complètes d'une session de qualification
+// QP_Session : complete data for a qualification session
 // ---------------------------------------------------------------
 class QP_Session
 {
@@ -261,11 +261,11 @@ class QP_Session
     public $categories   = [];
 
     /**
-     * @param int    $tId       ID tournoi
-     * @param int    $sessOrder Numéro de session
-     * @param int    $tfId      Filtrer par TfId blason (0 = tous)
-     * @param int    $cibleNum  Filtrer par numéro de cible (0 = toutes)
-     * @param string $cat       Filtrer par catégorie ('' = toutes)
+     * @param int    $tId       Tournament ID
+     * @param int    $sessOrder Session number
+     * @param int    $tfId      Filter by face TfId (0 = all)
+     * @param int    $cibleNum  Filter by target number (0 = all)
+     * @param string $cat       Filter by category ('' = all)
      */
     public function __construct(int $tId, int $sessOrder = 1, int $tfId = 0, int $cibleNum = 0, string $cat = '', string $blasonAlias = '', int $distFilter = 0)
     {
@@ -315,7 +315,7 @@ class QP_Session
 
     private function loadBlasons()
     {
-        // Correspondance targetName-diameter → imgH, imgV, label
+        // targetName-diameter → imgH, imgV, label mapping
         static $imgMap = [
             'TrgIndComplete-40'  => [1, 2, '⌀40'],
             'TrgIndSmall-40'     => [2, 1, 'CL'],
@@ -394,7 +394,7 @@ class QP_Session
 
         $rs = safe_r_sql($sql);
         while ($r = safe_fetch($rs)) {
-            // Filtre par blason si demandé
+            // Filter by target face if requested
             if ($tfId > 0 && intval($r->TfId) !== $tfId) {
                 continue;
             }
@@ -417,17 +417,17 @@ class QP_Session
             $p->distance    = $rDistance;
             $p->blason      = $this->blasons[$p->targetId] ?? null;
 
-            // Filtre par catégorie si demandé
+            // Filter by category if requested
             if ($cat !== '' && $p->getCategory() !== $cat) {
                 continue;
             }
 
-            // Filtre par alias de blason (groupe physique) si demandé
+            // Filter by target face alias (physical group) if requested
             if ($blasonAlias !== '' && ($p->blason === null || $p->blason->displayName() !== $blasonAlias)) {
                 continue;
             }
 
-            // Filtre par distance si demandé
+            // Filter by distance if requested
             if ($distFilter > 0 && $p->distance !== $distFilter) {
                 continue;
             }
@@ -449,33 +449,33 @@ class QP_Session
                 if ($p->distance > 0) {
                     $b->distances[$p->distance] = $p->distance;
                 }
-                // Nb blasons physiques = nb de colonnes distinctes (cible + groupe A/C ou B/D)
-                // qui utilisent ce type de blason.
-                // Pour imgNbArcher=1 (H1V2, H2V1) : 1 blason par archer → count physique = count archers
-                // Pour imgNbArcher>=2 (H2V2, H2V4) : 1 blason par colonne → compter les colonnes uniques
+                // Physical face count = number of distinct columns (target + group A/C or B/D)
+                // using this face type.
+                // For imgNbArcher=1 (H1V2, H2V1): 1 face per archer → physical count = archer count
+                // For imgNbArcher>=2 (H2V2, H2V4): 1 face per column → count distinct columns
             }
-            // Accumulation dans un tableau temporaire pour recalcul post-chargement
+            // Accumulate into a temporary array for post-load recalculation
             $this->participants[$p->id] = $p;
         }
 
-        // Recalcul physicalCount après chargement complet
-        $colUsage   = []; // [tfId][target-colonne] → blasons 60cm etc. (1 face par colonne AC/BD)
-        $cibleUsage = []; // [tfId][target]         → grands blasons (1 face par cible : 122, 80…)
+        // Recalculate physicalCount after full load
+        $colUsage   = []; // [tfId][target-column] → 60cm faces etc. (1 face per AC/BD column)
+        $cibleUsage = []; // [tfId][target]        → large faces (1 face per target: 122, 80…)
         foreach ($this->participants as $p) {
             if (!isset($this->blasons[$p->targetId])) continue;
             $b = $this->blasons[$p->targetId];
             if ($b->imgNbArcher <= 1) {
-                // 1 blason par archer (40cm plein, trispot, CO…)
+                // 1 face per archer (40cm full, trispot, CO…)
                 $b->physicalCount = $b->count;
             } elseif ($b->imgV >= 4) {
-                // Grand blason pleine cible (122cm, 80cm outdoor…) :
-                // tous les archers d'une même cible partagent 1 blason physique.
-                // Archers non placés (target=0) : clé unique par archer pour ne pas sous-compter.
+                // Full-target face (122cm, 80cm outdoor…):
+                // all archers on the same target share 1 physical face.
+                // Unplaced archers (target=0): unique key per archer to avoid under-counting.
                 $cibleKey = $p->target > 0 ? $p->target : ('u' . $p->id);
                 $cibleUsage[$p->targetId][$cibleKey] = true;
                 $b->physicalCount = count($cibleUsage[$p->targetId]);
             } else {
-                // Blason par colonne (60cm…) : 1 face par paire (cible, colonne AC/BD)
+                // Face per column (60cm…): 1 face per (target, AC/BD column) pair
                 $groupe = in_array($p->letter, ['A', 'C']) ? 'AC' : 'BD';
                 $key    = $p->target . '-' . $groupe;
                 $colUsage[$p->targetId][$key] = true;
@@ -484,17 +484,17 @@ class QP_Session
         }
     }
 
-    /** Liste des blasons utilisés avec count > 0 */
+    /** List of target faces in use with count > 0 */
     public function blasonCount(): array
     {
         return array_filter($this->blasons, fn($b) => $b->count > 0);
     }
 
     /**
-     * Liste des blasons regroupés par alias (displayName).
-     * Les blasons ayant le même alias sont fusionnés : physicalCount sommé,
-     * imgTaille/svgFile/imgNbArcher pris du premier trouvé.
-     * Retourne un tableau indexé par alias.
+     * List of target faces grouped by alias (displayName).
+     * Faces sharing the same alias are merged: physicalCount summed,
+     * imgTaille/svgFile/imgNbArcher taken from the first match.
+     * Returns an array indexed by alias.
      */
     public function blasonCountGrouped(): array
     {
@@ -521,10 +521,10 @@ class QP_Session
     }
 
     /**
-     * Liste des groupes (alias, distance) distincts pour l'accordéon blason.
-     * Un même type de blason tiré à des distances différentes donne N entrées séparées.
-     * Retourne [ key => ['alias'=>str, 'distance'=>int, 'blason'=>QP_Blason] ]
-     * trié par alias puis par distance croissante.
+     * List of distinct (alias, distance) groups for the target face accordion.
+     * The same face type shot at different distances produces N separate entries.
+     * Returns [ key => ['alias'=>str, 'distance'=>int, 'blason'=>QP_Blason] ]
+     * sorted by alias then ascending distance.
      */
     public function blasonDistanceGroups(): array
     {
@@ -548,7 +548,7 @@ class QP_Session
 }
 
 // ---------------------------------------------------------------
-// QP_Cible : détail d'une cible (pour AJAX)
+// QP_Cible : target detail (for AJAX)
 // ---------------------------------------------------------------
 class QP_Cible
 {
@@ -719,14 +719,14 @@ class QP_Cible
     {
         $count = count($this->participants);
         if ($count === 0) {
-            $this->warnLevel = 0; // Libre
+            $this->warnLevel = 0; // Free
             return;
         }
         $full    = ($this->ath > 0 && $count >= $this->ath);
         $structs = array_unique(array_map(fn($p) => $p->structName, $this->participants));
         $oneStruct = (count($structs) === 1);
 
-        // Majorité : une structure représente plus de la moitié des archers présents
+        // Majority: one structure represents more than half of the present archers
         $majority = false;
         foreach ($structs as $struct) {
             $n = count(array_filter($this->participants, fn($p) => $p->structName === $struct));
@@ -736,23 +736,23 @@ class QP_Cible
         }
 
         if (!$this->distance->sameDistance) {
-            $this->warnLevel = 4; // Distances mixtes
+            $this->warnLevel = 4; // Mixed distances
         } elseif ($oneStruct) {
-            $this->warnLevel = 3; // Structure unique (pleine ou pas)
+            $this->warnLevel = 3; // Single structure (full or not)
         } elseif ($majority) {
-            $this->warnLevel = 2; // Structure majoritaire
+            $this->warnLevel = 2; // Majority structure
         } elseif ($full) {
-            $this->warnLevel = 1; // Complète
+            $this->warnLevel = 1; // Full
         } else {
-            $this->warnLevel = 0; // Libre
+            $this->warnLevel = 0; // Free
         }
 
-        // Blason incompatible : priorité maximale (écrase les autres niveaux)
+        // Incompatible face: maximum priority (overrides other levels)
         if ($this->checkBlasonIncompatibility()) {
             $this->warnLevel = 5;
         }
 
-        // Position en double : deux archers sur la même lettre 
+        // Duplicate position: two archers on the same letter
         $letters = array_filter(array_map(fn($p) => $p->letter, $this->participants), fn($l) => $l !== '');
         if (count($letters) !== count(array_unique($letters))) {
             $this->warnLevel = 6;
@@ -760,24 +760,24 @@ class QP_Cible
     }
 
     /**
-     * Détecte les incompatibilités de blasons sur la cible :
-     * - Deux blasons différents dans la même colonne (A/C ou B/D)
-     * - Deux blasons pleine largeur (imgV>=4) différents entre les colonnes
+     * Detects face incompatibilities on the target:
+     * - Two different faces in the same column (A/C or B/D)
+     * - Two different full-width faces (imgV>=4) across columns
      */
     private function checkBlasonIncompatibility(): bool
     {
-        // Uniquement les vagues avec un archer réel (pas overlay)
+        // Only waves with a real archer (not overlay)
         $real = array_filter($this->vagues, fn($v) => isset($v->participant) && isset($v->blason) && !$v->overlay);
         if (count($real) <= 1) return false;
 
         $colAC = array_filter($real, fn($v) => in_array($v->order, [1, 3]));
         $colBD = array_filter($real, fn($v) => in_array($v->order, [2, 4]));
 
-        // Blasons distincts dans la même colonne (par clé physique)
+        // Distinct faces in the same column (by physical key)
         if (count(array_unique(array_map(fn($v) => $v->blason->physicalCompatKey(), $colAC))) > 1) return true;
         if (count(array_unique(array_map(fn($v) => $v->blason->physicalCompatKey(), $colBD))) > 1) return true;
 
-        // Blasons pleine largeur (imgV>=4) différents entre les deux colonnes
+        // Different full-width faces (imgV>=4) across the two columns
         $bAC = !empty($colAC) ? array_values($colAC)[0]->blason : null;
         $bBD = !empty($colBD) ? array_values($colBD)[0]->blason : null;
         if ($bAC && $bBD && $bAC->physicalCompatKey() !== $bBD->physicalCompatKey()) {
@@ -804,12 +804,12 @@ class QP_Cible
             $this->vagues[$i] = $v;
         }
 
-        // Propagation intra-colonne uniquement :
-        // Si une colonne (A/C ou B/D) a au moins 1 archer, propager son blason
-        // aux positions vides de LA MÊME colonne avec overlay=true.
-        // Une colonne entièrement vide ne reçoit RIEN (on ne sait pas quel blason viendra).
-        $blasonAC = null; // blason de référence pour la colonne A/C (orders 1,3)
-        $blasonBD = null; // blason de référence pour la colonne B/D (orders 2,4)
+        // Intra-column propagation only:
+        // If a column (A/C or B/D) has at least 1 archer, propagate its face
+        // to the empty positions of THE SAME column with overlay=true.
+        // A completely empty column receives NOTHING (we don't know which face will come).
+        $blasonAC = null; // reference face for the A/C column (orders 1,3)
+        $blasonBD = null; // reference face for the B/D column (orders 2,4)
         foreach ($this->vagues as $v) {
             if (isset($v->blason) && !$v->overlay && in_array($v->order, [1, 3]) && $blasonAC === null) {
                 $blasonAC = $v->blason;
@@ -818,9 +818,9 @@ class QP_Cible
                 $blasonBD = $v->blason;
             }
         }
-        // Propager uniquement vers les vides de la même colonne
+        // Propagate only to empty slots in the same column
         foreach ($this->vagues as $v) {
-            if (isset($v->blason)) continue; // déjà assigné
+            if (isset($v->blason)) continue; // already assigned
             if (in_array($v->order, [1, 3]) && $blasonAC !== null) {
                 $v->blason  = $blasonAC;
                 $v->overlay = true;
@@ -828,7 +828,7 @@ class QP_Cible
                 $v->blason  = $blasonBD;
                 $v->overlay = true;
             }
-            // Colonne entièrement vide → on ne propage rien
+            // Completely empty column → propagate nothing
         }
     }
 
@@ -843,9 +843,9 @@ class QP_Cible
     }
 
     /**
-     * Retourne true si la cible utilise le layout spécial 3 archers ABC (H1V2) :
-     * B en haut-centre, A en bas-gauche, C en bas-droite.
-     * S'active quand ath=3 et qu'aucun blason présent n'est d'un type autre que H1V2.
+     * Returns true if the target uses the special 3-archer ABC layout (H1V2):
+     * B top-center, A bottom-left, C bottom-right.
+     * Activates when ath=3 and no present face is of a type other than H1V2.
      */
     public function is3ArcherH1V2Layout(): bool
     {
@@ -872,7 +872,7 @@ class QP_Cible
 }
 
 // ---------------------------------------------------------------
-// QP_UpdateParticipant : déplacer/affecter un archer
+// QP_UpdateParticipant : move/assign an archer
 // ---------------------------------------------------------------
 class QP_UpdateParticipant
 {
@@ -890,7 +890,7 @@ class QP_UpdateParticipant
 
     private function loadParticipant(int $partId)
     {
-        // Chercher dans la session courante OU parmi les archers sans départ (QuSession=0)
+        // Look in the current session OR among archers without a session (QuSession=0)
         $sql = "SELECT E.EnId, Q.QuTarget, Q.QuLetter, Q.QuSession
                 FROM Entries E
                 INNER JOIN Qualifications Q ON E.EnId = Q.QuId
@@ -919,7 +919,7 @@ class QP_UpdateParticipant
             $letterStr = '';
         } else {
             $targetNo = $this->order . str_pad((string)$cNum, 3, '0', STR_PAD_LEFT) . $letterStr;
-            // Libérer la place si déjà occupée
+            // Free the spot if already occupied
             $existing = $this->getExistingAtSpot($cNum, $letterStr);
             foreach ($existing as $eid) {
                 $sql = "UPDATE Qualifications
@@ -935,7 +935,7 @@ class QP_UpdateParticipant
         $tnoSafe    = StrSafe_DB($targetNo);
 
         if ($this->participant->isUnassigned && $cNum > 0) {
-            // Archer sans départ : affecter au départ courant ET à la cible
+            // Unassigned archer: assign to the current session AND to the target
             $sql = "UPDATE Qualifications
                     SET QuSession = " . intval($this->order) . ",
                         QuTarget = $cNumSql,

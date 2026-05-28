@@ -16,25 +16,25 @@ $session = new QP_Session($_SESSION['TourId'], $sessId);
 
 
 
-// Si session introuvable, prendre la première disponible
+// If session not found, use the first available one
 if (($session->targets + $session->ath )==0 && !empty($session->tour->sessions)) {
     $firstSess = reset($session->tour->sessions);
     $sessId    = $firstSess->id;
     $session   = new QP_Session($_SESSION['TourId'], $sessId);
 }
 
-// Couleurs par structure (club/pays) — inclut tous les inscrits du tournoi
+// Colors per structure (club/country) — includes all tournament participants
 $structColors = [];
 $colorPalette = ['#FFD6D6','#D6FFD6','#D6D6FF','#FFFFD6','#FFD6FF','#D6FFFF','#FFE8D6','#E8D6FF','#D6FFE8','#FFD6E8'];
 $colorIdx = 0;
-// Session courante
+// Current session
 foreach ($session->participants as $p) {
     if (!isset($structColors[$p->structId])) {
         $structColors[$p->structId] = $colorPalette[$colorIdx % count($colorPalette)];
         $colorIdx++;
     }
 }
-// Archers sans départ (absents de la session courante)
+// Archers without a session (absent from the current session)
 $rsAllStruct = safe_r_sql(
     "SELECT DISTINCT E.EnCountry
      FROM Entries E
@@ -81,7 +81,7 @@ $JS_SCRIPT = [
     '<script src="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/Qualification/qualification.js"></script>',
 ];
 
-// Nom et heure d'affichage
+// Display name and time
 $headerName = !empty($session->name) ? $session->name : sprintf('%s %d', get_text('Session'), $sessId);
 $startTime  = '';
 if (!empty($session->start)) {
@@ -99,7 +99,7 @@ include('Common/Templates/head.php');
 </style>
 
 <!-- ============================================================
-     En-tête : sélecteurs session / groupement
+     Header: session / grouping selectors
      ============================================================ -->
 <table class="Tabella">
   <tr>
@@ -140,7 +140,7 @@ include('Common/Templates/head.php');
       <strong style="font-size:1.2em;"><?= htmlspecialchars($headerName) ?><?= $startTime ? ' — ' . $startTime : '' ?></strong>
     </td>
     <td style="width:220px; vertical-align:top; padding:4px; text-align:right;">
-      <!-- Toggles affichage -->
+      <!-- Display toggles -->
       <label style="font-size:.85em; display:block; margin-bottom:3px;">
         <input type="checkbox" id="toggleArcher" checked onchange="hideSwitch()">
         <?= get_text('ShowParticipants', 'Tournament') ?>
@@ -154,7 +154,7 @@ include('Common/Templates/head.php');
 </table>
 
 <!-- ============================================================
-     Récap blasons + actions
+     Target face summary + actions
      ============================================================ -->
 <div class="qp-bandeau">
   <span class="qp-label"><?= get_text('Target') ?>&nbsp;:</span>
@@ -166,25 +166,25 @@ include('Common/Templates/head.php');
   <input type="button" class="Button" value="<?= htmlspecialchars(get_text('TargetAssErase', 'Tournament')) ?>" onclick="clearAllCibles()" style="color:#c00; font-weight:bold;">
 </div>
 
-<!-- En-tête impression -->
+<!-- Print header -->
 <div id="printHeader">
   <strong><?= htmlspecialchars($session->tour->name) ?> — <?= htmlspecialchars($headerName) ?><?= $startTime ? ' — ' . $startTime : '' ?></strong>
 </div>
-<!-- Nom du tournoi seul (utilisé par le récap global) -->
+<!-- Tournament name only (used by the global summary) -->
 <span id="tourNameOnly" style="display:none"><?= htmlspecialchars($session->tour->name) ?></span>
 
-<!-- Page de garde impression : bilan blasons avec images SVG -->
+<!-- Print cover page: target face summary with SVG images -->
 <div id="printBlasonRecap">
   <div class="pbr-title"><?= get_text('PrintTargetFacesSummaryHeader', 'Tournament') ?></div>
-  <div id="printBlasonBody"><!-- rempli par AJAX blasonRecapPrint --></div>
+  <div id="printBlasonBody"><!-- filled by AJAX blasonRecapPrint --></div>
 </div>
 
 <!-- ============================================================
-     Mise en page principale : picking list | cibles
+     Main layout: picking list | targets
      ============================================================ -->
 <div class="qp-layout">
 
-  <!-- Colonne gauche : liste de picking -->
+  <!-- Left column: picking list -->
   <div class="qp-picking-col">
     <div class="qp-search-wrap">
       <input type="text" id="qpSearch" placeholder="<?= htmlspecialchars(get_text('DragDropSearchPlaceholder', 'Tournament')) ?>…" autocomplete="off">
@@ -192,7 +192,7 @@ include('Common/Templates/head.php');
     </div>
     <div id="PickingList" class="qp-picking-list">
       <?php if ($sortBy == 1): ?>
-        <!-- Groupé par catégorie -->
+        <!-- Grouped by category -->
         <?php foreach ($session->listByCategory() as $cat):
           $catDists = $cat->distances; ksort($catDists);
           $catDistStr = !empty($catDists) ? ' - ' . implode('/', $catDists) . 'm' : '';
@@ -219,7 +219,7 @@ include('Common/Templates/head.php');
           </div>
         <?php endforeach; ?>
       <?php else: ?>
-        <!-- Groupé par blason (type physique) × distance -->
+        <!-- Grouped by target face (physical type) × distance -->
         <?php $blasonIdx = 0; foreach ($session->blasonDistanceGroups() as $group): $blasonIdx++;
           $alias    = $group['alias'];
           $distance = $group['distance'];
@@ -251,7 +251,7 @@ include('Common/Templates/head.php');
         <?php endforeach; ?>
       <?php endif; ?>
 
-      <!-- Section archers sans départ (toujours affichée, chargée séparément) -->
+      <!-- Archers without session section (always shown, loaded separately) -->
       <div class="qp-accordion-item qp-unassigned-section" id="tgl-unassigned">
         <div class="qp-accordion-header qp-unassigned-header" onclick="qpToggle(this)">
           <span><?= get_text('WithoutSession', 'DragDropTarget') ?></span>
@@ -269,14 +269,14 @@ include('Common/Templates/head.php');
     </div>
   </div>
 
-  <!-- Colonne droite : zone cibles -->
+  <!-- Right column: target zone -->
   <div class="qp-targets-col">
     <input type="hidden" id="departId" value="<?= $sessId ?>">
     <div id="targetsArea" class="qp-targets-area">
       <?php for ($c = 1; $c <= $session->targets; $c++): ?>
         <div id="Cible-<?= $c ?>" class="qp-cible-wrap">
           <input type="hidden" class="cibleNum" value="<?= $c ?>">
-          <!-- Carte cible (placeholder, remplacé par AJAX) -->
+          <!-- Target card (placeholder, replaced by AJAX) -->
           <div class="qp-cible-card qp-border-primary">
             <div class="qp-cible-header">
               <span><?= get_text('Target') ?> <?= $c ?></span>
@@ -301,7 +301,7 @@ include('Common/Templates/head.php');
 </div>
 
 <!-- ============================================================
-     Modale commande blasons (CSS pur, pas de JS framework)
+     Target face order modal (pure CSS, no JS framework)
      ============================================================ -->
 <div id="orderModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4);
      align-items:center; justify-content:center; padding:1rem; z-index:2000;">
@@ -350,7 +350,7 @@ include('Common/Templates/head.php');
 
 
 <!-- ============================================================
-     Modale PopEdit (iframe — opener=null → pas de rechargement page)
+     PopEdit modal (iframe — opener=null → no page reload)
      ============================================================ -->
 <div id="qpPeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
      align-items:center; justify-content:center; z-index:3000;">

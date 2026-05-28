@@ -1,8 +1,7 @@
 /* ============================================================
-   QualifsP — Plan de cible
-   Dépendances : jQuery (ianseo), Dragula (CDN)
-   Aucune dépendance Bootstrap.
-   QP_ROOT, QP_SESS_ID, QP_SORT : injectés par index.php
+   QualifsP — Target plan
+   Dependencies: jQuery (ianseo), Dragula (CDN)
+   QP_ROOT, QP_SESS_ID, QP_SORT: injected by index.php
    ============================================================ */
 
 /* document.addEventListener('DOMContentLoaded', function () {
@@ -29,7 +28,7 @@ $(function () {
 
 
 /* ----------------------------------------------------------
-   Accordion natif (sans Bootstrap)
+   Native accordion (without Bootstrap)
 ---------------------------------------------------------- */
 function qpToggle(header) {
     var item = $(header).closest('.qp-accordion-item');
@@ -42,7 +41,7 @@ function qpToggle(header) {
     } else {
         body.removeClass('qp-hidden');
         item.addClass('qp-open');
-        // Charger le contenu si pas encore fait (lazy loading)
+        // Load content if not yet done (lazy loading)
         var container = body.find('[id^=blsItem-]');
         if (container.length && container.find('.blasonContent').children().length === 0) {
             if (container.attr('id') === 'blsItem-unassigned') {
@@ -55,7 +54,7 @@ function qpToggle(header) {
 }
 
 /* ----------------------------------------------------------
-   Récap blasons (bandeau + page de garde impression)
+   Target face summary (banner + print cover page)
 ---------------------------------------------------------- */
 function blasonRecap() {
     var sessId = $('#departId').val();
@@ -74,7 +73,7 @@ function blasonRecap() {
 }
 
 /* ----------------------------------------------------------
-   Picking list complète (groupes session)
+   Full picking list (session groups)
 ---------------------------------------------------------- */
 function loadPickingList(container) {
     $(container).find('[id^=blsItem-]').not('#blsItem-unassigned').each(function () {
@@ -110,7 +109,7 @@ function loadOnePickingItem(elt) {
 }
 
 /* ----------------------------------------------------------
-   Section "Sans départ"
+   "Without session" section
 ---------------------------------------------------------- */
 function loadUnassignedSection() {
     var elt = document.getElementById('blsItem-unassigned');
@@ -137,7 +136,7 @@ function loadUnassignedSection() {
 }
 
 /* ----------------------------------------------------------
-   Détail d'une cible
+   Target detail
 ---------------------------------------------------------- */
 function getCible(item) {
     var id   = $(item).attr('id') || '';          // "Cible-2"
@@ -155,7 +154,7 @@ function getCible(item) {
 }
 
 /* ----------------------------------------------------------
-   Déplacer un archer
+   Move an archer
 ---------------------------------------------------------- */
 function moveArcher(archer, source, target) {
     var cNum    = (target && ($(target).closest('[id^=Cible-]').attr('id') || '').replace('Cible-', '')) || '0';
@@ -178,7 +177,7 @@ function moveArcher(archer, source, target) {
 }
 
 /* ----------------------------------------------------------
-   Vider une cible
+   Clear a target
 ---------------------------------------------------------- */
 function removeCible(item) {
     var cible    = $(item).closest('[id^=Cible-]');
@@ -197,7 +196,7 @@ function removeCible(item) {
 }
 
 /* ----------------------------------------------------------
-   Drag & drop des cibles (échange de contenu)
+   Target drag & drop (content swap)
 ---------------------------------------------------------- */
 var _draggedCibleNum = null;
 var _insertDst       = null;
@@ -225,7 +224,7 @@ $(document).on('dragover', '.qp-cible-wrap', function (e) {
     var srcNum  = parseInt(_draggedCibleNum);
     $('.qp-cible-wrap').removeClass('qp-cible-drop-after qp-cible-drop-before');
     if (cNum !== srcNum) {
-        // Ligne à droite si on descend, à gauche si on remonte
+        // Line on the right when moving forward, on the left when moving back
         $(this).addClass(cNum > srcNum ? 'qp-cible-drop-after' : 'qp-cible-drop-before');
         _insertDst = String(cNum);
     } else {
@@ -256,7 +255,7 @@ $(document).on('drop', '.qp-cible-wrap', function (e) {
 });
 
 /* ----------------------------------------------------------
-   Désaffecter toutes les cibles du départ
+   Unassign all targets from the session
 ---------------------------------------------------------- */
 function clearAllCibles() {
     if (!confirm(Lng_UnassignAll)) return;
@@ -272,7 +271,7 @@ function clearAllCibles() {
 }
 
 /* ----------------------------------------------------------
-   Vider une cible avec confirmation
+   Clear a target with confirmation
 ---------------------------------------------------------- */
 function removeCibleConfirm(btn) {
     var cNum = ($(btn).closest('[id^=Cible-]').attr('id') || '').replace('Cible-', '');
@@ -281,7 +280,7 @@ function removeCibleConfirm(btn) {
 }
 
 /* ----------------------------------------------------------
-   Toggles affichage archers / affectés
+   Archer / assigned display toggles
 ---------------------------------------------------------- */
 function hideSwitch() {
     if ($('#toggleArcher').prop('checked')) {
@@ -292,7 +291,7 @@ function hideSwitch() {
 }
 
 function hideAffectedSwitch() {
-    // Si une recherche est active, laisser filterPickingList gérer la visibilité
+    // If a search is active, let filterPickingList manage visibility
     if (($('#qpSearch').val() || '').trim()) {
         filterPickingList();
         return;
@@ -305,7 +304,7 @@ function hideAffectedSwitch() {
 }
 
 /* ----------------------------------------------------------
-   Recherche dans la picking list (filtre live sur nom + structure)
+   Picking list search (live filter on name + structure)
 ---------------------------------------------------------- */
 function filterPickingList() {
     var q            = ($('#qpSearch').val() || '').toLowerCase().trim();
@@ -314,19 +313,19 @@ function filterPickingList() {
     $('#qpSearchClear').toggle(q.length > 0);
 
     if (!q) {
-        // Pas de recherche : tout afficher puis appliquer le filtre "affectés"
+        // No search: show all then apply the "assigned" filter
         $('#PickingList .qp-picker-item, #tgl-unassigned .qp-picker-item').show();
         $('#PickingList .qp-accordion-item').not('#tgl-unassigned').show();
         if (!showAffected) {
             $('#PickingList .affected').hide();
         }
-        // Section unassigned : réafficher si non vide
+        // Unassigned section: show again if not empty
         var unassignedCount = $('#tgl-unassigned .qp-picker-item').length;
         if (unassignedCount > 0) $('#tgl-unassigned').show();
         return;
     }
 
-    // Filtrer chaque archer sur nom et structure (sections session + unassigned)
+    // Filter each archer by name and structure (session + unassigned sections)
     $('#PickingList .qp-picker-item, #tgl-unassigned .qp-picker-item').each(function () {
 		var license   = ($(this).data('pq-license')        || '').toLowerCase();
         var name   = ($(this).data('pq-name')        || '').toLowerCase();
@@ -336,9 +335,9 @@ function filterPickingList() {
         $(this).toggle(match && (showAffected || !isAffected));
     });
 
-    // Afficher/masquer chaque groupe session selon s'il contient des archers correspondants
-    // NB : on contrôle le style inline de l'item (pas :visible qui dépend des ancêtres)
-    // Exclusion de #tgl-unassigned géré séparément ci-dessous
+    // Show/hide each session group depending on whether it contains matching archers
+    // NB: we check the item's inline style (not :visible which depends on ancestors)
+    // #tgl-unassigned is excluded and handled separately below
     $('#PickingList .qp-accordion-item').not('#tgl-unassigned').each(function () {
         var hasMatch = $(this).find('.qp-picker-item').filter(function () {
             return this.style.display !== 'none';
@@ -366,7 +365,7 @@ function clearSearch() {
 }
 
 /* ----------------------------------------------------------
-   Halo survol blason
+   Target face hover halo
 ---------------------------------------------------------- */
 
 function pqInitHoverStructure() {
@@ -404,7 +403,7 @@ function pqInitHoverCategory() {
 function pqInitHoverBlason() {
     $(document).on('mouseenter', '.pq-halo-blason', function () {
         var blasonAlias = $(this).data('pq-blason');
-        var distance    = $(this).data('pq-distance') || 0; // 0 = pas de filtre distance
+        var distance    = $(this).data('pq-distance') || 0; // 0 = no distance filter
         $('.pq-halo-archer').each(function () {
             var aliasMatch = $(this).data('pq-blason') === blasonAlias;
             var distMatch  = !distance || Number($(this).data('pq-distance')) === distance;
@@ -415,8 +414,8 @@ function pqInitHoverBlason() {
             }
         });
         $('.pq-halo-blason').each(function () {
-            // data-pq-blason-alias présent sur les images de cibles (ID numérique dans data-pq-blason)
-            // data-pq-blason seul (alias string) sur les items d'accordéon
+            // data-pq-blason-alias present on target images (numeric ID in data-pq-blason)
+            // data-pq-blason alone (alias string) on accordion items
             var aliasMatch = $(this).data('pq-blason') === blasonAlias;
             var distMatch  = !distance || Number($(this).data('pq-distance')) === distance;
             if (aliasMatch && distMatch) {
@@ -434,7 +433,7 @@ function pqInitHoverBlason() {
 
 
 /* ----------------------------------------------------------
-   Surbrillance du blason physique au survol d'un archer sur la cible
+   Physical face highlight when hovering an archer on the target
 ---------------------------------------------------------- */
 function pqInitHoverArcherOnCible() {
     $(document).on('mouseenter', '.qp-cible-names .pq-halo-archer', function () {
@@ -458,7 +457,7 @@ function pqInitHoverArcherOnCible() {
 
 
 /* ----------------------------------------------------------
-   Récap global (impression dans nouvelle fenêtre)
+   Global summary (print in new window)
 ---------------------------------------------------------- */
 function openGlobalRecap() {
     $.get(QP_ROOT + 'ajax.php', {
@@ -497,9 +496,9 @@ function openGlobalRecap() {
 }
 
 /* ----------------------------------------------------------
-   Impression
+   Printing
 ---------------------------------------------------------- */
-var PRINT_PER_PAGE = 16; // cibles par page
+var PRINT_PER_PAGE = 16; // targets per page
 
 function printTargets() {
     window.print();
@@ -512,7 +511,7 @@ function printTargets() {
                        ? document.getElementById('printHeader').innerHTML : '';
         if (!headerHtml) return;
 
-        // En-tête page de garde : injecté au début de #printBlasonRecap, sans saut avant
+        // Cover page header: injected at the start of #printBlasonRecap, no break before
         var recap = document.getElementById('printBlasonRecap');
         if (recap) {
             $(recap).prepend(
@@ -520,7 +519,7 @@ function printTargets() {
             );
         }
 
-        // En-têtes pages cibles : une par groupe de PRINT_PER_PAGE cibles, avec saut de page
+        // Target page headers: one per group of PRINT_PER_PAGE targets, with page break
         var wraps = $('#targetsArea .qp-cible-wrap');
         for (var i = 0; i < wraps.length; i += PRINT_PER_PAGE) {
             $(wraps[i]).before(
@@ -565,7 +564,7 @@ function loadDragula() {
 }
 
 /* ============================================================
-   Commande blasons (modale CSS pur)
+   Target face order (pure CSS modal)
    ============================================================ */
 function getAutoCoeff(face) {
     var f = String(face || '').toLowerCase().trim();
@@ -697,7 +696,7 @@ async function copyOrder() {
     alert(Lng_CopyCart);
 }
 
-/* Fermer la modale en cliquant sur le fond */
+/* Close the modal by clicking on the backdrop */
 document.addEventListener('DOMContentLoaded', function () {
     var modal = document.getElementById('orderModal');
     if (modal) {
@@ -708,9 +707,9 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 /* ----------------------------------------------------------
-   PopEdit — édition archer en modal iframe
-   opener = null dans un iframe → PopEdit ne recharge pas
-   la page principale. window.close() est intercepté.
+   PopEdit — archer editing in a modal iframe
+   opener = null in an iframe → PopEdit does not reload
+   the main page. window.close() is intercepted.
 ---------------------------------------------------------- */
 $(function () {
     var _peArcherId = 0;
@@ -736,16 +735,16 @@ $(function () {
         blasonRecap();
     };
 
-    /* Intercepter window.close() dans l'iframe après chaque chargement */
+    /* Intercept window.close() in the iframe after each load */
     document.getElementById('qpPeIframe').addEventListener('load', function () {
         try {
             var iw = this.contentWindow;
-            iw.opener = null;  // empêche PopEdit de recharger la page parente
+            iw.opener = null;  // prevents PopEdit from reloading the parent page
             iw.close  = function () { window.closePopEditModal(); };
         } catch (e) {}
     });
 
-    /* Fermer sur ESC */
+    /* Close on ESC */
     $(document).on('keydown.qpPeModal', function (e) {
         if (e.key === 'Escape'
                 && document.getElementById('qpPeModal').style.display !== 'none') {
@@ -753,12 +752,12 @@ $(function () {
         }
     });
 
-    /* Fermer en cliquant sur le fond */
+    /* Close by clicking on the backdrop */
     document.getElementById('qpPeModal').addEventListener('click', function (e) {
         if (e.target === this) window.closePopEditModal();
     });
 
-    /* Double-clic sur un archer dans la picking list */
+    /* Double-click on an archer in the picking list */
     $(document).on('dblclick', '.qp-src-card', function (e) {
         e.stopPropagation();
         var item     = $(this).closest('.qp-picker-item');
@@ -767,7 +766,7 @@ $(function () {
         if (athId) window.openPopEdit(athId, cibleNum);
     });
 
-    /* Double-clic sur un archer dans une cible */
+    /* Double-click on an archer in a target */
     $(document).on('dblclick', '#targetsArea .disptrg', function (e) {
         e.stopPropagation();
         var item     = $(this).closest('.qp-picker-item');
@@ -776,7 +775,7 @@ $(function () {
         if (athId) window.openPopEdit(athId, cibleNum);
     });
 
-    /* Supprimer un archer — empêcher le drag sur mousedown */
+    /* Delete an archer — prevent drag on mousedown */
     $(document).on('mousedown', '.qp-del-archer', function (e) {
         e.stopPropagation();
     });

@@ -1,11 +1,10 @@
 /* ============================================================
-   QualifsP — Plan de cible
-   CSS autonome, aucune dépendance Bootstrap.
-   S'appuie sur les variables CSS d'ianseo (colors.css).
+   QualifsP — Target plan
+   Relies on ianseo CSS variables (colors.css).
    ============================================================ */
 
 /* ----------------------------------------------------------
-   Mise en page générale
+   General layout
 ---------------------------------------------------------- */
 .qp-bandeau {
     display: flex;
@@ -38,15 +37,15 @@
     white-space: nowrap;
 }
 
-/* Layout principal (picking | cibles) */
+/* Main layout (picking | targets) */
 .qp-layout {
     display: flex;
     gap: 6px;
     margin-top: 4px;
-    height: calc(100vh - 180px); /* hauteur dispo sous l'entête */
+    height: calc(100vh - 180px); /* available height below the header */
 }
 
-/* Colonne picking (gauche) */
+/* Picking column (left) */
 .qp-picking-col {
     width: 210px;
     min-width: 180px;
@@ -55,7 +54,7 @@
     flex-direction: column;
 }
 
-/* Barre de recherche picking list */
+/* Picking list search bar */
 .qp-search-wrap {
     display: flex;
     align-items: center;
@@ -94,7 +93,7 @@
     background: var(--row-background);
 }
 
-/* Colonne cibles (droite) */
+/* Target column (right) */
 .qp-targets-col {
     flex: 1;
     overflow: hidden;
@@ -112,7 +111,7 @@
 }
 
 /* ----------------------------------------------------------
-   Accordion (picking list) — CSS pur, JS minimal
+   Accordion (picking list) — pure CSS, minimal JS
 ---------------------------------------------------------- */
 .qp-accordion-item {
     border-bottom: 1px solid var(--input-border);
@@ -158,7 +157,7 @@
 }
 
 /* ----------------------------------------------------------
-   Carte cible
+   Target card
 ---------------------------------------------------------- */
 .qp-cible-subtitle {
     margin-top: 5px;
@@ -175,7 +174,7 @@
     gap: 2px;
 }
 
-/* Tailles fixes des cartes */
+/* Fixed card sizes */
 .qp-cible-card,
 .qp-cible-names {
     min-width: 148px;
@@ -195,7 +194,7 @@
     flex-direction: row;
 }
 
-/* Couleurs de bordure selon warnLevel */
+/* Border colors by warnLevel */
 .qp-border-primary { border-color: var(--header-dark); }
 .qp-border-success { border-color: var(--text-success); }
 .qp-border-warning { border-color: var(--bg-orange); }
@@ -217,7 +216,7 @@
 .qp-bg-warning { background: var(--bg-orange); color: #333; }
 .qp-bg-danger  { background: var(--dark-red); }
 
-/* Entête de la carte */
+/* Card header */
 .qp-cible-header {
     display: flex;
     justify-content: space-between;
@@ -227,7 +226,7 @@
     margin-bottom: 2px;
 }
 
-/* Poignée de déplacement de cible */
+/* Target drag handle */
 .qp-cible-move-handle {
     cursor: grab;
     color: #aaa;
@@ -237,7 +236,7 @@
 }
 .qp-cible-move-handle:active { cursor: grabbing; }
 
-/* États drag & drop des cibles */
+/* Target drag & drop states */
 .qp-cible-wrap { position: relative; }
 .qp-cible-dragging { opacity: .4; }
 .qp-cible-drop-after::after,
@@ -258,7 +257,7 @@
 .qp-cible-drop-after::after  { right: -5px; }
 .qp-cible-drop-before::before { left: -5px; }
 
-/* Bouton effacement */
+/* Clear button */
 .btRm {
     cursor: pointer;
     color: #c00;
@@ -269,7 +268,7 @@
 }
 .btRm:hover { background: #c00; color: #fff; }
 
-/* Étiquettes A/B C/D */
+/* A/B C/D labels */
 .qp-vagues-labels {
     display: flex;
     border: 1px solid #000;
@@ -285,7 +284,7 @@
 }
 .qp-vague-label:last-child { border-right: none; }
 
-/* Zone blasons : hauteur fixe pour accueillir le plus grand blason (⌀122 = 122px) */
+/* Target face zone: fixed height to fit the largest face (⌀122 = 122px) */
 .qp-blasons-row {
     background: cornsilk;
     height: 130px;
@@ -296,7 +295,7 @@
     overflow: hidden;
 }
 
-/* Slot vague (drag & drop) */
+/* Wave slot (drag & drop) */
 .qp-vague-slot {
     display: flex;
     flex-direction: column;
@@ -312,7 +311,7 @@
 }
 
 /* ----------------------------------------------------------
-   Picking item (archer dans la liste)
+   Picking item (archer in the list)
 ---------------------------------------------------------- */
 .qp-picker-item {
     padding: 2px;
@@ -320,12 +319,12 @@
 .qp-src-card {
     border: 1px solid var(--input-border);
     border-radius: 2px;
-    padding: 2px 18px 2px 4px; /* espace à droite pour le bouton ✕ */
+    padding: 2px 18px 2px 4px; /* right space for the ✕ button */
     position: relative;
     cursor: grab;
 }
 
-/* Bouton suppression archer */
+/* Archer delete button */
 .qp-del-archer {
     position: absolute;
     top: 1px;
@@ -343,13 +342,13 @@
     background: #c00;
     color: #fff;
 }
-/* Archer non placé : mise en valeur avec bordure colorée et fond légèrement teinté */
+/* Unplaced archer: highlighted with colored border and slightly tinted background */
 .qp-picker-item:not(.affected) .qp-src-card {
     border: 2px solid var(--color-warning, #e6a817);
     background-color: #fffbe6;
     font-weight: bold;
 }
-/* Archer déjà placé : discret */
+/* Already placed archer: subtle */
 .qp-picker-item.affected .qp-src-card {
     opacity: 0.55;
 }
@@ -362,7 +361,7 @@
 }
 
 /* ----------------------------------------------------------
-   Affichage drag source / cible
+   Drag source / target display
 ---------------------------------------------------------- */
 .disptrg {
     display: none !important;
@@ -380,7 +379,7 @@
 .ddsrc .dispsrc { display: block !important; }
 
 /* ----------------------------------------------------------
-   Texte archers
+   Archer text
 ---------------------------------------------------------- */
 .ddtrg .archers {
     font-size: .7em;
@@ -392,7 +391,7 @@
 }
 
 /* ----------------------------------------------------------
-   Halo survol
+   Hover halo
 ---------------------------------------------------------- */
 .halo {
     outline: 2px solid var(--text-success) !important;
@@ -414,7 +413,7 @@
     transition: opacity .12s, filter .12s;
 }
 
-/* Surbrillance blason correspondant à l'archer survolé */
+/* Highlight for the face matching the hovered archer */
 .pq-blason-hl {
     outline: 3px solid var(--text-success, #2a7a2a) !important;
     border-radius: 4px;
@@ -428,7 +427,7 @@
 
 
 /* ----------------------------------------------------------
-   Section "Sans départ"
+   "Without session" section
 ---------------------------------------------------------- */
 .qp-unassigned-section {
     border-top: 2px solid var(--bg-orange, #e6a817);
@@ -441,7 +440,7 @@
 .qp-unassigned-header:hover {
     background: #ffe699 !important;
 }
-/* Laisser la couleur bgstru du div parent transparaître dans la card */
+/* Let the parent div's bgstru color show through in the card */
 #tgl-unassigned .qp-picker-item .qp-src-card {
     background-color: transparent;
 }
@@ -460,7 +459,7 @@
 .gu-unselectable { user-select: none; }
 
 /* ----------------------------------------------------------
-   Visibilité archers (toggles)
+   Archer visibility (toggles)
 ---------------------------------------------------------- */
 .qp-hidden-archers .nameArcher { display: none !important; }
 
@@ -473,7 +472,7 @@
 @media print {
     @page { margin: 1cm; }
 
-    /* Masquer tout sauf les blocs d'impression */
+    /* Hide everything except print blocks */
     .qp-picking-col,
     .qp-bandeau,
     table.Tabella,
@@ -481,17 +480,17 @@
     #targetsArea .btRm,
     #targetsArea [id^="cb"] { display: none !important; }
 
-    /* Flux normal pour l'impression */
+    /* Normal flow for printing */
     body, html { overflow: visible !important; height: auto !important; }
     body { padding-top: 0; }
 
-    /* ---- PAGE 1 : page de garde bilan ---- */
+    /* ---- PAGE 1: cover page summary ---- */
 
-    /* Page de garde bilan — occupe toute la page 1 puis saut de page */
+    /* Summary cover page — fills the entire page 1 then page break */
     #printBlasonRecap {
         display: block;
         width: 100%;
-        padding-top: 1cm; /* espace sous l'en-tête fixe */
+        padding-top: 1cm; /* space below the fixed header */
         page-break-after: always;
         break-after: page;
     }
@@ -501,7 +500,7 @@
         margin-bottom: .4cm;
     }
 
-    /* Tableau des blasons avec images généré par AJAX */
+    /* Target face table with images generated by AJAX */
     .pbr-print-table {
         border-collapse: collapse;
         width: auto;
@@ -528,14 +527,14 @@
         vertical-align: middle;
     }
 
-    /* ---- PAGES 2+ : en-tête répété (injecté par JS) + cibles ---- */
+    /* ---- PAGES 2+: repeated header (injected by JS) + targets ---- */
 
-    /* L'en-tête principal est masqué — les copies JS prennent le relais */
+    /* The main header is hidden — JS copies take over */
     #printHeader {
         display: none !important;
     }
 
-    /* En-tête injecté par JS — commun */
+    /* Header injected by JS — shared */
     .qp-print-page-header {
         display: block !important;
         width: 100%;
@@ -547,7 +546,7 @@
         page-break-before: always;
         break-before: page;
     }
-    /* Page de garde : pas de saut avant l'en-tête */
+    /* Cover page: no break before the header */
     .qp-print-page-header--first {
         page-break-before: auto;
         break-before: auto;
@@ -587,6 +586,6 @@
         overflow: visible !important;
     }
 
-    /* Masquer les noms d'archers à l'impression */
+    /* Hide archer names when printing */
     .nameArcher { display: none !important; }
 }
