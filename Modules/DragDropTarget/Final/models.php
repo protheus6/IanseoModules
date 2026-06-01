@@ -475,9 +475,9 @@ class PF_Plan
                             $p1 = $uniqueSeeds[0];
                             $p2 = $uniqueSeeds[1];
                             $firstMatch = null;
-                            foreach ($pd['matchMap'] as $m) {
-                                if ($m->pos1 === $p1) { $firstMatch = $m; break; }
-                            }
+                            $sortedForPick = array_values($pd['matchMap']);
+                            usort($sortedForPick, fn($a, $b) => $a->matchNo <=> $b->matchNo);
+                            $firstMatch = $sortedForPick[0] ?? null;
                             if (!$firstMatch) $firstMatch = clone reset($pd['matchMap']);
                             $firstMatch->pos1 = $p1;
                             $firstMatch->pos2 = $p2;
@@ -621,14 +621,14 @@ class PF_Plan
                     }
 
                     // --- 2-wave mode (AB/CD): FsLetter='B' on some matches ---
-                    $hasWaveB = !empty(array_filter($matches, fn($m) => $m->letter === 'B'));
+                    $hasWaveB = !empty(array_filter($matches, fn($m) => substr($m->letter, -1) === 'B'));
                     if ($hasWaveB) {
                         $slotsMap[$key]['waves'] = 2;
 
-                        $matchesA = array_values(array_filter($matches, fn($m) => $m->letter !== 'B'));
-                        $matchesB = array_values(array_filter($matches, fn($m) => $m->letter === 'B'));
+                        $matchesA = array_values(array_filter($matches, fn($m) => substr($m->letter, -1) !== 'B'));
+                        $matchesB = array_values(array_filter($matches, fn($m) => substr($m->letter, -1) === 'B'));
 
-                        $baseId = $block->id;  // e.g. "phase_ScratchHCO_2"
+                        $baseId = $block->id;  // ex : "phase_ScratchHCO_2"
 
                         // Wave A sub-block (waveRow=0)
                         if (!empty($matchesA)) {
@@ -1008,9 +1008,6 @@ class PF_Saver
             $teamEvent = intval($block['teamEvent']);
             $dateSql   = StrSafe_DB($date);
             $timeSql   = StrSafe_DB($time . ':00');
-            // FsLetter: 'A' for wave 0 (AB), 'B' for wave 1 (CD)
-            $waveRow = intval($block['waveRow'] ?? 0);
-            $letter  = $waveRow > 0 ? "'B'" : "'A'";
 
             $isCanonOnly  = !empty($block['_canonOnly']);
             $isMirrorOnly = !empty($block['_mirrorOnly']);
@@ -1030,19 +1027,23 @@ class PF_Saver
                     $mirrorNo    = $matchNo + 1;
                     $canonTarget = intval($match['target']);
                     $mirrorTarget = $canonTarget + 1;
+                    $mTargetSql = sprintf("'%04d'", $mirrorTarget);
+                    $mLetterSql = sprintf("'%04dA'", $mirrorTarget);
                     safe_w_sql("DELETE FROM FinSchedule
                         WHERE FSTournament=" . intval($this->tId) . "
                         AND FSEvent=$evCode AND FSMatchNo=$mirrorNo");
                     safe_w_sql("INSERT INTO FinSchedule
                         (FSTournament,FSEvent,FSMatchNo,FSTeamEvent,FSScheduledDate,FSScheduledTime,FSScheduledLen,FSTarget,FsLetter)
                         VALUES(" . intval($this->tId) . ",$evCode,$mirrorNo,$teamEvent,
-                               $dateSql,$timeSql," . intval($dur) . ",$mirrorTarget,$letter)");
+                               $dateSql,$timeSql," . intval($dur) . ",$mTargetSql,$mLetterSql)");
                 }
             } else {
                 foreach ($block['matches'] ?? [] as $match) {
                     $matchNo = intval($match['matchNo']);
                     $target  = intval($match['target']);
-
+                    // FsLetter iAnseo : cible zero-paddée + 'A' (canonical = premier archer)
+                    $targetSql  = $target > 0 ? sprintf("'%04d'", $target) : 'NULL';
+                    $letterSql  = $target > 0 ? sprintf("'%04dA'", $target) : "'A'";
                     safe_w_sql("DELETE FROM FinSchedule
                         WHERE FSTournament=" . intval($this->tId) . "
                         AND FSEvent=$evCode AND FSMatchNo=$matchNo");
@@ -1050,9 +1051,9 @@ class PF_Saver
                     safe_w_sql("INSERT INTO FinSchedule
                         (FSTournament,FSEvent,FSMatchNo,FSTeamEvent,FSScheduledDate,FSScheduledTime,FSScheduledLen,FSTarget,FsLetter)
                         VALUES(" . intval($this->tId) . ",$evCode,$matchNo,$teamEvent,
-                               $dateSql,$timeSql," . intval($dur) . "," .
-                               ($target > 0 ? intval($target) : 'NULL') . ",$letter)");
+                               $dateSql,$timeSql," . intval($dur) . ",$targetSql,$letterSql)");
                 }
+
 
                 if (!$isCanonOnly) {
                     // --- iAnseo mirrors (canonical+1 matchNo) ---
@@ -1079,30 +1080,42 @@ class PF_Saver
                                      : $canonicalNos;
                     $mirrorNos     = array_values(array_diff($allMatchNos, $allCanonicals));
 
+                    $canonicalTargetMap = [];
+                    foreach ($block['matches'] ?? [] as $m) {
+                        $canonicalTargetMap[intval($m['matchNo'])] = intval($m['target']);
+                    }
                     if (!$twoPerTarget && !empty($mirrorNos)) {
                         // 1 archer per target: UPSERT the mirror of THIS block's canonical only.
-                        $canonicalTargetMap = [];
-                        foreach ($block['matches'] ?? [] as $m) {
-                            $canonicalTargetMap[intval($m['matchNo'])] = intval($m['target']);
-                        }
                         foreach ($mirrorNos as $mn) {
                             $canonicalMn = $mn - 1;
                             $canonTgt    = $canonicalTargetMap[$canonicalMn] ?? 0;
                             if ($canonTgt <= 0) continue;
                             $mirrorTarget = $canonTgt + 1;
+                            $mTargetSql = sprintf("'%04d'", $mirrorTarget);
+                            $mLetterSql = sprintf("'%04dA'", $mirrorTarget);
                             safe_w_sql("DELETE FROM FinSchedule
                                 WHERE FSTournament=" . intval($this->tId) . "
                                 AND FSEvent=$evCode AND FSMatchNo=$mn");
                             safe_w_sql("INSERT INTO FinSchedule
                                 (FSTournament,FSEvent,FSMatchNo,FSTeamEvent,FSScheduledDate,FSScheduledTime,FSScheduledLen,FSTarget,FsLetter)
                                 VALUES(" . intval($this->tId) . ",$evCode,$mn,$teamEvent,
-                                       $dateSql,$timeSql," . intval($dur) . ",$mirrorTarget,$letter)");
+                                       $dateSql,$timeSql," . intval($dur) . ",$mTargetSql,$mLetterSql)");
                         }
                     } else {
                         foreach ($mirrorNos as $mn) {
+                            $canonicalMn = $mn - 1;
+                            $canonTgt    = $canonicalTargetMap[$canonicalMn] ?? 0;
                             safe_w_sql("DELETE FROM FinSchedule
                                 WHERE FSTournament=" . intval($this->tId) . "
                                 AND FSEvent=$evCode AND FSMatchNo=$mn");
+                            if ($canonTgt > 0) {
+                                $mTargetSql = sprintf("'%04d'", $canonTgt);
+                                $mLetterSql = sprintf("'%04dB'", $canonTgt);
+                                safe_w_sql("INSERT INTO FinSchedule
+                                    (FSTournament,FSEvent,FSMatchNo,FSTeamEvent,FSScheduledDate,FSScheduledTime,FSScheduledLen,FSTarget,FsLetter)
+                                    VALUES(" . intval($this->tId) . ",$evCode,$mn,$teamEvent,
+                                           $dateSql,$timeSql," . intval($dur) . ",$mTargetSql,$mLetterSql)");
+                            }
                         }
                     }
                 }
