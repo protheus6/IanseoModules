@@ -1,0 +1,219 @@
+<?php
+require_once(dirname(__FILE__, 3) . '/config.php');
+require_once('Common/Fun_Sessions.inc.php');
+require_once('Common/Lib/CommonLib.php');
+
+CheckTourSession(true);
+checkACL(AclCompetition, AclReadOnly);
+
+// Tournament info
+$tourId = intval($_SESSION['TourId']);
+$rsTour = safe_r_sql("SELECT ToName, ToCode FROM Tournament WHERE ToId=" . $tourId);
+$tour   = safe_fetch($rsTour);
+$tourName = $tour ? htmlspecialchars($tour->ToName) : '';
+$tourCode = $tour ? htmlspecialchars($tour->ToCode) : '';
+
+// Date range (from DistanceInformation or FinSchedule)
+$dateRange = '';
+$rsDates = safe_r_sql("SELECT MIN(DiDay) minD, MAX(DiDay) maxD
+                        FROM DistanceInformation
+                        WHERE DiTournament=" . $tourId
+                        . " AND DiDay IS NOT NULL AND DiDay != '0000-00-00'");
+if ($rd = safe_fetch($rsDates)) {
+    if ($rd->minD) $dateRange = $rd->minD . ($rd->maxD && $rd->maxD !== $rd->minD ? ' — ' . $rd->maxD : '');
+}
+if (!$dateRange) {
+    $rsDates2 = safe_r_sql("SELECT MIN(FSScheduledDate) minD, MAX(FSScheduledDate) maxD
+                             FROM FinSchedule WHERE FSTournament=" . $tourId
+                             . " AND FSScheduledDate IS NOT NULL");
+    if ($rd2 = safe_fetch($rsDates2)) {
+        if ($rd2->minD) $dateRange = $rd2->minD . ($rd2->maxD && $rd2->maxD !== $rd2->minD ? ' — ' . $rd2->maxD : '');
+    }
+}
+
+// Default duration parameters for the configuration
+$equipeEchauffement = 15;
+$equipeMatch        = 30;
+$indivEchauffement  = 5;
+$indivMatch         = 30;
+
+$PAGE_TITLE    = 'Plan de cible — Finales';
+$IncludeJquery = true;
+
+//$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanFinales/svg/';
+$svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
+$pfRoot  = $CFG->ROOT_DIR . 'Modules/DragDropTarget/Final/';
+
+
+$JS_SCRIPT = [
+    '<link rel="stylesheet" href="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/lib/dragula.min.css">',
+    '<link rel="stylesheet" href="' . $pfRoot . 'final.css">',
+    '<script src="' . $CFG->ROOT_DIR . 'Modules/DragDropTarget/lib/dragula.min.js"></script>',
+    phpVars2js([
+        'PF_ROOT' => $pfRoot,
+        'PF_SVG' => $svgBase,
+        'PF_AJAX' => $pfRoot . 'ajax.php',
+    ]),
+	phpVars2js([
+		'Lng_CmdOk' => get_text('CmdOk'),
+		'Lng_Error' => get_text('Error'),
+		'Lng_Target' => get_text('Target'),
+		'Lng_Date' => get_text('Date', 'Tournament'),
+		'Lng_Hour' => get_text('Hour', 'Tournament'),
+		'Lng_Length' => get_text('Length', 'Tournament'),
+		'Lng_OrisFinals' => get_text('OrisFinals', 'Tournament'),
+		'Lng_Print' => get_text('Print', 'Tournament'),
+		'Lng_PrintFOP' => get_text('PrintFOP', 'Tournament'),
+		'Lng_WarmUp' => get_text('WarmUp', 'Tournament'),
+		'Lng_AddSlot' => get_text('AddSlot', 'DragDropTarget'),
+		'Lng_AddTarget' => get_text('AddTarget', 'DragDropTarget'),
+		'Lng_AlertSwitch1Wave' => get_text('AlertSwitch1Wave', 'DragDropTarget'),
+		'Lng_ChangesNotSaved' => get_text('ChangesNotSaved', 'DragDropTarget'),
+		'Lng_ClearSlot' => get_text('ClearSlot', 'DragDropTarget'),
+		'Lng_CmdModify' => get_text('CmdModify', 'DragDropTarget'),
+		'Lng_ConfirmRemoveSlot' => get_text('ConfirmRemoveSlot', 'DragDropTarget'),
+		'Lng_ConfirmRemoveTarget' => get_text('ConfirmRemoveTarget', 'DragDropTarget'),
+		'Lng_Conflict' => get_text('Conflict', 'DragDropTarget'),
+		'Lng_LostUnsaved' => get_text('LostUnsaved', 'DragDropTarget'),
+		'Lng_RemovePhase' => get_text('RemovePhase', 'DragDropTarget'),
+		'Lng_RemoveSlot' => get_text('RemoveSlot', 'DragDropTarget'),
+		'Lng_RemoveTarget' => get_text('RemoveTarget', 'DragDropTarget'),
+		'Lng_Saved' => get_text('Saved', 'DragDropTarget'),
+		'Lng_SavedWithError' => get_text('SavedWithError', 'DragDropTarget'),
+		'Lng_Saving' => get_text('Saving', 'DragDropTarget'),
+		'Lng_Split' => get_text('Split', 'DragDropTarget'),
+		'Lng_Switch1Archer' => get_text('Switch1Archer', 'DragDropTarget'),
+		'Lng_Switch1Wave' => get_text('Switch1Wave', 'DragDropTarget'),
+		'Lng_Switch2Archers' => get_text('Switch2Archers', 'DragDropTarget'),
+		'Lng_Switch2Waves' => get_text('Switch2Waves', 'DragDropTarget'),
+		'Lng_Unknown' => get_text('Unknown', 'DragDropTarget'),
+		'Lng_ErrorLoadingData' => get_text('ErrorLoadingData', 'Errors'),
+		'Lng_ErrorSave' => get_text('ErrorSave', 'Errors'),
+    ]),
+    '<script src="' . $pfRoot . 'final.js"></script>',
+];
+
+
+include('Common/Templates/head.php');
+?>
+
+<!-- =====================================================================
+     Header
+     ===================================================================== -->
+<table class="Tabella" style="width:100%;">
+  <tr>
+    <th class="Title" colspan="3">
+      <?= get_text('PrintFOP', 'Tournament') ?> — <?= get_text('OrisFinals', 'Tournament') ?> — <?= $tourCode ?> / <?= $tourName ?>
+    </th>
+  </tr>
+  <tr>
+    <th class="Title" colspan="3"><?= htmlspecialchars($dateRange) ?></th>
+  </tr>
+</table>
+
+<!-- =====================================================================
+     Toolbar
+     ===================================================================== -->
+<div class="pf-toolbar">
+  <input type="button" class="Button" id="btnSave" value="Enregistrer" onclick="pfSave()">
+  <label class="pf-toolbar-lbl">
+    <input type="checkbox" id="chkAutoShift" checked>
+    <?= get_text('UpdateNextTimelines', 'DragDropTarget') ?>
+  </label>
+  <label class="pf-toolbar-lbl">
+    <input type="checkbox" id="chkBlason" onchange="pfToggleBlasons(this.checked)">
+    <?= get_text('ShowFaces', 'DragDropTarget') ?>
+  </label>
+  <input type="button" class="Button" value="🖨 <?= get_text('Print', 'Tournament') ?>" onclick="pfPrint()" title="<?= get_text('PrintPlan', 'DragDropTarget') ?>">
+  <span id="pfStatus" class="pf-status"></span>
+</div>
+
+<!-- =====================================================================
+     Layout: configuration | grid
+     ===================================================================== -->
+<div class="pf-layout">
+
+  <!-- ---- Configuration panel (left) ---- -->
+  <div class="pf-config-col">
+    <div class="pf-config-panel">
+      <div class="pf-config-title"><?= get_text('Configuration', 'Tournament') ?></div>
+
+      <div class="pf-config-section">
+        <strong><?= get_text('Team') ?></strong>
+        <div class="pf-config-row">
+          <label><?= get_text('WarmUp', 'Tournament') ?></label>
+          <input type="number" id="cfgEquipeEchauff" value="<?= $equipeEchauffement ?>" min="1" max="120" style="width:4em;" oninput="pfApplyConfigDuration()">
+          <span>min</span>
+        </div>
+        <div class="pf-config-row">
+          <label><?= get_text('Match', 'Tournament') ?></label>
+          <input type="number" id="cfgEquipeMatch" value="<?= $equipeMatch ?>" min="1" max="120" style="width:4em;" oninput="pfApplyConfigDuration()">
+          <span>min</span>
+        </div>
+      </div>
+
+      <div class="pf-config-section">
+        <strong><?= get_text('Individual') ?></strong>
+        <div class="pf-config-row">
+          <label><?= get_text('WarmUp', 'Tournament') ?></label>
+          <input type="number" id="cfgIndivEchauff" value="<?= $indivEchauffement ?>" min="1" max="120" style="width:4em;" oninput="pfApplyConfigDuration()">
+          <span>min</span>
+        </div>
+        <div class="pf-config-row">
+          <label><?= get_text('Match', 'Tournament') ?></label>
+          <input type="number" id="cfgIndivMatch" value="<?= $indivMatch ?>" min="1" max="120" style="width:4em;" oninput="pfApplyConfigDuration()">
+          <span>min</span>
+        </div>
+      </div>
+
+      <!-- Unscheduled phases -->
+      <div class="pf-config-section" id="unscheduledPanel">
+        <div class="pf-unsched-header">
+          <strong><?= get_text('NotScheduled', 'DragDropTarget') ?></strong>
+          <button class="pf-add-train-btn" onclick="pfOpenTrainModal()" title="<?= get_text('AddWarmup', 'DragDropTarget') ?>">＋ <?= get_text('WarmUp', 'Tournament') ?></button>
+        </div>
+        <div id="unscheduledList" class="pf-unscheduled-list">
+          <em style="color:#999; font-size:.8em;"><?= get_text('Loading', 'Tournament') ?></em>
+        </div>
+      </div>
+
+      <!-- Modal: choose the event for a new warm-up -->
+      <div id="pfTrainModal" class="pf-train-modal" style="display:none;">
+        <div class="pf-train-modal-inner">
+          <div class="pf-train-modal-title"><?= get_text('AddWarmup', 'DragDropTarget') ?></div>
+          <label class="pf-train-modal-lbl"><?= get_text('Event') ?>
+            <select id="pfTrainEvSelect" class="pf-train-ev-select"></select>
+          </label>
+          <div class="pf-train-modal-btns">
+            <button class="Button" onclick="pfAddTrainingConfirm()"><?= get_text('CmdAdd') ?></button>
+            <button class="Button" onclick="pfCloseTrainModal()"><?= get_text('CmdCancel') ?></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Grid area (right) ---- -->
+  <div class="pf-grid-col">
+    <!-- Grid action buttons -->
+    <div class="pf-grid-actions">
+      <input type="button" class="Button" value="+ <?= get_text('Slot', 'DragDropTarget') ?>" onclick="pfAddSlot()" title="<?= get_text('AddSlot', 'DragDropTarget') ?>">
+      <input type="button" class="Button" value="+ <?= get_text('Target') ?>"   onclick="pfAddTarget()" title="<?= get_text('AddTarget', 'DragDropTarget') ?>">
+      <span class="pf-zoom-control" title="Zoom">
+        🔍
+        <input type="range" id="pfZoomSlider" min="50" max="150" step="5" value="100"
+               oninput="pfSetZoom(this.value)">
+        <span id="pfZoomLbl">100%</span>
+      </span>
+    </div>
+
+    <!-- The grid itself -->
+    <div id="pfGridWrap" class="pf-grid-wrap">
+      <div id="pfLoading" style="padding:20px; color:#666;"><?= get_text('Loading', 'Tournament') ?></div>
+      <div id="pfGrid"></div>
+    </div>
+  </div>
+
+</div><!-- .pf-layout -->
+
+<?php include('Common/Templates/tail.php'); ?>

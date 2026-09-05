@@ -1,0 +1,127 @@
+<?php
+require_once(dirname(__FILE__, 3) . '/config.php');
+require_once('Common/Fun_Sessions.inc.php');
+require_once('Common/Lib/CommonLib.php');
+
+CheckTourSession(true);
+checkACL(AclCompetition, AclReadOnly);
+
+require_once(__DIR__ . '/models.php');
+
+$action = $_GET['action'] ?? '';
+$tourId = intval($_SESSION['TourId']);
+
+$JSON=[
+    'error' => 1,
+    'msg' => get_text('ErrGenericError', 'Errors'),
+];
+
+switch ($action) {
+
+    // ------------------------------------------------------------------
+    // getData : returns the full plan (slots + blocks + targets)
+    // ------------------------------------------------------------------
+    case 'getData':
+        $plan = new PF_Plan($tourId);
+        $JSON['error'] = 0;
+        $JSON['data'] = $plan->toJson();
+        JsonOut($JSON);
+        break;
+
+    // ------------------------------------------------------------------
+    // save : saves the plan (POST JSON)
+    // ------------------------------------------------------------------
+    case 'save':
+        checkACL(AclCompetition, AclReadWrite);
+        $raw  = file_get_contents('php://input');
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            http_response_code(400);
+            $JSON['msg'] = get_text('InvalidJSON', 'Errors');
+            JsonOut($JSON);
+            break;
+        }
+        $saver  = new PF_Saver($tourId);
+        $errors = $saver->save($data);
+        $JSON['error'] = 0;
+        JsonOut(array_merge($JSON, ['ok' => true, 'errors' => $errors]));
+        break;
+
+    // ------------------------------------------------------------------
+    // debugFS : returns the FinSchedule records for the tournament
+    // (debug only – remove in production)
+    // ------------------------------------------------------------------
+    case 'debugFS':
+        $rs   = safe_r_sql("SELECT FSEvent, FSMatchNo, FSTeamEvent,
+                                   FSScheduledDate, FSScheduledTime, FSTarget, FsLetter
+                            FROM FinSchedule
+                            WHERE FSTournament=" . intval($tourId) . "
+                            ORDER BY FSEvent, FSMatchNo");
+        $rows = [];
+        while ($r = safe_fetch($rs)) {
+            $rows[] = [
+                'ev'     => $r->FSEvent,
+                'match'  => $r->FSMatchNo,
+                'team'   => $r->FSTeamEvent,
+                'date'   => $r->FSScheduledDate,
+                'time'   => $r->FSScheduledTime,
+                'target' => $r->FSTarget,
+                'letter' => $r->FsLetter,
+            ];
+        }
+        $JSON['error'] = 0;
+        JsonOut(array_merge($JSON, ['count' => count($rows), 'rows' => $rows]));
+        break;
+
+    // ------------------------------------------------------------------
+    // getBlasonSvg : returns the SVG of a target face (for display in tiles)
+    // ------------------------------------------------------------------
+    case 'getTargetFaces':
+        // Returns the list of TargetFaces
+        $rs = safe_r_sql("SELECT T.TarId, T.TarDescr,E.EvTargetSize
+                          FROM Events E
+                          LEFT JOIN Targets T ON E.EvFinalTargetType = T.TarId 
+                          WHERE E.EvTournament=" . intval($tourId)."
+                          ORDER BY T.TarId");
+        $faces = [];
+        while ($r = safe_fetch($rs)) {
+            $key  = $r->TarDescr . '-' . intval($r->EvTargetSize);
+            $svgMap = [
+			'TrgIndComplete-40'  => '1.svg', //'D40.svg',
+            'TrgIndSmall-40'     => '2.svg', //'D40TCL.svg',
+            'TrgCOIndSmall-40'   =>  '4.svg', //'D40TCO.svg',
+            'TrgProAMIndVegasSmall-40'  => '16.svg', //'D40V.svg',
+            'TrgIndComplete-60'  => '1.svg', //'D60.svg',
+            'TrgIndSmall-60'     => '2.svg', //'D60T.svg',
+            'TrgIndComplete-80'  => '1.svg', //'D80.svg',
+            'TrgCOOutdoor-80'    => '9.svg', //'D80R.svg',
+            'TrgOutdoor-80'      => '1.svg', //'D80.svg',
+            'TrgOutdoor-122'     => '5.svg', //'D122.svg',
+            'TrgFrBeursault-45'  => '27.svg',//'Beursault.svg',
+            ];
+            $faces[$r->TarId] = [
+                'id'      => $r->TarId,
+                'name'    => $r->TarDescr,
+                'svg'     => $svgMap[$key] ?? '0.svg',
+                'classes' => 'None',
+            ];
+        }
+        // Associate each event with its TargetFace
+        $evFaces = [];
+        $rs2 = safe_r_sql("SELECT EvCode, EvTeamEvent,EvFinalTargetType
+                           FROM Events 
+                           WHERE EvTournament = " . intval($tourId) . "
+                           AND EvFinalFirstPhase != 0");
+        while ($r = safe_fetch($rs2)) {
+            $tfId = intval($r->EvFinalTargetType);
+            $evFaces[$r->EvCode] = isset($faces[$tfId]) ? $faces[$tfId]['svg'] : '0.svg';
+        }
+        $JSON['error'] = 0;
+        JsonOut(array_merge($JSON, ['faces' => $faces, 'eventFaces' => $evFaces]));
+        break;
+
+    default:
+        http_response_code(400);
+        JsonOut($JSON);
+        break;
+}
