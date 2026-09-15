@@ -34,14 +34,12 @@ foreach ($session->participants as $p) {
         $colorIdx++;
     }
 }
-// Archers without a session (absent from the current session)
-$rsAllStruct = safe_r_sql(
-    "SELECT DISTINCT E.EnCountry
-     FROM Entries E
-     LEFT JOIN Qualifications Q ON E.EnId = Q.QuId
-     WHERE E.EnAthlete = 1 AND E.EnTournament = " . intval($_SESSION['TourId']) . "
-       AND (Q.QuId IS NULL OR Q.QuSession = 0 OR Q.QuSession IS NULL)"
-);
+// Archers sans départ (absents de la session courante)
+$rsAllStruct = safe_r_sql("SELECT EnCountry
+    FROM Entries
+    INNER JOIN Qualifications ON EnId = QuId and QuSession = 0
+    WHERE EnAthlete = 1 AND EnTournament = {$_SESSION['TourId']}
+    group by EnCountry");
 while ($rAllStruct = safe_fetch($rsAllStruct)) {
     $sid = intval($rAllStruct->EnCountry);
     if (!isset($structColors[$sid])) {
@@ -50,7 +48,7 @@ while ($rAllStruct = safe_fetch($rsAllStruct)) {
     }
 }
 
-$PAGE_TITLE = 'Plan de cible';
+$PAGE_TITLE = get_text('MenuLM_DragDropTarget');
 $IncludeJquery = true;
 //$svgBase = $CFG->ROOT_DIR . 'Modules/Custom/PlanQualifs/svg/';
 $svgBase = $CFG->ROOT_DIR . 'Common/Images/Targets/';
@@ -104,7 +102,7 @@ include('Common/Templates/head.php');
 <table class="Tabella">
   <tr>
     <th class="Title" colspan="3">
-      Plan de cible — <?= htmlspecialchars($session->tour->name) ?>
+      <?= $PAGE_TITLE ?>
     </th>
   </tr>
   <tr>
@@ -145,10 +143,6 @@ include('Common/Templates/head.php');
         <input type="checkbox" id="toggleArcher" checked onchange="hideSwitch()">
         <?= get_text('ShowParticipants', 'Tournament') ?>
       </label>
-      <label style="font-size:.85em; display:block;">
-        <input type="checkbox" id="toggleAffected" checked onchange="hideAffectedSwitch()">
-        <?= get_text('ShowAssignedParticipants', 'Tournament') ?>
-      </label>
     </td>
   </tr>
 </table>
@@ -186,6 +180,10 @@ include('Common/Templates/head.php');
 
   <!-- Left column: picking list -->
   <div class="qp-picking-col">
+      <label style="font-size:.85em; display:block; margin-bottom: 4px;">
+        <input type="checkbox" id="toggleAffected" checked onchange="hideAffectedSwitch()">
+        <?= get_text('ShowAssignedParticipants', 'Tournament') ?>
+      </label>
     <div class="qp-search-wrap">
       <input type="text" id="qpSearch" placeholder="<?= htmlspecialchars(get_text('DragDropSearchPlaceholder', 'Tournament')) ?>…" autocomplete="off">
       <span id="qpSearchClear" title="<?= htmlspecialchars(get_text('CmdClear')) ?>" onclick="clearSearch()">✕</span>
@@ -280,7 +278,7 @@ include('Common/Templates/head.php');
           <div class="qp-cible-card qp-border-primary">
             <div class="qp-cible-header">
               <span><?= get_text('Target') ?> <?= $c ?></span>
-              <span class="btRm" onclick="removeCibleConfirm(this)" title="Désaffecter tout">✕</span>
+              <span class="btRm" onclick="removeCibleConfirm(this)" title="<?= get_text('UnassignTarget', 'DragDropTarget') ?>">✕</span>
             </div>
             <div class="qp-blasons-row" style="background:cornsilk; min-height:40px; display:flex; align-items:center; justify-content:center;">
               <img src="<?= htmlspecialchars($svgBase . '0.svg') ?>"
@@ -313,11 +311,11 @@ include('Common/Templates/head.php');
     <h3 style="text-align:center; margin:0 0 .5rem 0; font-size:1.1em;"><?= get_text('OrderFaces', 'DragDropTarget') ?></h3>
 
     <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-bottom:.5rem;">
-      <label style="font-size:.85em;">Coeff global</label>
+      <label style="font-size:.85em;"><?= get_text('GlobalCoeff', 'DragDropTarget') ?></label>
       <input id="globalCoeff" type="number" step="1" min="0" value="1" style="width:5em;"
              oninput="applyGlobalCoeff(this.value)">
-      <input type="button" class="Button" value="<?= htmlspecialchars(get_text('CmdRefresh')) ?>" onclick="refreshFromRecap()">
-      <input type="button" class="Button" value="+ <?= htmlspecialchars(get_text('CmdAdd', 'Tournament')) ?>"    onclick="addOrderRow()">
+      <input type="button" class="Button" value="<?= get_text('CmdRefresh') ?>" onclick="refreshFromRecap()">
+      <input type="button" class="Button" value="<?= get_text('AddRow', 'DragDropTarget') ?>"    onclick="addOrderRow()">
       <span style="font-size:.75em; color:#666; margin-left:auto;">
         40cm Trispot CO → ×5 &nbsp;|&nbsp; 40cm → ×2 &nbsp;|&nbsp; 60/80cm Unique → ÷4
       </span>

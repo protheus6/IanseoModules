@@ -258,7 +258,7 @@ $(document).on('drop', '.qp-cible-wrap', function (e) {
    Unassign all targets from the session
 ---------------------------------------------------------- */
 function clearAllCibles() {
-    if (!confirm(Lng_UnassignAll)) return;
+    if (!confirm(Lng_UnassignAllOfSession)) return;
     $.get(QP_ROOT + 'ajax.php', {
         action: 'clearSession',
         sessId: $('#departId').val()
@@ -430,7 +430,6 @@ function pqInitHoverBlason() {
         $('.pq-halo-blason').removeClass('pq-archer-hl pq-archer-dim');
     });
 }
-
 
 /* ----------------------------------------------------------
    Physical face highlight when hovering an archer on the target
@@ -684,7 +683,7 @@ async function copyOrder() {
     });
     var text = [Lng_FaceType +'\t'+ Lng_Quantity +'\t'+ Lng_Coeff +'\t'+ Lng_Total]
                .concat(rows)
-               .concat([GrandTotal +'\t\t\t' + document.getElementById('orderGrandTotal').textContent])
+               .concat([Lng_GrandTotal +'\t\t\t' + document.getElementById('orderGrandTotal').textContent])
                .join('\n');
     try {
         await navigator.clipboard.writeText(text);

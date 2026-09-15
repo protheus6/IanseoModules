@@ -195,7 +195,7 @@ class QP_Participant
 
     public function getNomCourt(): string
     {
-        return substr($this->prenom, 0, 1) . '.' . $this->nom;
+        return mb_substr($this->prenom, 0, 1) . '.' . $this->nom;
     }
 
     public function getCategory(): string

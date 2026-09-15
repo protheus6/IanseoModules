@@ -50,7 +50,7 @@ switch ($action) {
         }
 
         if (empty($matrix)) {
-            echo '<em style="color:#999;">'.get_text('NoFaceInvolved').'</em>';
+            echo '<em style="color:#999;">'.get_text('NoFaceInvolved', 'DragDropTarget').'</em>';
             break;
         }
 
@@ -297,7 +297,7 @@ switch ($action) {
               </div>
               <!-- Row for picking list (dispsrc) -->
               <div class="dispsrc bgstru<?= $structId ?> qp-src-card" data-struct="<?= $structId ?>">
-                <span class="qp-del-archer" title="<?= htmlspecialchars(get_text('CmdDelete')) ?>">✕</span>
+                <span class="qp-del-archer" title="<?= htmlspecialchars(get_text('CmdDelete', 'Tournament')) ?>">✕</span>
                 <span class="archers"><?= htmlspecialchars($cat . ' — ' . $nomCourt) ?></span><br>
                 <span class="archers" style="color:#555;"><?= htmlspecialchars($r->CoName) ?></span>
               </div>
@@ -340,25 +340,25 @@ switch ($action) {
         if ($src <= 0 || $dst <= 0 || $src === $dst) { http_response_code(400); break; }
         $tmp = 99999;
         // Park archers to Temporary target
-        safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $tmp WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = $src");
+        safe_w_sql("UPDATE Qualifications SET QuTarget = $tmp WHERE QuSession = $sess AND QuTarget = $src");
         if ($src < $dst) {
             // move to right : shift src+1..dst to left
             for ($i = $src; $i < $dst; $i++) {
-                safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $i WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = " . ($i + 1));
+                safe_w_sql("UPDATE Qualifications SET QuTarget = $i WHERE QuSession = $sess AND QuTarget = " . ($i + 1));
             }
         } else {
             // move to left : shift dst..src-1 to right (reverse ordrer)
             for ($i = $src; $i > $dst; $i--) {
-                safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $i WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = " . ($i - 1));
+                safe_w_sql("UPDATE Qualifications SET QuTarget = $i WHERE QuSession = $sess AND QuTarget = " . ($i - 1));
             }
         }
         // set the target source to destination
-        safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTarget = $dst WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget = $tmp");
+        safe_w_sql("UPDATE Qualifications SET QuTarget = $dst WHERE QuSession = $sess AND QuTarget = $tmp");
         // Recalculate QuTargetNo for the complet range
         $minC = min($src, $dst);
         $maxC = max($src, $dst);
-        safe_w_sql("UPDATE Qualifications Q INNER JOIN Entries E ON E.EnId = Q.QuId SET Q.QuTargetNo = CONCAT($sess, LPAD(Q.QuTarget, 3, '0'), Q.QuLetter)
-                    WHERE E.EnTournament = $tourId AND Q.QuSession = $sess AND Q.QuTarget BETWEEN $minC AND $maxC");
+        safe_w_sql("UPDATE Qualifications SET QuTargetNo = CONCAT($sess, LPAD(QuTarget, 3, '0'), QuLetter)
+                    WHERE QuSession = $sess AND QuTarget BETWEEN $minC AND $maxC");
         http_response_code(200);
         break;
 
@@ -437,7 +437,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 
       <div class="qp-cible-header">
         <span class="qp-cible-move-handle" draggable="true" title="<?= htmlspecialchars(get_text('MoveTarget', 'DragDropTarget')) ?>">⠿</span>
-        <span><?= get_text('Target') ?> <?= $cible->num ?> (<?= $cible->distance->distance ?>m)</span>
+        <span><?= get_text('IskTargetTitle','Api', $cible->num) ?> (<?= $cible->distance->distance ?>m)</span>
         <span class="btRm" onclick="removeCibleConfirm(this)" title="<?= htmlspecialchars(get_text('UnassignTarget', 'DragDropTarget')) ?>">✕</span>
       </div>
 
