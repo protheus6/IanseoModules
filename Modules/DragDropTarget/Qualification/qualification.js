@@ -590,14 +590,17 @@ function refreshFromRecap() { buildOrderTable(true); }
 function buildOrderTable(force) {
     var tbody = document.querySelector('#orderTable tbody');
     if (!force && tbody.children.length > 0) { updateGrandTotal(); return; }
-    tbody.innerHTML = '';
-    var items = parseRecapBlasons();
-    if (!items.length) {
-        addOrderRow('Blason', 0, 1);
-    } else {
-        items.forEach(function (it) { addOrderRow(it.face, it.count, getAutoCoeff(it.face)); });
-    }
-    updateGrandTotal();
+    // All faces of the tournament, whatever the current session
+    $.getJSON(QP_ROOT + 'ajax.php', { action: 'blasonOrder' }, function (data) {
+        tbody.innerHTML = '';
+        var items = (data && data.items) || [];
+        if (!items.length) {
+            addOrderRow('Blason', 0, 1);
+        } else {
+            items.forEach(function (it) { addOrderRow(it.face, it.count, getAutoCoeff(it.face)); });
+        }
+        updateGrandTotal();
+    });
 }
 
 function addOrderRow(face, count, coeff) {
@@ -658,18 +661,6 @@ function applyGlobalCoeff(val) {
         updateRowTotal(tr, false);
     });
     updateGrandTotal();
-}
-
-function parseRecapBlasons() {
-    var root = document.getElementById('recapBlason');
-    if (!root) return [];
-    var items = [];
-    root.querySelectorAll('.qp-recap-item').forEach(function (el) {
-        var face  = el.getAttribute('data-face');
-        var count = Number(el.getAttribute('data-count'));
-        if (face && isFinite(count)) items.push({ face: face, count: count });
-    });
-    return items;
 }
 
 async function copyOrder() {
