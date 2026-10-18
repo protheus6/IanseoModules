@@ -565,18 +565,6 @@ function loadDragula() {
 /* ============================================================
    Target face order (pure CSS modal)
    ============================================================ */
-function getAutoCoeff(face) {
-    var f = String(face || '').toLowerCase().trim();
-    if (!f) return 1;
-    if (f.indexOf('trispot co') !== -1) return 5;
-    if (f.indexOf('40') !== -1) return 2;
-    return 1;
-}
-function isBundleBy4(face) {
-    var f = String(face || '').toLowerCase().trim();
-    return f.indexOf('60cm unique') !== -1 || f.indexOf('80cm unique') !== -1;
-}
-
 function openOrder() {
     buildOrderTable(true);
     var modal = document.getElementById('orderModal');
@@ -597,7 +585,8 @@ function buildOrderTable(force) {
         if (!items.length) {
             addOrderRow('Blason', 0, 1);
         } else {
-            items.forEach(function (it) { addOrderRow(it.face, it.count, getAutoCoeff(it.face)); });
+            // coeff computed server-side from the ianseo face type
+            items.forEach(function (it) { addOrderRow(it.face, it.count, it.coeff); });
         }
         updateGrandTotal();
     });
@@ -623,7 +612,7 @@ function addOrderRow(face, count, coeff) {
     var inpQty   = makeInput('number', count, '5em');
     var inpCoeff = makeInput('number', coeff, '4em');
 
-    inpFace.addEventListener('input',  function () { inpCoeff.value = getAutoCoeff(inpFace.value); updateRowTotal(tr); });
+    inpFace.addEventListener('input',  function () { updateRowTotal(tr); });
     inpQty.addEventListener('input',   function () { updateRowTotal(tr); });
     inpCoeff.addEventListener('input', function () { updateRowTotal(tr); });
 
@@ -638,11 +627,9 @@ function addOrderRow(face, count, coeff) {
 
 function updateRowTotal(tr, doGrand) {
     doGrand = doGrand !== false;
-    var face  = tr.children[0].querySelector('input').value;
     var qty   = Number(tr.children[1].querySelector('input').value) || 0;
     var coeff = Number(tr.children[2].querySelector('input').value) || 0;
-    var qtyEff = isBundleBy4(face) ? Math.ceil(qty / 4) : qty;
-    tr.children[3].textContent = Math.round(qtyEff * coeff);
+    tr.children[3].textContent = Math.round(qty * coeff);
     if (doGrand) updateGrandTotal();
 }
 

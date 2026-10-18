@@ -93,7 +93,10 @@ switch ($action) {
         list($matrix) = qp_blason_matrix($tourId);
         $items = [];
         foreach ($matrix as $alias => $row) {
-            $items[$alias] = ['face' => $alias, 'count' => array_sum($row['sessions'])];
+            $key = $row['blason']->targetName . '-' . $row['blason']->diameter;
+            $items[$alias] = ['face'  => $alias,
+                              'count' => array_sum($row['sessions']),
+                              'coeff' => QP_Blason::orderCoeffForKey($key)];
         }
         // Faces defined in the tournament but used by no archer → quantity 0
         $rsB = safe_r_sql("SELECT TF.TfName, TF.TfW1, T.TarDescr
@@ -102,12 +105,15 @@ switch ($action) {
                            WHERE TF.TfTournament = " . intval($tourId) . "
                            ORDER BY TF.TfId");
         while ($rB = safe_fetch($rsB)) {
+            $key      = $rB->TarDescr . '-' . intval($rB->TfW1);
             $b        = new QP_Blason();
             $b->name  = $rB->TfName;
-            $b->alias = QP_Blason::aliasForKey($rB->TarDescr . '-' . intval($rB->TfW1));
+            $b->alias = QP_Blason::aliasForKey($key);
             $alias    = $b->displayName();
             if (!isset($items[$alias])) {
-                $items[$alias] = ['face' => $alias, 'count' => 0];
+                $items[$alias] = ['face'  => $alias,
+                                  'count' => 0,
+                                  'coeff' => QP_Blason::orderCoeffForKey($key)];
             }
         }
         $JSON['error'] = 0;
