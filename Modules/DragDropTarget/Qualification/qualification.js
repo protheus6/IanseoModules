@@ -565,18 +565,6 @@ function loadDragula() {
 /* ============================================================
    Target face order (pure CSS modal)
    ============================================================ */
-function getAutoCoeff(face) {
-    var f = String(face || '').toLowerCase().trim();
-    if (!f) return 1;
-    if (f.indexOf('trispot co') !== -1) return 5;
-    if (f.indexOf('40') !== -1) return 2;
-    return 1;
-}
-function isBundleBy4(face) {
-    var f = String(face || '').toLowerCase().trim();
-    return f.indexOf('60cm unique') !== -1 || f.indexOf('80cm unique') !== -1;
-}
-
 function openOrder() {
     buildOrderTable(true);
     var modal = document.getElementById('orderModal');
@@ -590,14 +578,18 @@ function refreshFromRecap() { buildOrderTable(true); }
 function buildOrderTable(force) {
     var tbody = document.querySelector('#orderTable tbody');
     if (!force && tbody.children.length > 0) { updateGrandTotal(); return; }
-    tbody.innerHTML = '';
-    var items = parseRecapBlasons();
-    if (!items.length) {
-        addOrderRow('Blason', 0, 1);
-    } else {
-        items.forEach(function (it) { addOrderRow(it.face, it.count, getAutoCoeff(it.face)); });
-    }
-    updateGrandTotal();
+    // All faces of the tournament, whatever the current session
+    $.getJSON(QP_ROOT + 'ajax.php', { action: 'blasonOrder' }, function (data) {
+        tbody.innerHTML = '';
+        var items = (data && data.items) || [];
+        if (!items.length) {
+            addOrderRow('Blason', 0, 1);
+        } else {
+            // coeff computed server-side from the ianseo face type
+            items.forEach(function (it) { addOrderRow(it.face, it.count, it.coeff); });
+        }
+        updateGrandTotal();
+    });
 }
 
 function addOrderRow(face, count, coeff) {
@@ -620,7 +612,7 @@ function addOrderRow(face, count, coeff) {
     var inpQty   = makeInput('number', count, '5em');
     var inpCoeff = makeInput('number', coeff, '4em');
 
-    inpFace.addEventListener('input',  function () { inpCoeff.value = getAutoCoeff(inpFace.value); updateRowTotal(tr); });
+    inpFace.addEventListener('input',  function () { updateRowTotal(tr); });
     inpQty.addEventListener('input',   function () { updateRowTotal(tr); });
     inpCoeff.addEventListener('input', function () { updateRowTotal(tr); });
 
@@ -635,11 +627,9 @@ function addOrderRow(face, count, coeff) {
 
 function updateRowTotal(tr, doGrand) {
     doGrand = doGrand !== false;
-    var face  = tr.children[0].querySelector('input').value;
     var qty   = Number(tr.children[1].querySelector('input').value) || 0;
     var coeff = Number(tr.children[2].querySelector('input').value) || 0;
-    var qtyEff = isBundleBy4(face) ? Math.ceil(qty / 4) : qty;
-    tr.children[3].textContent = Math.round(qtyEff * coeff);
+    tr.children[3].textContent = Math.round(qty * coeff);
     if (doGrand) updateGrandTotal();
 }
 
@@ -658,18 +648,6 @@ function applyGlobalCoeff(val) {
         updateRowTotal(tr, false);
     });
     updateGrandTotal();
-}
-
-function parseRecapBlasons() {
-    var root = document.getElementById('recapBlason');
-    if (!root) return [];
-    var items = [];
-    root.querySelectorAll('.qp-recap-item').forEach(function (el) {
-        var face  = el.getAttribute('data-face');
-        var count = Number(el.getAttribute('data-count'));
-        if (face && isFinite(count)) items.push({ face: face, count: count });
-    });
-    return items;
 }
 
 async function copyOrder() {

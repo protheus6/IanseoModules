@@ -26,28 +26,7 @@ switch ($action) {
     //  global summarize : Array with all Session and all Faces
     // ---------------------------------------------------------------
     case 'blasonRecapGlobal':
-        $tour     = new QP_TourInfo($tourId);
-        $sessions = $tour->sessions; // [ sessOrder => stdClass(id, name) ]
-
-        // Load each session grouped by Alias
-        // Structure : $matrix[alias] = ['blason'=>QP_Blason, 'sessions'=>[sessOrder=>physicalCount]]
-        $matrix   = [];
-        $sessLabels = [];
-        foreach ($sessions as $sOrder => $sInfo) {
-            $sess  = new QP_Session($tourId, $sOrder);
-            $label = !empty($sInfo->name) ? $sInfo->name : 'Départ ' . $sOrder;
-            $sessLabels[$sOrder] = $label;
-            foreach ($sess->blasonCountGrouped() as $alias => $blason) {
-                if (!isset($matrix[$alias])) {
-                    $matrix[$alias] = ['blason' => $blason, 'sessions' => []];
-                }
-                $matrix[$alias]['sessions'][$sOrder] = $blason->physicalCount;
-                // Keep the face with the largest imgTaille for the picture
-                if ($blason->imgTaille > $matrix[$alias]['blason']->imgTaille) {
-                    $matrix[$alias]['blason'] = $blason;
-                }
-            }
-        }
+        list($matrix, $sessLabels) = qp_blason_matrix($tourId);
 
         if (empty($matrix)) {
             echo '<em style="color:#999;">'.get_text('NoFaceInvolved', 'DragDropTarget').'</em>';
@@ -105,6 +84,41 @@ switch ($action) {
 
         $html .= '</tbody></table>';
         echo $html;
+        break;
+
+    // ---------------------------------------------------------------
+    // Faces order : all faces of the tournament (all sessions)
+    // ---------------------------------------------------------------
+    case 'blasonOrder':
+        list($matrix) = qp_blason_matrix($tourId);
+        $items = [];
+        foreach ($matrix as $alias => $row) {
+            $key = $row['blason']->targetName . '-' . $row['blason']->diameter;
+            $items[$alias] = ['face'  => $alias,
+                              'count' => array_sum($row['sessions']),
+                              'coeff' => QP_Blason::orderCoeffForKey($key)];
+        }
+        // Faces defined in the tournament but used by no archer → quantity 0
+        $rsB = safe_r_sql("SELECT TF.TfName, TF.TfW1, T.TarDescr
+                           FROM TargetFaces TF
+                           INNER JOIN Targets T ON T.TarId = TF.TfT1
+                           WHERE TF.TfTournament = " . intval($tourId) . "
+                           ORDER BY TF.TfId");
+        while ($rB = safe_fetch($rsB)) {
+            $key      = $rB->TarDescr . '-' . intval($rB->TfW1);
+            $b        = new QP_Blason();
+            $b->name  = $rB->TfName;
+            $b->alias = QP_Blason::aliasForKey($key);
+            $alias    = $b->displayName();
+            if (!isset($items[$alias])) {
+                $items[$alias] = ['face'  => $alias,
+                                  'count' => 0,
+                                  'coeff' => QP_Blason::orderCoeffForKey($key)];
+            }
+        }
+        $JSON['error'] = 0;
+        $JSON['items'] = array_values($items);
+        JsonOut($JSON);
         break;
 
     // ---------------------------------------------------------------
@@ -417,6 +431,33 @@ switch ($action) {
         http_response_code(400);
         echo 'Action inconnue';
         break;
+}
+
+// ---------------------------------------------------------------
+// Faces of all sessions grouped by Alias
+// Structure : $matrix[alias] = ['blason'=>QP_Blason, 'sessions'=>[sessOrder=>physicalCount]]
+// ---------------------------------------------------------------
+function qp_blason_matrix(int $tourId): array
+{
+    $tour       = new QP_TourInfo($tourId);
+    $matrix     = [];
+    $sessLabels = [];
+    foreach ($tour->sessions as $sOrder => $sInfo) {
+        $sess  = new QP_Session($tourId, $sOrder);
+        $label = !empty($sInfo->name) ? $sInfo->name : 'Départ ' . $sOrder;
+        $sessLabels[$sOrder] = $label;
+        foreach ($sess->blasonCountGrouped() as $alias => $blason) {
+            if (!isset($matrix[$alias])) {
+                $matrix[$alias] = ['blason' => $blason, 'sessions' => []];
+            }
+            $matrix[$alias]['sessions'][$sOrder] = $blason->physicalCount;
+            // Keep the face with the largest imgTaille for the picture
+            if ($blason->imgTaille > $matrix[$alias]['blason']->imgTaille) {
+                $matrix[$alias]['blason'] = $blason;
+            }
+        }
+    }
+    return [$matrix, $sessLabels];
 }
 
 // ---------------------------------------------------------------

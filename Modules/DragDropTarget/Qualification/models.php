@@ -155,6 +155,19 @@ class QP_Blason
         return $tailleMap[$key] ?? 40;
     }
 
+    // Order coefficient for a targetName-diameter key (target face order)
+    // 40cm Trispot CO → ×5, other 40cm → ×2, others → ×1
+    public static function orderCoeffForKey(string $key): int
+    {
+        static $coeffMap = [
+            'TrgCOIndSmall-40'          => 5,
+            'TrgIndComplete-40'         => 2,
+            'TrgIndSmall-40'            => 2,
+            'TrgProAMIndVegasSmall-40'  => 2,
+        ];
+        return $coeffMap[$key] ?? 1;
+    }
+
     // Calculates archer count from h+v (ImgTFace::getNbArcher logic)
     public function calcNbArcher()
     {

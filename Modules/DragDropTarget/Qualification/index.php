@@ -303,8 +303,13 @@ include('Common/Templates/head.php');
      ============================================================ -->
 <div id="orderModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4);
      align-items:center; justify-content:center; padding:1rem; z-index:2000;">
-  <div id="orderCard" style="background:#fff; width:min(800px,95vw); max-height:90vh;
+  <div id="orderCard" style="position:relative; background:#fff; width:min(800px,95vw); max-height:90vh;
        overflow:auto; border-radius:4px; box-shadow:0 6px 24px rgba(0,0,0,.3); padding:1rem;">
+    <!-- Coefficients info (tooltip) -->
+    <span title="<?= htmlspecialchars(QP_Blason::aliasForKey('TrgCOIndSmall-40')) ?> → ×5&#10;40cm → ×2"
+          style="position:absolute;top:.65rem;right:2.4rem;width:1.1rem;height:1.1rem;line-height:1.1rem;
+                 border:1px solid #888;border-radius:50%;color:#666;text-align:center;
+                 font:italic bold .8rem Georgia,serif;cursor:help;">i</span>
     <button type="button"
             style="position:absolute;top:.5rem;right:.5rem;border:none;background:transparent;font-size:1.2rem;cursor:pointer;"
             onclick="closeOrder()">✕</button>
@@ -316,9 +321,6 @@ include('Common/Templates/head.php');
              oninput="applyGlobalCoeff(this.value)">
       <input type="button" class="Button" value="<?= get_text('CmdRefresh') ?>" onclick="refreshFromRecap()">
       <input type="button" class="Button" value="<?= get_text('AddRow', 'DragDropTarget') ?>"    onclick="addOrderRow()">
-      <span style="font-size:.75em; color:#666; margin-left:auto;">
-        40cm Trispot CO → ×5 &nbsp;|&nbsp; 40cm → ×2 &nbsp;|&nbsp; 60/80cm Unique → ÷4
-      </span>
     </div>
 
     <table class="Tabella" id="orderTable">
