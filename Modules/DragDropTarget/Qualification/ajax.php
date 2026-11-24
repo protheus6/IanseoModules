@@ -437,7 +437,7 @@ function qp_render_cible(QP_Cible $cible, string $svgBase = '')
 
       <div class="qp-cible-header">
         <span class="qp-cible-move-handle" draggable="true" title="<?= htmlspecialchars(get_text('MoveTarget', 'DragDropTarget')) ?>">⠿</span>
-        <span><?= get_text('IskTargetTitle','Api', $cible->num) ?> (<?= $cible->distance->distance ?>m)</span>
+        <span><?= get_text('IskTargetTitle','Api', $cible->num) ?><?= $cible->distance->name !== '' ? ' (' . htmlspecialchars($cible->distance->name) . ')' : '' ?></span>
         <span class="btRm" onclick="removeCibleConfirm(this)" title="<?= htmlspecialchars(get_text('UnassignTarget', 'DragDropTarget')) ?>">✕</span>
       </div>
 
