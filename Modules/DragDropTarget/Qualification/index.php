@@ -193,7 +193,7 @@ include('Common/Templates/head.php');
         <!-- Grouped by category -->
         <?php foreach ($session->listByCategory() as $cat):
           $catDists = $cat->distances; ksort($catDists);
-          $catDistStr = !empty($catDists) ? ' - ' . implode('/', $catDists) . 'm' : '';
+          $catDistStr = !empty($catDists) ? ' - ' . implode('/', $catDists) : '';
         ?>
           <div class="pq-halo-category qp-accordion-item" id="tcat-<?= htmlspecialchars($cat->name) ?>"
 		  data-pq-category="<?= $cat->name ?>"
@@ -221,7 +221,7 @@ include('Common/Templates/head.php');
         <?php $blasonIdx = 0; foreach ($session->blasonDistanceGroups() as $group): $blasonIdx++;
           $alias    = $group['alias'];
           $distance = $group['distance'];
-          $label    = $alias . ($distance > 0 ? ' - ' . $distance . 'm' : '');
+          $label    = $alias . ($distance > 0 ? ' - ' . $group['distanceName'] : '');
         ?>
           <div class="pq-halo-blason qp-accordion-item" id="tgl-<?= $blasonIdx ?>"
 		  data-pq-blason="<?= htmlspecialchars($alias, ENT_QUOTES) ?>"

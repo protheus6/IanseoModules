@@ -182,7 +182,8 @@ class QP_Participant
     public $nom          = '';
     public $prenom       = '';
     public $target       = 0;
-    public $distance     = 0; // distance in meters (TournamentDistances.TdDist1 or Td1)
+    public $distance     = 0; // distance value (TournamentDistances.TdDist1 or Td1)
+    public $distanceName = ''; // distance label as set in ianseo (TournamentDistances.Td1, e.g. '70m-1', '50y')
     public $letter       = '';
     public $targetId     = 0;
     public $blason       = null;  // QP_Blason
@@ -202,6 +203,12 @@ class QP_Participant
     {
         return $this->arme . $this->classe;
     }
+
+    // Distance label as set in ianseo, the distance value if the label is empty
+    public function getDistanceName(): string
+    {
+        return ($this->distanceName !== '') ? $this->distanceName : (string)$this->distance;
+    }
 }
 
 // ---------------------------------------------------------------
@@ -214,6 +221,7 @@ class QP_Distance
     public $start        = '';
     public $targets      = 0;
     public $distance     = 0;
+    public $name         = ''; // distance label as set in ianseo (TournamentDistances.Td1)
     public $sameDistance = true;
     public $ath          = 0;
     public $id           = 0;
@@ -239,7 +247,7 @@ class QP_Cat
 {
     public $name      = '';
     public $count     = 0;
-    public $distances = []; // [dist => dist] unique distances in meters
+    public $distances = []; // [dist => distance label] unique distances
 }
 
 // ---------------------------------------------------------------
@@ -415,6 +423,7 @@ class QP_Session
             $p->target      = intval($r->QuTarget);
             $p->letter      = $r->QuLetter;
             $p->distance    = $rDistance;
+            $p->distanceName = (string)$r->Td1;
             $p->blason      = $this->blasons[$p->targetId] ?? null;
 
             // Filter by category if requested
@@ -440,7 +449,7 @@ class QP_Session
             }
             $this->categories[$catKey]->count++;
             if ($p->distance > 0) {
-                $this->categories[$catKey]->distances[$p->distance] = $p->distance;
+                $this->categories[$catKey]->distances[$p->distance] = $p->getDistanceName();
             }
 
             if (isset($this->blasons[$p->targetId])) {
@@ -523,7 +532,7 @@ class QP_Session
     /**
      * List of distinct (alias, distance) groups for the target face accordion.
      * The same face type shot at different distances produces N separate entries.
-     * Returns [ key => ['alias'=>str, 'distance'=>int, 'blason'=>QP_Blason] ]
+     * Returns [ key => ['alias'=>str, 'distance'=>int, 'distanceName'=>str, 'blason'=>QP_Blason] ]
      * sorted by alias then ascending distance.
      */
     public function blasonDistanceGroups(): array
@@ -536,7 +545,7 @@ class QP_Session
             $dist  = $p->distance;
             $key   = $alias . '||' . $dist;
             if (!isset($groups[$key])) {
-                $groups[$key] = ['alias' => $alias, 'distance' => $dist, 'blason' => $b];
+                $groups[$key] = ['alias' => $alias, 'distance' => $dist, 'distanceName' => $p->getDistanceName(), 'blason' => $b];
             }
         }
         uasort($groups, function ($a, $b) {
@@ -694,6 +703,7 @@ class QP_Cible
             $p->classe     = $r->EnClass;
             $p->target     = intval($r->QuTarget);
             $p->distance   =  $rDistance;
+            $p->distanceName = (string)$r->Td1;
             $p->letter     = $r->QuLetter;
             $p->blason     = $this->blasons[$p->targetId] ?? null;
             $this->participants[$p->id] = $p;
@@ -712,6 +722,10 @@ class QP_Cible
         } elseif (count($distList) > 1) {
             $this->distance->distance     = reset($distList);
             $this->distance->sameDistance = false;
+        }
+        // Label of the displayed distance (same participant as reset($distList))
+        if (!empty($this->participants)) {
+            $this->distance->name = reset($this->participants)->getDistanceName();
         }
     }
 
